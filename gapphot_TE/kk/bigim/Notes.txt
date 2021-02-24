@@ -1,0 +1,128 @@
+Notes for gapphot
+
+gapphot2 (elliptical apertures, specified in world coordinates) seems to work.
+still need to check WCS functions correctly.
+also make a version which does pt spource photometry:
+- fit PSF as specified in GPSFSIG
+- output a chi^2 or some such fitting parameter to give a star classifier 
+  (plotting that vs flx should show narrow sequence).
+
+-----------------
+Notes for imxshmap
+
+calculate width of border from shapelet map params
+
+read in mxm patch, starting at ix1,iy1
+
+mask a border, at top and right except when patch is at end of image
+keep idx,idy = offset for bottom left of image
+
+-----------------
+pixpsfmap
+ fits a series of stars as pixellated maps.
+ issue is how to shift the stars.
+
+ could try to make a polynomial model for the stars - a bicubic spline
+ with spatially varying coefficients.
+
+specify P, P,x  P,y  P,xy at each grid point. Then the value of the
+PSF anywhere is a linear function of these. Gives a large number of
+paramaters to fit! But avoids having to shift the PSF stars; instead
+they are simply fitted for. NR ch 3-6 gives coeffs.
+
+Works well, PSFs look nice. Still residuals that look like centroid
+issues. weighting stars by flx or swrt(flx) has little effect - so use
+sqrt.
+
+This version saved as pixpsfmap.F.shiftfirst
+
+--change to try: centering steps for stars.
+
+so - use input centroids to estimate b/g, beta (do not shift)
+    - low-order shapelet to determine gauss-weighted centroid
+    - shift star images
+    - fit models.
+
+Done. Does make a difference to the models, but for cfhtls data the
+few stars with large residuals remain.
+
+output could combine star, model and residuals in one fits file.
+
+----to make things more efficient:
+separate programme that carves out the stars and puts them in 3 d fits
+file with x,y coordinates in the headers. can put background estimates
+in there as well. (from a larger radius than what is saved in the fits
+file).
+
+-----------------
+
+pixpsfxshcpts makes large list of shapelet-convolved PSF components,
+for quick shear fitting later. Vary beta, use 3 orders of circular
+shapelets, and for each compute the effect of S1, S2, T1, T2, and
+T1S1,T1S2,T2S1,T2S2.
+
+These can then be combined to give a local PSF and its components,
+shifted on top of a source and used in chi^2 computation of different
+models.  a 6th-order PSF polynomial has 28 components; each of these
+is convolved with 25 betas (from 1 to 8 pixels in steps of 2**0.125),
+3 circular shape orders, and 9 combinations of Ti and Si. Also include
+the PSF itself, and its translations. Total number of such components
+is then 18984. 73 MB file ofr 31x31 pix models. OK.
+
+sort out bg treatment - either subtract it before, or incorporate it
+properly in pixpsfmap and pix2g. Fails on step1 images right now (bg
+of 20000 or so).
+
+----------------
+
+
+isotropnoise is a programme that calculates the minimum amont of noise
+to add to a kernel-convolved image to make the noise covariance matrix
+isotropic and identical everywhere.
+
+A convolution with a kernel correlates pixel noise with covariance
+matrix equal to the ACF of the kernel. To isotropize the noise
+requires adding noise with a covariance matrix that compensates for
+the anisotropy of the kernel ACF.
+
+This programme takes the kernel map and calculates the fourier
+transform of the target covariance matrix by maximizing the power in
+its ACF as a function of wavenumber (it maximises over wavevector
+azimuth and position in the image). A new noise map is then
+smoothed with a variable kernel whose power spectrum is the difference
+between the power spectrum of the target and of the original kernel.
+
+
+
+------
+
+noise covariance matrix estimation
+
+routine guess_cov analyses pixel pairs to determine correlation.
+subtleties:
+ - read in small patches and background subtract each (essential!)
+ - only use those pixel pairs with z1+z2<0, to avoid sources
+ - determine median of |z1+z2| and |z1-z2| distributions = quartile
+   point of background-only A=z1+z2 and B=z1-z2. Turn these into sigma
+   estimates by dividing by 0.67, square to give variances. 
+ - then Cov(z1,z2) = (Var(A)-Var(B))/4
+
+guess_errors_sec modified to zap core of near-zero pixels (after
+  gaussianization zero turns to very small nonzero). So once histogram
+  of pixel values has been made, determine provisional sig and bg and
+  then excise all within 0.001*sig of bg before making final histogram
+
+testcov writes out the covariance estimate of a large fits
+image. On gaussianized kids images this agrees well with analytic
+calculation of kernel ACF.
+
+now improved gapphot4 to estimate cov matrix if no kernel acf map is
+available, and then fit a shapelet expansion to it.
+
+  -----
+
+fitbeta
+
+found a bug in fitbeta that did not sort the weights of the data
+points properly, which will have given rise to suboptimal fits...
+Also it used weights/pix that go as 1/r^2, which gives total weight per ring that scales as 1/r. using weight/pix ~ 1/r (i.e. sig ~ sqrt(r)) gives equal weight per radial bin. Constant weight per pixel makes the weight per ring prop. to r.

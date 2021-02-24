@@ -1,0 +1,15 @@
+in
+ set pix=1,31*31
+ set x=pix%31-15
+ set y=int((pix-1)/31)-15
+ erase vs x y
+ set r=sqrt(x*x+y*y)
+ set gal=exp(-r)
+ set m0=(r==0)
+ set m1=exp(-r**2/2)
+ set m2=exp(-r**2/8)
+ set m4=exp(-r**2/32)
+ set vec={m0 m1 m2 m4}
+ linfit vec gal coefs
+ set mod=coefs[0]*m0+coefs[1]*m1+coefs[2]*m2+coefs[3]*m4
+ erase vs (log(gal)) (log(mod))

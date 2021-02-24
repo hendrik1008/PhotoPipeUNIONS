@@ -1,0 +1,35 @@
+pixpsfmap.F
+
+takes fits image inimage.fits and a star catalogue (piped in via stdin) to make interpolated pixellated PSF.
+needs a config file pixmap.par which contains 3 numbers:
+
+-polynomial order N (order to which to fit spatial variations)
+-niter (number of rejection iterations)
+-clip (number of sigma at which to clip)
+
+Output is a 3D image pixpsf.fits which contains the polynomial terms:
+[*,*,1] gives the average PSF
+[*,*,2] the 10 component
+[*,*,2] the 01 component
+then 20, 22 02, 30, 21, 12, 03, ... up to 0N
+each image is 31x31 pixels
+
+and 'psfstars.fits', another 3D fits image that shown three panels per star from the input list: input pixels, model and residual, all shifted to the center of the panel.
+
+
+
+
+pixpsfxshcpts.F
+
+starting from a pixellated psf map pixpsf.fits, compute the terms needed for a shape measurement: for a series of values of beta (logarithmically spaced) calculate the PSF-convolved round shapelets as well as results of acting on them with the shear  and translation operators. Result is in pixpsfshearcpts.fits.
+
+
+pix2g.F
+
+fit PSF-convolved sheared shapelet models to catalogue positions in stdin, using image inimage.fits [unfinished]
+
+
+
+
+
+

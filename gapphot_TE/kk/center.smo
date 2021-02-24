@@ -1,0 +1,37 @@
+mkdata 1
+ set x=expdev($1)+1
+ set y=expdev($1)-1
+ define xm 0
+ define ym 0
+ do i=1,10 {
+  set r=sqrt((x-$xm)**2+(y-$ym)**2)
+  define xm2 $(sum(x/r)/sum(1/r))
+  define ym2 $(sum(y/r)/sum(1/r))
+  define xm $xm2
+  define ym $ym2
+  echo $i $xm $ym
+  }
+
+
+run 2
+ set dimen(xxm)=0
+ set yym=xxm
+ set xmean=xxm
+ set ymean=xxm
+ do k=1,$1 {
+  mkdata $2
+  set xxm=xxm concat $xm
+  set yym=yym concat $ym
+  set xmean=xmean concat $(sum(x)/dimen(x))
+  set ymean=ymean concat $(sum(y)/dimen(x))
+   }
+
+
+gasdev 1
+ set _t=random($1)
+ set _u=random($1)
+ set $0=sqrt(-2*ln(1-_t))*cos(pi*_u)
+expdev 1
+ set _t=random($1)
+ set _u=random($1)
+ set $0=-ln(1-_t)*cos(pi*_u)

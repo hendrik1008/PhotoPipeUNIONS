@@ -1,0 +1,26 @@
+plot
+ data shearstats.cov
+ read {order 1 vg1 2 vg2 3 evg 4 nsample 5}
+ set th=7/order
+ set logth=lg(th)
+ set evg=evg/sqrt(nsample)
+ lim logth (vg1+vg2+2*evg)
+ define vsize $fy2
+ lim -0.5 1 0 $(10000*$vsize)
+ ticksize -1 0 0 0
+ expand 2
+ window 10 10 2:10 2:10
+ erase box 
+ lim -0.5 1 0 $vsize
+ ptype 8 3
+ poi logth (vg1+vg2)
+ errorbar logth (vg1+vg2) (sqrt(2)*evg) 2
+ errorbar logth (vg1+vg2) (sqrt(2)*evg) 4
+ ptype 4 1
+ poi logth vg1
+ angle 45
+ poi logth vg2
+ angle 0
+ xlabel \theta [arcmin]
+ ylabel <g^2> \times 10^4
+

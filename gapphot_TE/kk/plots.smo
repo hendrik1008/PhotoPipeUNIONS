@@ -1,0 +1,91 @@
+in 2 # cuts in S/N, max mag
+ data test.g.all
+ read {x 1 y 2 f 3 fe 4 fw 5 a 6 b 7 pa 8 g1 9 g2 10 g1s 11 g2s 12 ggcov 13 id 14 flg 15}
+ echo $(dimen(x)) Read
+ set snr=f<$2?f/fe:-1
+ foreach vvv {x y f fe fw a b pa g1 g2 g1s g2s ggcov id} {set $vvv=$vvv if (flg==0 && snr>$1)}
+ echo $(dimen(x)) Kept
+ set mag=35-2.5*lg(f)
+
+all
+ foreach i {0 2 3 4} {
+ ptype 1 0
+ expand 0.5
+ cd lens$i/psf0lens$i
+ #cd psf$($i)lens1
+ device postencap all.ps
+ allpanels
+ expand 1.5
+ toplabel PSF0LENS$i
+ #toplabel PSF$($i)LENS1
+ device null
+ expand 1
+ cd ../..
+ }
+
+
+all2
+ foreach i {0 2 3 4} {
+ ptype 1 0
+ expand 0.5
+ cd lens$i/psf1lens$i
+ #cd psf$($i)lens1
+ device postencap all.ps
+ allpanels
+ expand 1.5
+ toplabel PSF1LENS$i
+ #toplabel PSF$($i)LENS1
+ device null
+ expand 1
+ cd ../..
+ }
+
+all3
+ foreach i {2 3 4} {
+ ptype 1 0
+ expand 0.5
+ #cd psf0lens$i
+ cd lens0/psf$($i)lens0
+ device postencap all.ps
+ allpanels
+ expand 1.5
+ #toplabel PSF1LENS$i
+ toplabel PSF$($i)LENS0
+ device null
+ expand 1
+ cd ../..
+ }
+
+
+
+allpanels
+ erase
+ in 10 50000
+ window 2 2 1 2
+ lim -.1 .1 -.1 .1 
+ poi g1 g2 
+ ctype white grid ctype default box
+ xlabel g_1
+ ylabel g_2
+ window 2 4 2 3
+ sort {mag fw g1 g2}
+ set iii=1,dimen(mag)
+ lim 1 $(dimen(mag)) -0.1 0.1 
+ poi iii g1
+ ctype white grid ctype default box
+ xlabel Mag rank
+ ylabel g_1
+ window 2 4 2 4
+ poi iii g2
+ ctype white grid ctype default box
+ ylabel g_2
+ window 2 4 1 1
+ sort {fw mag g1 g2}
+ poi iii g1
+ ctype white grid ctype default box
+ xlabel FWHM rank
+ ylabel g_1
+ window 2 4 1 2
+ poi iii g2
+ ctype white grid ctype default box
+ ylabel g_2

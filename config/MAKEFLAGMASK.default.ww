@@ -1,0 +1,32 @@
+# Default configuration file for WeightWatcher 1.3
+#
+# NOTE: this file exists as a temporary fix
+#       this file will be removed (as it is identical to default.ww)
+ 
+#--------------------------------- Weights ------------------------------------
+ 
+WEIGHT_NAMES    weightin.fits   # Filename(s) of the input WEIGHT map(s)
+ 
+WEIGHT_MIN      0.3             # Pixel below those thresholds will be flagged
+WEIGHT_MAX      1.30            # Pixels above those thresholds will be flagged
+WEIGHT_OUTFLAGS 1               # FLAG values for thresholded pixels
+ 
+#---------------------------------- Flags -------------------------------------
+ 
+FLAG_NAMES      flagin.fits     # Filename(s) of the input FLAG map(s)
+ 
+FLAG_WMASKS     0xff            # Bits which will nullify the WEIGHT-map pixels
+FLAG_MASKS      0x01            # Bits which will be converted as output FLAGs
+FLAG_OUTFLAGS   2               # Translation of the FLAG_MASKS bits
+ 
+#---------------------------------- Polygons ----------------------------------
+ 
+POLY_NAMES      ""              # Filename(s) of input DS9 regions
+POLY_OUTFLAGS                   # FLAG values for polygon masks
+POLY_INTERSECT  Y               # Use inclusive OR for polygon intersects (Y/N)?
+ 
+#---------------------------------- Output ------------------------------------
+ 
+OUTWEIGHT_NAME  weight.fits     # Output WEIGHT-map filename
+OUTFLAG_NAME    flag.fits       # Output FLAG-map filename
+ 

@@ -1,0 +1,161 @@
+#!/bin/bash -xv
+
+# Script to gaussianise one VISTA chip
+#
+# Input:
+# - Background-subtracted VISTA chip processed by
+#   Angus Wright.
+#
+# Output:
+# - Gaussianised image
+#
+# Author: Hendrik Hildebrandt
+#
+# Version history:
+# 2018-01-22 V1.0
+
+#Set up the PATH {{{
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export NUMERIX=numpy
+export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
+set -e
+#}}}
+
+### command line parameters
+
+wd=$1                # work directory
+measurement_image=$2 # VISTA chip
+gaap_dir=${3}       # path to the GAaP code
+band=${4}           # VISTA band of the chip, i.e. Z, Z, J, H, or Ks
+
+test ! -d $wd && mkdir $wd
+
+### need to go to work directory as GaAP assumes
+### hard-coded links (e.g. inimage.fits)
+orig_dir=`pwd`
+
+cp @RUNROOT@/@CONFIGPATH@/default.* $wd/
+cd $wd
+
+measurement_image_dir=`dirname $measurement_image`
+measurement_image_base=`basename $measurement_image .fits`
+measurement_image_weight=${measurement_image_dir}/${measurement_image_base}.weight.fits
+
+### Dimensions of the image
+NAXIS1=`dfits $measurement_image | \
+fitsort -d NAXIS1 | gawk '{print $2}'` 
+NAXIS2=`dfits $measurement_image | \
+fitsort -d NAXIS2 | gawk '{print $2}'` 
+
+### Sky coordinates of the corners
+minmin_hms=`xy2sky $measurement_image 0 0`
+maxmax_hms=`xy2sky $measurement_image $NAXIS1 $NAXIS2`
+RAmin_hms=`echo $maxmax_hms | gawk '{print $1}'`
+RAmax_hms=`echo $minmin_hms | gawk '{print $1}'`
+Decmax_dms=`echo $maxmax_hms | gawk '{print $2}'`
+Decmin_dms=`echo $minmin_hms | gawk '{print $2}'`
+RAmin=`hmstodecimal $RAmin_hms | gawk '{print $1}'`
+RAmax=`hmstodecimal $RAmax_hms | gawk '{print $1}'`
+Decmin=`dmstodecimal $Decmin_dms | gawk '{print $1}'`
+Decmax=`dmstodecimal $Decmax_dms | gawk '{print $1}'`
+
+### New star catalogue based on the image itself ###
+# saturation levels
+case $band in
+    "Z")  sat_level=70000;;
+    "Y")  sat_level=220000;;
+    "J")  sat_level=100000;;
+    "H")  sat_level=80000;;
+    "Ks") sat_level=100000;;
+esac
+
+if [ ! -f $wd/${measurement_image_base}_smart_ggpsf.fits ]
+then
+   sex $measurement_image \
+   	 -CATALOG_NAME $wd/${measurement_image_base}_cat.asc \
+   	 -DETECT_THRESH 10 -SATUR_LEVEL $sat_level -SATUR_KEY DUMMY
+   
+   rm $wd/default.*
+   
+   fmax=`awk '{if ($10==0 && $3<1e6) print $3}' $wd/${measurement_image_base}_cat.asc | sort -gr |head -1`
+   rad1=`awk '{if ($3>'$fmax'/30. && $10==0) print $5}' $wd/${measurement_image_base}_cat.asc|$gaap_dir/kk/mode | awk '{printf "%f\n",$1}'`
+   fmax=`awk '{if ($10==0 && $5<'$rad1'+0.5) print $3}' $wd/${measurement_image_base}_cat.asc | sort -gr |head -1`
+   rad2=`awk '{if ($3>'$fmax'/30. && $5<'$rad1'+0.5 && $10==0) print $5}' $wd/${measurement_image_base}_cat.asc|$gaap_dir/kk/mode | awk '{printf "%f\n",$1}'`
+   awk '{if ($3>'$fmax'/30. && $5<'$rad2'+0.3 && $5>'$rad2'-0.3 && $10==0) print $0}' $wd/${measurement_image_base}_cat.asc > $wd/${measurement_image_base}_star_cat_GAaP.asc
+   echo $rad1 $rad2 $fmax `wc -l $wd/${measurement_image_base}_star_cat_GAaP.asc`
+   
+   ### Start the GaAP processing
+   rm -f inimage.fits
+   ln -sf $measurement_image inimage.fits
+   
+   if [ ! -e orders.par ]; then
+   echo 8 > orders.par
+   echo 3 >> orders.par
+   fi
+   
+   ### Gaussianise the image
+   tcsh $gaap_dir/doittwk.csh \
+       $measurement_image \
+       $wd/${measurement_image_base}_star_cat_GAaP.asc \
+       -1 \
+       $gaap_dir \
+       $wd/${measurement_image_base}_smart_ker.map \
+       $wd/${measurement_image_base}_smart_ggpsf.fits
+   
+   ### make maps of the PSF of the Gaussianized images
+   rm -f inimage.fits
+   ln -sf $wd/${measurement_image_base}_smart_ggpsf.fits inimage.fits
+   
+   echo MAKING SHAPELET EXPANSION FOR GAUSSIANIZED IMAGE
+   $gaap_dir/kk/bigim/psfcat2sherr_2 \
+       < $wd/${measurement_image_base}_star_cat_GAaP.asc \
+       > $wd/${measurement_image_base}_smart_ggpsf.sh
+   
+   echo FITTING MAP TO GAUSSIANIZED PSF
+   $gaap_dir/kk/bigim/fitpsfmap2 \
+       < $wd/${measurement_image_base}_smart_ggpsf.sh \
+       > $wd/${measurement_image_base}_smart_ggpsf.map
+   
+   $gaap_dir/kk/showpsfmapcol \
+       < $wd/${measurement_image_base}_smart_ggpsf.map
+   mv -f psfmap.ps $wd/${measurement_image_base}_smart_ggpsf_map.ps
+   
+   echo PLOTTING ASTROMETRIC RESIDUALS FOR GAUSSIANIZED IMAGE
+   $gaap_dir/kk/bigim/showdxdy \
+       < $wd/${measurement_image_base}_smart_ggpsf.sh
+   
+   echo PLOTTING STICK PLOTS FOR GAUSSIANIZED IMAGE
+   $gaap_dir/kk/bigim/fitpsfmap2 \
+       < $wd/${measurement_image_base}_smart_ggpsf.sh \
+       > /dev/null
+   
+   rm noise-est.ps  #$wd/${measurement_image_base}_smart_ggnoise-est.ps
+   mv fitpsfmap.ps  $wd/${measurement_image_base}_smart_ggfitpsfmap.ps
+   mv psfstarpos.ps $wd/${measurement_image_base}_smart_ggpsfstarpos.ps
+   rm psfstars.ps   #$wd/${measurement_image_base}_smart_ggpsfstars.ps
+   mv starsused.txt $wd/${measurement_image_base}_smart_ggstarsused.txt
+   mv psfsticks.ps  $wd/${measurement_image_base}_smart_ggpsfsticks.ps
+   mv dxdy.ps       $wd/${measurement_image_base}_smart_ggdxdy.ps
+   
+   rm -f inimage.fits
+fi 
+
+###############
+###############
+
+ln -sf $wd/${measurement_image_base}_ker.in gpsfsig.dat
+
+rm -f inimage.fits
+ln -sf $wd/${measurement_image_base}_smart_ggpsf.fits inimage.fits
+$gaap_dir/kk/shummary < $wd/${measurement_image_base}_smart_ggpsf.sh | \
+    sort -g -k 8 | gawk '$7==0' | tail -200 | $gaap_dir/kk/bigim/checkgpsf2d
+convert -density 200 $wd/checkgpsf2d.ps $wd/${measurement_image_base}_smart_ggpsf.jpg
+rm $wd/checkgpsf2d_pages.ps $wd/checkgpsf2d.ps
+
+rm orders.par  bgnoise.dat
+rm -f gpsfsig.dat inimage.fits
+
+cd $orig_dir
