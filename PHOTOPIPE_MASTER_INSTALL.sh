@@ -21,7 +21,7 @@ NOCONFIG=0
 #Package directory (default: `pwd`)
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
-RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN/
+RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN_new/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
@@ -226,50 +226,50 @@ EOF
   echo -e "\033[0;31m - Done! \033[0m" 
   #}}}
   #}}}
+  #}}}
+  #Add useful Functions to Python Lib {{{
+  echo -en "   >\033[0;34m Adding usefull functions to python lib \033[0m" 
+  cd ${RUNROOT}/INSTALL/anaconda2/lib/
+  cp ${PACKROOT}/scripts/ldac.py . > ${RUNROOT}/INSTALL/LDAC_wget.log 2>&1
+  echo -e "\033[0;31m - Done! \033[0m" 
+  echo -en "   >\033[0;34m Installing GAAP \033[0m" 
+  cd ${RUNROOT}/INSTALL
+  cp -r ${PACKROOT}/gapphot_TE . > ${RUNROOT}/INSTALL/gaap_copy.log 2>&1
+  #Compile the kk directory 
+  cd ${PACKROOT}/gapphot_TE/kk
+  make clean  > ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
+  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  #compile the bigim directory 
+  cd ${RUNROOT}/INSTALL/gapphot_TE/kk/bigim/
+  make clean  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  #This binary isn't removed in the clean
+  rm -f kermapm2rot 
+  make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
+  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  sed -i "s@^all: @all: set gapphot fitkermaptwk imxshmapwithtweak kermapm2rot pix2g8 pixpsfxshcpts8 psfcat2gauskerwithtweak psfcat2gauskerwithtweak_no_recentre showdxdy showpsfmaptwk kermapm2rot @" makefile 
+  echo "" >> makefile 
+  echo "psfcat2gauskerwithtweak_no_recentre: psfcat2gauskerwithtweak_no_recentre.o libshape.a libutil.a" >> makefile 
+  echo '	$(F77)  psfcat2gauskerwithtweak_no_recentre.o $(libs) -o psfcat2gauskerwithtweak_no_recentre' >> makefile
+  echo "" >> makefile 
+  echo "kermapm2rot: kermapm2rot.o libshape.a libutil.a" >> makefile 
+  echo '	$(F77)  kermapm2rot.o $(libs) -o kermapm2rot' >> makefile
+  make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  cd ${RUNROOT}
+  echo -e "\033[0;31m - Done! \033[0m"
+  #}}}
+  echo -en "   >\033[0;34m Installing WCStools \033[0m" 
+  cd ${RUNROOT}/INSTALL/
+  wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.9.6.tar.gz > ${RUNROOT}/INSTALL/wcstools_wget.log 2>&1
+  tar -xf wcstools-3.9.6.tar.gz 
+  cd wcstools-3.9.6
+  make all > ${RUNROOT}/INSTALL/wcstools_make.log 2>&1
+  echo -e "\033[0;31m - Done! \033[0m"
+  echo -e "\033[0;31m   ##Script Installations all done!##\033[0m" 
 fi 
-#}}}
-#Add useful Functions to Python Lib {{{
-echo -en "   >\033[0;34m Adding usefull functions to python lib \033[0m" 
-cd ${RUNROOT}/INSTALL/anaconda2/lib/
-cp ${PACKROOT}/scripts/ldac.py . > ${RUNROOT}/INSTALL/LDAC_wget.log 2>&1
-echo -e "\033[0;31m - Done! \033[0m" 
-echo -en "   >\033[0;34m Installing GAAP \033[0m" 
-cd ${RUNROOT}/INSTALL
-cp -r ${PACKROOT}/gapphot_TE . > ${RUNROOT}/INSTALL/gaap_copy.log 2>&1
-#Compile the kk directory 
-cd ${PACKROOT}/gapphot_TE/kk
-make clean  > ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
-sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
-make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-#compile the bigim directory 
-cd ${RUNROOT}/INSTALL/gapphot_TE/kk/bigim/
-make clean  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-#This binary isn't removed in the clean
-rm -f kermapm2rot 
-make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
-sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
-sed -i "s@^all: @all: set gapphot fitkermaptwk imxshmapwithtweak kermapm2rot pix2g8 pixpsfxshcpts8 psfcat2gauskerwithtweak psfcat2gauskerwithtweak_no_recentre showdxdy showpsfmaptwk kermapm2rot @" makefile 
-echo "" >> makefile 
-echo "psfcat2gauskerwithtweak_no_recentre: psfcat2gauskerwithtweak_no_recentre.o libshape.a libutil.a" >> makefile 
-echo '	$(F77)  psfcat2gauskerwithtweak_no_recentre.o $(libs) -o psfcat2gauskerwithtweak_no_recentre' >> makefile
-echo "" >> makefile 
-echo "kermapm2rot: kermapm2rot.o libshape.a libutil.a" >> makefile 
-echo '	$(F77)  kermapm2rot.o $(libs) -o kermapm2rot' >> makefile
-make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-cd ${RUNROOT}
-echo -e "\033[0;31m - Done! \033[0m"
-#}}}
-echo -en "   >\033[0;34m Installing WCStools \033[0m" 
-cd ${RUNROOT}/INSTALL/
-wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.9.6.tar.gz > ${RUNROOT}/INSTALL/wcstools_wget.log 2>&1
-tar -xf wcstools-3.9.6.tar.gz 
-cd wcstools-3.9.6
-make all > ${RUNROOT}/INSTALL/wcstools_make.log 2>&1
-echo -e "\033[0;31m - Done! \033[0m"
-echo -e "\033[0;31m   ##Script Installations all done!##\033[0m" 
 cd ${RUNROOT}
 ##}}}
 
