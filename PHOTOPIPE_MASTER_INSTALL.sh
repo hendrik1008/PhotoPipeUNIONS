@@ -52,7 +52,7 @@ THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/
 DRYRUN=0
 #Define the Pointing Filelist 
 POINTINGLIST=/path/to/pointinglist.txt 
-POINTINGLIST=pointing_filelist.dat  
+POINTINGLIST=KiDS-Legacy_pointings_1.txt
 #Path to AstroWISE catalogues 
 ASTROWISEPATH=/path/to/AstroWISE/catalogues/
 ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/
