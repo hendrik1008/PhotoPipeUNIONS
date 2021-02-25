@@ -1,0 +1,36 @@
+#!/bin/sh
+if [ $# -lt 1 ]; then
+  echo "Usage $0 -i <cat> [-c COL_CHAN_DEFAULT] [-m COL_MERGE_DEFAULT]"
+  exit
+fi
+CHAN=ALL
+MERGE=AVERAGE
+export CHAN
+export MERGE
+GoOn=0
+while [ $GoOn = 0 ]
+do
+   case $1 in
+   -i)
+       CAT=${2}
+       shift
+       shift
+       ;;
+   -c)
+       CHAN=${2}
+       shift
+       shift
+       ;;
+   -m)
+       MERGE=${2}
+       shift
+       shift
+       ;;
+    *)
+       GoOn=1
+       ;;
+    esac
+done
+ldacdesc -q -i $CAT -t OBJECTS | grep "Key name" | \
+  grep -v FIELD_POS | grep -v SeqNr | more \
+   | awk -F.  '{printf("COL_NAME=%s\nCOL_INPUT=%s\nCOL_CHAN=%s\nCOL_MERGE=%s\n#\n",$NF,$NF,CHAN,MERGE)}' CHAN=$CHAN MERGE=$MERGE
