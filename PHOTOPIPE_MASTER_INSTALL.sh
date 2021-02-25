@@ -22,6 +22,7 @@ NOCONFIG=0
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
 RUNROOT=/net/home/fohlen13/hendrik/PhotoPipe/RUNDIR_CLEAN/
+#RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
@@ -48,11 +49,13 @@ VIKINGTYPE=native_bsub
 #Path to THELI data 
 THELIDATAPATH=/path/to/THELI/Data/
 THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/
+#THELIDATAPATH=/net/fohlen13/home/awright/KiDS/DR5/THELI/
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
 POINTINGLIST=/path/to/pointinglist.txt 
 POINTINGLIST=KiDS-Legacy_pointings_1.txt
+POINTINGLIST=pointing_filelist.dat
 #Path to AstroWISE catalogues 
 ASTROWISEPATH=/path/to/AstroWISE/catalogues/
 ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/
@@ -74,6 +77,8 @@ POINTINGLIMITSFILE=${CONFIGPATH}/KIDS_ra_dec_cuts.txt
 NTHREAD=32
 #File with Catalogue Keywords, units, comments, and order
 CATALOGUEKEYSFILE=${CONFIGPATH}/Legacy_keyword_order_comments.csv
+#2DFLens Redshift Catalogue (For QC) 
+2DFLENSCATALOGUE=/path/to/2dfLensCatalogue.cat
 #Set the wait time between completion checks 
 REFRESHRATE=5
 #Logfile name 
@@ -84,7 +89,7 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY AWSURVEYNAME FILESUFFIX USER \
   WORKINGDIR RAWDIR CONFIGPATH SCRIPTPATH VIKINGROOT VIKINGTYPE DRYRUN \
   POINTINGLIST POINTINGLIMITSFILE ASTROWISEPATH THELIFILTER THELIVERSION \
   REFERENCE UBANDCORRECTIONSFILE THELIPATH THELIDATAPATH NTHREAD \
-  CATALOGUEKEYSFILE REFRESHRATE LOGFILE"
+  CATALOGUEKEYSFILE REFRESHRATE LOGFILE 2DFLENSCATALOGUE"
 #}}}
 
 #Read any command line options  {{{
