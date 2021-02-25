@@ -50,7 +50,7 @@ then
 	    > $md/${FIELD}_sdssdr8_stars.tmp.dat_$$
     asctoldac -a $md/${FIELD}_sdssdr8_stars.tmp.dat_$$ \
 	      -o $md/${FIELD}_sdssdr8_stars.tmp.cat_$$ \
-	      -c asctoldac_sdssdr8_stars_K1000.conf
+	      -c @RUNROOT@/@CONFIGPATH@/asctoldac_sdssdr8_stars_K1000.conf
     ldacaddkey -i $md/${FIELD}_sdssdr8_stars.tmp.cat_$$ \
 	       -o $md/${FIELD}_sdssdr8_stars.cat -t FIELDS \
 	       -k CRVAL1 0.0 DOUBLE ""\
@@ -75,7 +75,7 @@ then
 	    > $md/${FIELD}_sdssdr8_galz.tmp.dat_$$
     asctoldac -a $md/${FIELD}_sdssdr8_galz.tmp.dat_$$ \
 	      -o $md/${FIELD}_sdssdr8_galz.tmp.cat_$$ \
-	      -c asctoldac_sdssdr8_galz.conf
+	      -c @RUNROOT@/@CONFIGPATH@/asctoldac_sdssdr8_galz.conf
     ldacaddkey -i $md/${FIELD}_sdssdr8_galz.tmp.cat_$$ \
 	       -o $md/${FIELD}_sdssdr8_galz.cat -t FIELDS \
 	       -k CRVAL1 0.0 DOUBLE ""\
