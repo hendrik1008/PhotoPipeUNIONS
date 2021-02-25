@@ -41,8 +41,8 @@ ${P_ASSOCIATE} -i ${cat}_tmp_$$ ${TWOdFLenS_cat} \
                -o $wd/tmp1.cat_$$ $wd/tmp2.cat_$$ \
                -c associate_2dFLenS_K1000.conf
 
-make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
-make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
+bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
+bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
     ${P_GAWK} 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_2dFLenS\n",$0; else print $0}' \
 	>> $wd/make_ssc.conf_$$
 
