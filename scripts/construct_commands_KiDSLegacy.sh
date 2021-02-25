@@ -845,7 +845,7 @@ do
       #### Comparison to SDSS.
       echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_2dFLenS_z_K1000.sh \
         ${mdfield} \
-        @2DFLENSCATALOGUE@ \
+        @TWODFLENSCATALOGUE@ \
         ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
         ${field_name} \;\ 
       echo

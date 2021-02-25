@@ -54,8 +54,8 @@ THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/
 DRYRUN=0
 #Define the Pointing Filelist 
 POINTINGLIST=/path/to/pointinglist.txt 
-POINTINGLIST=KiDS-Legacy_pointings_1.txt
 POINTINGLIST=pointing_filelist.dat
+POINTINGLIST=KiDS-Legacy_pointings_1.txt
 #Path to AstroWISE catalogues 
 ASTROWISEPATH=/path/to/AstroWISE/catalogues/
 ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/
@@ -78,7 +78,7 @@ NTHREAD=32
 #File with Catalogue Keywords, units, comments, and order
 CATALOGUEKEYSFILE=${CONFIGPATH}/Legacy_keyword_order_comments.csv
 #2DFLens Redshift Catalogue (For QC) 
-2DFLENSCATALOGUE=/path/to/2dfLensCatalogue.cat
+TWODFLENSCATALOGUE=/net/fohlen11/home/hendrik/data/2dFLenS/2dflens_bestredshifts_lrgs_goodz_final_kidss.cat
 #Set the wait time between completion checks 
 REFRESHRATE=5
 #Logfile name 
@@ -89,7 +89,7 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY AWSURVEYNAME FILESUFFIX USER \
   WORKINGDIR RAWDIR CONFIGPATH SCRIPTPATH VIKINGROOT VIKINGTYPE DRYRUN \
   POINTINGLIST POINTINGLIMITSFILE ASTROWISEPATH THELIFILTER THELIVERSION \
   REFERENCE UBANDCORRECTIONSFILE THELIPATH THELIDATAPATH NTHREAD \
-  CATALOGUEKEYSFILE REFRESHRATE LOGFILE 2DFLENSCATALOGUE"
+  CATALOGUEKEYSFILE REFRESHRATE LOGFILE TWODFLENSCATALOGUE"
 #}}}
 
 #Read any command line options  {{{
