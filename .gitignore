@@ -1,5 +1,6 @@
 INSTALL
 *.o 
+*~
 gapphot_TE/kk/cat2sh
 gapphot_TE/kk/cat2shcov
 gapphot_TE/kk/cat2sherr
