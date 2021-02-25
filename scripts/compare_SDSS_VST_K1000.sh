@@ -50,7 +50,7 @@ associate -i ${cat}_tmp_$$ ${SDSS_cat} \
 
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
-    ${P_GAWK} 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_SDSS\n",$0; else print $0}' \
+    gawk 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_SDSS\n",$0; else print $0}' \
 	>> $wd/make_ssc.conf_$$
 
 make_ssc -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
@@ -67,12 +67,12 @@ ldacrentab -i $wd/merg_SDSS_comp2.cat_$$ -o $wd/${base}_SDSS.cat \
 rm $wd/*_$$ ${cat}_tmp_$$
 
 ldactoasc -i $wd/${base}_SDSS.cat -t OBJECTS -s -b -k \
-    RA \
-    DEC \
+    RAJ2000 \
+    DECJ2000 \
     MAG_GAAP_$band \
     MAGERR_GAAP_$band \
     ${band2}_SDSS \
-    | ${P_GAWK} '{if ($3>0 && $3<99 && $4<0.5 && $5>0 && $5<99) print $0}' \
+    | gawk '{if ($3>0 && $3<99 && $4<0.5 && $5>0 && $5<99) print $0}' \
     > $wd/${base}_SDSS_$band.asc
 
 python @RUNROOT@/@SCRIPTPATH@/phot_offset.py $wd/${base}_SDSS_$band.asc $mag_min $mag_max \
