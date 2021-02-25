@@ -65,7 +65,7 @@ echo
 ldacfilter -i $wd/tmp2.cat_$$ -o $wd/tmp4.cat_$$ -t OBJECTS -c "Pair_0>0;"
 echo
 
-maskssc -i ${wd}/tmp3.cat_$$ ${wd}/tmp4.cat_$$ \
+make_ssc -i ${wd}/tmp3.cat_$$ ${wd}/tmp4.cat_$$ \
              -o ${wd}/merg_2MASS_comp.cat_$$ \
              -c $wd/make_ssc.conf_$$
 
@@ -75,8 +75,8 @@ ldacrentab -i $wd/merg_2MASS_comp.cat_$$ -o $wd/${base}_2MASS.cat \
 rm $wd/*_$$
 
 ldactoasc -i $wd/${base}_2MASS.cat -t OBJECTS -s -b -k \
-    RA \
-    DEC \
+    RAJ2000 \
+    DECJ2000 \
     MAG_GAAP_$band \
     MAGERR_GAAP_$band \
     ${band2}mag_2MASS \
@@ -94,7 +94,7 @@ ldactoasc -i $wd/${base}_2MASS.cat -t OBJECTS -s -b -k \
 	  '{if ($3>0 && $3<99 && $4<0.5 && $6<=3 && $7>1 && $7<=4 && $8==2 && $9==1 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+'$const')}' \
     > $wd/${base}_2MASS_$band.asc
 
-python phot_offset.py $wd/${base}_2MASS_$band.asc $mag_min $mag_max \
+python @RUNROOT@/@SCRIPTPATH@/phot_offset.py $wd/${base}_2MASS_$band.asc $mag_min $mag_max \
        > $wd/${base}_2MASS_${band}_offset.asc
 
 median=`awk '{printf "%1.3f\n", $1}' $wd/${base}_2MASS_${band}_offset.asc`
