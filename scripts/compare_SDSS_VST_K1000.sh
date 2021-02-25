@@ -32,7 +32,7 @@ case $band in
     "Z") band2=z;;
 esac
 
-${P_LDACADDKEY} -i $cat \
+ldacaddkey -i $cat \
 		-o ${cat}_tmp_$$ \
 		-t FIELDS \
 		-k CRVAL1 0.0 DOUBLE ""\
@@ -44,29 +44,29 @@ ${P_LDACADDKEY} -i $cat \
 		MAPNAXS1 0.0 LONG ""\
 		MAPNAXS2 0.0 LONG ""
 
-${P_ASSOCIATE} -i ${cat}_tmp_$$ ${SDSS_cat} \
+associate -i ${cat}_tmp_$$ ${SDSS_cat} \
                -o $wd/tmp1.cat_$$ $wd/tmp2.cat_$$ \
-               -c associate_K1000.conf
+               -c @RUNROOT@/@CONFIGPATH@/associate_K1000.conf
 
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
     ${P_GAWK} 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_SDSS\n",$0; else print $0}' \
 	>> $wd/make_ssc.conf_$$
 
-${P_MAKESSC} -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
+make_ssc -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
              -o ${wd}/merg_SDSS_comp.cat_$$ \
              -c $wd/make_ssc.conf_$$
 
-${P_LDACFILTER} -i $wd/merg_SDSS_comp.cat_$$ -o $wd/merg_SDSS_comp2.cat_$$ \
+ldacfilter -i $wd/merg_SDSS_comp.cat_$$ -o $wd/merg_SDSS_comp2.cat_$$ \
 		-t PSSC -c "RICHNESS>1;"
 echo
 
-${P_LDACRENTAB} -i $wd/merg_SDSS_comp2.cat_$$ -o $wd/${base}_SDSS.cat \
+ldacrentab -i $wd/merg_SDSS_comp2.cat_$$ -o $wd/${base}_SDSS.cat \
 		-t PSSC OBJECTS
 
 rm $wd/*_$$ ${cat}_tmp_$$
 
-${P_LDACTOASC} -i $wd/${base}_SDSS.cat -t OBJECTS -s -b -k \
+ldactoasc -i $wd/${base}_SDSS.cat -t OBJECTS -s -b -k \
     RA \
     DEC \
     MAG_GAAP_$band \
@@ -75,7 +75,7 @@ ${P_LDACTOASC} -i $wd/${base}_SDSS.cat -t OBJECTS -s -b -k \
     | ${P_GAWK} '{if ($3>0 && $3<99 && $4<0.5 && $5>0 && $5<99) print $0}' \
     > $wd/${base}_SDSS_$band.asc
 
-python phot_offset.py $wd/${base}_SDSS_$band.asc $mag_min $mag_max \
+python @RUNROOT@/@SCRIPTPATH@/phot_offset.py $wd/${base}_SDSS_$band.asc $mag_min $mag_max \
        > $wd/${base}_SDSS_${band}_offset.asc
 
 median=`awk '{printf "%1.3f\n", $1}' $wd/${base}_SDSS_${band}_offset.asc`
