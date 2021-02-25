@@ -25,7 +25,7 @@ field=$4
 
 base=`basename $cat .cat`
 
-${P_LDACADDKEY} -i $cat \
+ldacaddkey -i $cat \
 		-o ${cat}_tmp_$$ \
 		-t FIELDS \
 		-k CRVAL1 0.0 DOUBLE ""\
@@ -37,27 +37,27 @@ ${P_LDACADDKEY} -i $cat \
 		MAPNAXS1 0.0 LONG ""\
 		MAPNAXS2 0.0 LONG ""
 
-${P_ASSOCIATE} -i ${cat}_tmp_$$ ${TWOdFLenS_cat} \
+associate -i ${cat}_tmp_$$ ${TWOdFLenS_cat} \
                -o $wd/tmp1.cat_$$ $wd/tmp2.cat_$$ \
-               -c associate_2dFLenS_K1000.conf
+               -c @RUNROOT@/@CONFIGPATH@/associate_2dFLenS_K1000.conf
 
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
-    ${P_GAWK} 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_2dFLenS\n",$0; else print $0}' \
+    gawk 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_2dFLenS\n",$0; else print $0}' \
 	>> $wd/make_ssc.conf_$$
 
-${P_MAKESSC} -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
+makessc -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
              -o ${wd}/merg_2dFLenS_comp.cat_$$ \
              -c $wd/make_ssc.conf_$$
 
-${P_LDACFILTER} -i $wd/merg_2dFLenS_comp.cat_$$ -o $wd/merg_2dFLenS_comp2.cat_$$ \
+ldacfilter -i $wd/merg_2dFLenS_comp.cat_$$ -o $wd/merg_2dFLenS_comp2.cat_$$ \
 		-t PSSC -c "RICHNESS>1;"
 echo
 
-${P_LDACRENTAB} -i $wd/merg_2dFLenS_comp2.cat_$$ -o $wd/${base}_2dFLenS.cat \
+ldacrentab -i $wd/merg_2dFLenS_comp2.cat_$$ -o $wd/${base}_2dFLenS.cat \
 		-t PSSC OBJECTS
 
-python zz_plot.py \
+python @RUNROOT@/@SCRIPTPATH@/zz_plot.py \
        $wd/${base}_2dFLenS.cat \
        z_spec_2dFLenS \
        Z_B \
@@ -65,7 +65,7 @@ python zz_plot.py \
        $wd/${base}_2dFLenS_zz.png \
        $wd/${base}_2dFLenS_zz.pdf
 
-python zz_stats.py \
+python @RUNROOT@/@SCRIPTPATH@/zz_stats.py \
        $wd/${base}_2dFLenS.cat \
        z_spec_2dFLenS \
        Z_B \
