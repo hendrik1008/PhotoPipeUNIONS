@@ -666,7 +666,12 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEVST" ]; then
-    Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+    if [ "$RA" == "" ]
+    then 
+      >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
+      RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
+      Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+    fi 
     continue=`echo $Dec | awk '{if ($1>-10) print 1; else print 0}'`
     if [ $continue -eq 1 ]
     then
@@ -802,6 +807,12 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEZ" ]; then
+    if [ "$RA" == "" ]
+    then 
+      >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
+      RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
+      Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+    fi 
     continue=`echo $Dec | awk '{if ($1>-10) print 1; else print 0}'`
     if [ $continue -eq 1 ]
     then
@@ -822,6 +833,12 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEZ2DF" ]; then
+    if [ "$RA" == "" ]
+    then 
+      >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
+      RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
+      Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+    fi 
     continue=`echo $Dec | awk '{if ($1<=-10) print 1; else print 0}'`
     if [ $continue -eq 1 ] && [ -f @2DFLENSCATALOGUE@ ]
     then
