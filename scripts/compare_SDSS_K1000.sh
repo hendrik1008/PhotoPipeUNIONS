@@ -31,39 +31,39 @@ case $band in
     "Z") band2=z;;
 esac
 
-${P_ASSOCIATE} -i $cat ${SDSS_cat} \
+associate -i $cat ${SDSS_cat} \
                -o $wd/tmp1.cat_$$ $wd/tmp2.cat_$$ \
-               -c associate_K1000.conf
+               -c @RUNROOT@/@CONFIGPATH@/associate_K1000.conf
 
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
-    ${P_GAWK} 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_SDSS\n",$0; else print $0}' \
+    gawk 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_SDSS\n",$0; else print $0}' \
 	>> $wd/make_ssc.conf_$$
 
-${P_LDACFILTER} -i $wd/tmp1.cat_$$ -o $wd/tmp3.cat_$$ -t OBJECTS -c "Pair_1>0;"
+ldacfilter -i $wd/tmp1.cat_$$ -o $wd/tmp3.cat_$$ -t OBJECTS -c "Pair_1>0;"
 echo
-${P_LDACFILTER} -i $wd/tmp2.cat_$$ -o $wd/tmp4.cat_$$ -t OBJECTS -c "Pair_0>0;"
+ldacfilter -i $wd/tmp2.cat_$$ -o $wd/tmp4.cat_$$ -t OBJECTS -c "Pair_0>0;"
 echo
 
-${P_MAKESSC} -i ${wd}/tmp3.cat_$$ ${wd}/tmp4.cat_$$ \
+make_ssc -i ${wd}/tmp3.cat_$$ ${wd}/tmp4.cat_$$ \
              -o ${wd}/merg_SDSS_comp.cat_$$ \
              -c $wd/make_ssc.conf_$$
 
-${P_LDACRENTAB} -i $wd/merg_SDSS_comp.cat_$$ -o $wd/${base}_SDSS.cat \
+ldacrentab -i $wd/merg_SDSS_comp.cat_$$ -o $wd/${base}_SDSS.cat \
 		-t PSSC OBJECTS
 
 rm $wd/*_$$
 
-${P_LDACTOASC} -i $wd/${base}_SDSS.cat -t OBJECTS -s -b -k \
+ldactoasc -i $wd/${base}_SDSS.cat -t OBJECTS -s -b -k \
     RA \
     DEC \
     MAG_GAAP_$band \
     MAGERR_GAAP_$band \
     ${band2}_SDSS \
-    | ${P_GAWK} '{if ($3>0 && $3<99 && $4<0.5 && $5>0 && $5<99) print $0}' \
+    | gawk '{if ($3>0 && $3<99 && $4<0.5 && $5>0 && $5<99) print $0}' \
     > $wd/${base}_SDSS_$band.asc
 
-python phot_offset.py $wd/${base}_SDSS_$band.asc $mag_min $mag_max \
+python @RUNROOT@/@SCRIPTPATH@/phot_offset.py $wd/${base}_SDSS_$band.asc $mag_min $mag_max \
        > $wd/${base}_SDSS_${band}_offset.asc
 
 median=`awk '{printf "%1.3f\n", $1}' $wd/${base}_SDSS_${band}_offset.asc`
