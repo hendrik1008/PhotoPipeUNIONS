@@ -27,9 +27,17 @@ for aperture in ('0p7', '1p0'):
         band_cap = band.capitalize()[0]
         # read the SLR+Gaia calibration from the header
         if aperture == '0p7':
-            SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+"_07_i1"]+ldac_cat.header['DMAG_'+band_cap+"_07_i2"])/2.0
+            if band_cap == "I":
+                band_num = band.capitalize()[1]
+                SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i"+band_num]
+            else: 
+                SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+"_07_i1"]+ldac_cat.header['DMAG_'+band_cap+"_07_i2"])/2.0
         if aperture == '1p0':
-            SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+'_10_i1']+ldac_cat.header['DMAG_'+band_cap+"_10_i2"])/2.0
+            if band_cap == "I":
+                band_num = band.capitalize()[1]
+                SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+'_10_i'+band_num]
+            else: 
+                SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+'_10_i1']+ldac_cat.header['DMAG_'+band_cap+"_10_i2"])/2.0
 
         if band == "u":
             SLR_Gaia_offset -= u_offset

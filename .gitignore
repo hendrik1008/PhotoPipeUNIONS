@@ -1,4 +1,6 @@
+RUNDIR
 INSTALL
+all_scripts
 *.o 
 *~
 gapphot_TE/kk/cat2sh

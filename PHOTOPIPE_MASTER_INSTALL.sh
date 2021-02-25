@@ -225,18 +225,12 @@ EOF
   cd ${RUNROOT}/INSTALL
   echo -e "\033[0;31m - Done! \033[0m" 
   #}}}
-  #}}}
-  #}}}
-  #Add useful Functions to Python Lib {{{
-  echo -en "   >\033[0;34m Adding usefull functions to python lib \033[0m" 
-  cd ${RUNROOT}/INSTALL/anaconda2/lib/
-  cp ${PACKROOT}/scripts/ldac.py . > ${RUNROOT}/INSTALL/LDAC_wget.log 2>&1
-  echo -e "\033[0;31m - Done! \033[0m" 
+  #Install GAAP {{{
   echo -en "   >\033[0;34m Installing GAAP \033[0m" 
   cd ${RUNROOT}/INSTALL
   cp -r ${PACKROOT}/gapphot_TE . > ${RUNROOT}/INSTALL/gaap_copy.log 2>&1
   #Compile the kk directory 
-  cd ${PACKROOT}/gapphot_TE/kk
+  cd ${RUNROOT}/INSTALL/gapphot_TE/kk
   make clean  > ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
@@ -261,6 +255,7 @@ EOF
   cd ${RUNROOT}
   echo -e "\033[0;31m - Done! \033[0m"
   #}}}
+  #Install WCSTools {{{
   echo -en "   >\033[0;34m Installing WCStools \033[0m" 
   cd ${RUNROOT}/INSTALL/
   wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.9.6.tar.gz > ${RUNROOT}/INSTALL/wcstools_wget.log 2>&1
@@ -268,10 +263,20 @@ EOF
   cd wcstools-3.9.6
   make all > ${RUNROOT}/INSTALL/wcstools_make.log 2>&1
   echo -e "\033[0;31m - Done! \033[0m"
+  #}}}
+  #}}}
   echo -e "\033[0;31m   ##Script Installations all done!##\033[0m" 
 fi 
+#}}}
 cd ${RUNROOT}
 ##}}}
+
+#Add useful Functions to Python Lib {{{
+echo -en "   >\033[0;34m Adding usefull functions to python lib \033[0m" 
+cd ${RUNROOT}/INSTALL/anaconda2/lib/
+cp -f ${PACKROOT}/scripts/ldac.py ${PACKROOT}/scripts/sqlcl.py . > ${RUNROOT}/INSTALL/PythonLib_link.log 2>&1
+echo -e "\033[0;31m - Done! \033[0m" 
+#}}}
 
 #Update the run script for this run {{{
 echo -en "   >\033[0;34m Update the configure script \033[0m" 

@@ -449,8 +449,6 @@ do
 done
 
 ### Preparation of SDSS catalogue.
-### Requires Dominik Klaes' SDSS-catalogue-creator-1.2 in repo
-### https://github.com/dklaes/SDSS-catalogue-creator
 for mode in ${MODE}
 do
   if [ "${mode}" = "SDSSPREP" ]; then
@@ -464,9 +462,7 @@ do
     if [ $continue -eq 1 ]
     then
       echo -n mkdir ${mdfield}/SDSS \;\ 
-      echo -n cd @RUNROOT@/INSTALL/SDSS-catalogue-creator-1.2 \;\ 
-      echo -n bash @RUNROOT@/@SCRIPTPATH@/retrieve_sloan_K1000.sh ${mdfield}/SDSS/ $KiDS_field $RA $Dec \;\ 
-      echo cd @RUNROOT@
+      echo -n bash @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $KiDS_field $RA $Dec \;\ 
     else 
       echo "echo 'Field is in the South'"
     fi
@@ -776,7 +772,7 @@ do
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
       ${mdfield}\
       ${field_name}_ugriZYJHKs_maglim.cat \
-      \"u g r i2 Z Y J H Ks\" \
+      \"u g r i1 i2 Z Y J H Ks\" \
       MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
       0.01 \;\ 
     echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriZYJHKs.py \
@@ -790,8 +786,8 @@ do
       -o ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
       -t OBJECTS \
       -k  \
-      MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i2 MAG_LIM_0p7_Z MAG_LIM_0p7_Y MAG_LIM_0p7_J MAG_LIM_0p7_H MAG_LIM_0p7_Ks \
-      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i2 MAG_LIM_1p0_Z MAG_LIM_1p0_Y MAG_LIM_1p0_J MAG_LIM_1p0_H MAG_LIM_1p0_Ks \;\ 
+      MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i1 MAG_LIM_0p7_i2 MAG_LIM_0p7_Z MAG_LIM_0p7_Y MAG_LIM_0p7_J MAG_LIM_0p7_H MAG_LIM_0p7_Ks \
+      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i1 MAG_LIM_1p0_i2 MAG_LIM_1p0_Z MAG_LIM_1p0_Y MAG_LIM_1p0_J MAG_LIM_1p0_H MAG_LIM_1p0_Ks \;\ 
     echo rm ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat_tmp_$$ \
       ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat_tmp2_$$ \
       ${mdfield}/${field_name}_ugriZYJHKs_maglim.cat \
