@@ -31,32 +31,32 @@ do
     fi
 done
 
-${P_IC} '1 0 %1 1.0e-06 > ? ! 32 *' \
+ic '1 0 %1 1.0e-06 > ? ! 32 *' \
    $md/Z/${field}_Z_swarp_cut.sum.fits \
    > $md/Z/${field}_Z_swarp_cut.mask.fits
 #gzip $md/Z/${field}_Z_swarp_cut.sum.fits
 
-${P_IC} '1 0 %1 1.0e-06 > ? ! 64 *' \
+ic '1 0 %1 1.0e-06 > ? ! 64 *' \
    $md/Y/${field}_Y_swarp_cut.sum.fits \
    > $md/Y/${field}_Y_swarp_cut.mask.fits
 #gzip $md/Y/${field}_Y_swarp_cut.sum.fits
 
-${P_IC} '1 0 %1 1.0e-06 > ? ! 128 *' \
+ic '1 0 %1 1.0e-06 > ? ! 128 *' \
    $md/J/${field}_J_swarp_cut.sum.fits \
    > $md/J/${field}_J_swarp_cut.mask.fits
 #gzip $md/J/${field}_J_swarp_cut.sum.fits
 
-${P_IC} '1 0 %1 1.0e-06 > ? ! 256 *' \
+ic '1 0 %1 1.0e-06 > ? ! 256 *' \
    $md/H/${field}_H_swarp_cut.sum.fits \
    > $md/H/${field}_H_swarp_cut.mask.fits
 #gzip $md/H/${field}_H_swarp_cut.sum.fits
 
-${P_IC} '1 0 %1 1.0e-06 > ? ! 512 *' \
+ic '1 0 %1 1.0e-06 > ? ! 512 *' \
    $md/Ks/${field}_Ks_swarp_cut.sum.fits \
    > $md/Ks/${field}_Ks_swarp_cut.mask.fits
 #gzip $md/Ks/${field}_Ks_swarp_cut.sum.fits
 
-${P_IC} '%1 %2 + %3 + %4 + %5 + %6 +' \
+ic '%1 %2 + %3 + %4 + %5 + %6 +' \
    $md/Z/${field}_Z_swarp_cut.mask.fits \
    $md/Y/${field}_Y_swarp_cut.mask.fits \
    $md/J/${field}_J_swarp_cut.mask.fits \

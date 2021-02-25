@@ -19,7 +19,7 @@ comment=$5
 longshort=$6
 tmpdir=$7
 
-${P_LDACTOASC} -b -i $incat -t OBJECTS -k ALPHA_J2000 DELTA_J2000 > $tmpdir/pos_$$
+ldactoasc -b -i $incat -t OBJECTS -k ALPHA_J2000 DELTA_J2000 > $tmpdir/pos_$$
 
 echo
 
@@ -36,9 +36,9 @@ echo 'COL_DEPTH = 1'
 
 echo
 
-${P_ASCTOLDAC} -a $tmpdir/mask_$$ -o $tmpdir/mask_$$.cat -c $tmpdir/asctoldac_$$.conf
+asctoldac -a $tmpdir/mask_$$ -o $tmpdir/mask_$$.cat -c $tmpdir/asctoldac_$$.conf
 echo
-${P_LDACJOINKEY} -i $incat -o $outcat -t OBJECTS -p $tmpdir/mask_$$.cat -k $maskkey
+ldacjoinkey -i $incat -o $outcat -t OBJECTS -p $tmpdir/mask_$$.cat -k $maskkey
 echo
 rm $tmpdir/pos_$$
 rm $tmpdir/mask_$$
