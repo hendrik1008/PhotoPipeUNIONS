@@ -677,7 +677,7 @@ do
     then
       SDSS_cat=${mdfield}/SDSS/${KiDS_field}_sdssdr8_stars.cat
       ### Loop over all VST bands.
-      for band in u g r i
+      for band in u g r i1 i2
       do
         wdband=${mdfield}/${band}
         test ! -d ${wdband} && mkdir ${wdband}

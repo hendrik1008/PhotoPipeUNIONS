@@ -30,6 +30,8 @@ base=`basename $cat .cat`
 band2=$band
 case $band in
     "Z") band2=z;;
+    "i1") band2=i;;
+    "i2") band2=i;;
 esac
 
 ldacaddkey -i $cat \
