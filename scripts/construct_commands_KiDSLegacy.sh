@@ -666,6 +666,7 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEVST" ]; then
+    Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
     continue=`echo $Dec | awk '{if ($1>-10) print 1; else print 0}'`
     if [ $continue -eq 1 ]
     then
