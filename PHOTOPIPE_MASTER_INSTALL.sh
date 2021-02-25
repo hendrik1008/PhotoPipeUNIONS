@@ -198,7 +198,7 @@ EOF
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Installing cfitsio, pgplot, source-extractor, gfortran, libxcb, tcsh \033[0m" 
   ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot astromatic-source-extractor gfortran_linux-64 \
-    libxcb >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+    libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing gfortran \033[0m" 
   #${RUNROOT}/INSTALL/anaconda2/bin/conda install  >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
