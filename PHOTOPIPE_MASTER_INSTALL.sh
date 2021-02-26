@@ -72,7 +72,7 @@ MACHINE=Linux_64 # can be seen using `uname`
 #THELI Path 
 THELIPATH=${RUNROOT}/INSTALL/theli-1.6.1/bin/${MACHINE}/
 #File with pointing WCS limits
-POINTINGLIMITSFILE=${CONFIGPATH}/KIDS_ra_dec_cuts.txt
+POINTINGLIMITSFILE=${RUNROOT}/${CONFIGPATH}/KIDS_ra_dec_cuts_corr2.txt
 #Number of threads 
 NTHREAD=32
 #File with Catalogue Keywords, units, comments, and order
