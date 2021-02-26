@@ -1,0 +1,3748 @@
+#!/usr/bin/env perl
+
+####################################
+#Astrom.pl
+#  Last modified: Aug 06, 2007
+####################################
+
+# HISTORY COMMENTS for changements within the
+# GaBoDS pipeline context. The original file
+# is from v1.2 of Mario Radovich's ASTROMETRIX
+#
+# 18.07.2005:
+#
+# - changes to account for the new syntax of the
+#   functions read_ldac and wheadasc (see file nldacsub.pm).
+#   Inclusion of several 'tie' commands before headers
+#   are read and written again. This is to ensure the
+#   order of the header keywords which is important
+#   with the introduced HISTORY comments in the ASCII
+#   headers (see file nldacsub.pm)
+# - changes to include a global GaBoDS version number.
+#
+# 22.08.2005:
+# The Perl interpreter is now called via the 'env' program.
+# In this way I can prevent to hardcode the absolute path
+# to perl.
+#
+# 06.11.2006:
+# A new flag 'BADCCD' is introduced. If an image has set
+# this header keyword to '1' it will not ne considered for
+# astrometric solutions. The BADCCD flag also appears as
+# header keyword in the ASTROMETRIX headers.
+#
+# 14.02.2007:
+# - We included the possibility to use USNOB1 and SDSS3
+#   as astrometric standardstar catalogues (thanks to P. Hudelot).
+# - I refined the initial checking whether there are standard
+#   sources for a certain chips at all. We mark an input chip
+#   as bad if, within its boundaries, there are less than 10
+#   reference sources. The old procedure did not catch bad chips
+#   as it asked for sources within the boundaries plus some
+#   margin of 10 arcsec. Hence, bad chips slipped through
+#   if there happend to be sources within these
+#
+# 12.05.2007:
+# LINFIX phase:
+# If a CCD has the 'BADCCD' flag it is assigned the ASTBAD flag
+# during the LINFIX phase. Not doing so led some 'BADCCD' chips
+# slip through to the global astrom phase without being marked
+# as bad.
+#
+# 12.06.2007:
+# I added the SDSS4 and SDSS5 as possible astrometric standardstar
+# catalogues (thanks to P. Hudelot); this is connecet with an upgrade
+# of the 'cdsclient' software to version 2.87 in the main WIFIX
+# package.
+#
+# 04.07.2007:
+# I corrected some bugs connected to astrometric catalogues.
+# The cdsclient for 2MASS requires RA and DEC given in degrees
+# while all other catalogues can be queried with sexagesimal notation.
+#
+# 06.08.2007:
+# Images that have 'no match' with the standardstar catalogue
+# during the global astrometry phase are 'marked' as bad now
+# (header keyword 'ASTBAD'). It could happen that images pass
+# the initk phase where a wrong linear shift has been determined
+# for some chip. There, the allowed match radius is considerably
+# larger than in the global phase and hence false matches can
+# more easily pass.
+# The current way of 'masking' these images as bad in the global
+# phase is suboptimal because data of these frames still contribute
+# to the solutions of other data until they are eventually reconginsed
+# and marked.
+#
+# 22.08.2007:
+# I corrected a bug in the setting of the location of external programs
+# (SExtractor, wget and gzip). The setting has to happen after reading
+# the command line, not before.
+
+# TODO:
+# ASTROMETRIX builds catalogs for images that have the
+# 'BADCCD' flag set and for which no catalogue is present!
+
+use 5.6.0;
+
+use File::Basename;
+use Getopt::Long;
+use strict;
+use Cwd;
+
+use PDL;
+use PDL::Math;
+use nldacsub_theli;
+use catsubs_theli;
+use AstConf_theli;
+use AstSubs_theli;
+use Mylib::nFtrans;
+use Mylib::Pfit;
+use Mylib::Astrom;
+
+
+use Tie::IxHash;
+
+use PGPLOT;
+
+use  PDL::Graphics::PGPLOT;
+
+use vars qw/$refcoor @sfiles @scoord $HDRSUF $wtype/;
+
+# =========================
+
+     sub catch_zap {
+          my $signame = shift;
+
+	  print "ASTROMETRIX was STOPPED\nERROR\n"; die"\n";	
+
+      }
+      $SIG{INT} = \&catch_zap;  # best strategy
+
+#=================================
+
+# global GaBoDS pipeline version
+my $GaBoDSVersion="Pipeline Version: 1.30.0";
+
+my $mode='REDO';
+my $logroot="ASTLOG.TXT";
+my $DIAGDIR='AstroDiag/';
+
+#GLOBAL VARIABLES
+use vars qw($kangle);
+
+my (@inlists, @fits_dir);
+my ($sflist, $options,  $reflist, $distord, @outdir);
+
+
+my $MINASTID=5;
+
+# "main" flags
+my $KCALC=0;
+my $DOGLOBAL=0;
+my $LINFIX=0;
+
+my $ANALYZE="";
+
+# optional flags
+my $REDO=0;
+my $DEBUG=0;
+my $noinitps=0;
+my $CHECK=0;
+my $GROUPCCD=1;
+my $DOPLOT=1;
+my $OVHEADS=1;
+my $OVMCATS=1;
+my $OVSEXCATS=0;
+my $MKSEX=1;
+my $VERBOSE=0;
+my $SKIPMOFF=-1;
+my $CFILE="astrom.conf";
+my $MKCONF=0;
+
+my $inlist='';
+
+my %optctl = ();
+
+my $retopts=&GetOptions (\%optctl,
+                         "conf=s"=>\$CFILE,
+			 "help|h",
+			 # Modify the configuration file
+			 "set|s=s@",
+			 "list=s"=>\$inlist,
+			
+			 # Main options
+			 "mkconf"=>\$MKCONF,
+			 "initk"=>\$KCALC,
+			 "linfix"=>\$LINFIX,
+			 "global"=>\$DOGLOBAL,
+			 "analyze=s"=>\$ANALYZE,
+			
+			 # Flags
+			 "skipoff|skipoffset!" =>\$SKIPMOFF,
+			 "stopreg",
+			 "stopk",
+			 "stopmkcat",
+			 "stopscats",
+			 "stopgcats",
+			 "redo"=> \$REDO,
+			 "plot!" =>  \$DOPLOT,
+			 "ovheads!" => \$OVHEADS,
+			 "ovmcats!" => \$OVMCATS,
+			 "ovscats!"=> \$OVSEXCATS,
+			 "runsex!"=>\$MKSEX,
+			 "additer"=> \$noinitps,     	
+			 "debug"=>   \$DEBUG,
+			 "check" =>  \$CHECK,
+			 "verbose"=> \$VERBOSE
+			);
+
+$ANALYZE=1 if (defined $optctl{'help'});
+
+if ($REDO==1) {$OVHEADS=1; $OVMCATS=1; $OVSEXCATS=1}
+
+
+if ($retopts!=1 || $optctl{'help'} || ($MKCONF==0 && $KCALC==0 && $LINFIX==0 && $DOGLOBAL==0  && $ANALYZE eq '') ) {
+  print "ASTROMETRIX V 1.2 (June 26, 2004) by Mario Radovich (radovich\@na.astro.it)\n\n";
+  print "This version has been modified by Thomas Erben (terben\@astro.uni-bonn.de)\n";
+  print "for use within the GaBoDS pipeline ($GaBoDSVersion)\n\n";
+
+  print "Usage: astrom -c[onf] [-option] \n";
+  print "              -c[onf] name  => Configuration file (def.: astrom.cfg)\n";
+  print "              -s[et] xxx=yyy => set an entry in the conf. file\n";
+  print "              -list=list(s)  => Lists separated by commas\n";
+  print "                   (alternative to write them in the conf. file)\n";
+  print "========== Main options\n";
+  print "              -mkconf    => Write the configuration file and stop\n";
+  print "              -initk     => Recompute offsets \n";
+  print "              -linfix    => Recompute linear WCS \n";
+  print "              -global    => Make global astrometry\n";
+  print "              -analyze=a => a=mklist: Make lists of overlapping images \n";
+  print "                            a=xhead#[a1,a2,d1,d2]#hdr: Extract headers\n";
+  print "                                    within  that region in ra, dec\n";
+  print "========== Flags\n";
+  print "              -stopreg   => Stop after the offset/rotat./scaling are COMPUTED\n";
+  print "              -stopk     => Stop after the offset/rotat./scaling are APPLIED\n";
+  print "              -stopscats => Stop after SExtractor has built the catalogs\n";
+  print "              -stopgcats => Stop after catalogs were cross correlated (global)\n";
+  print "              -stopmkcat => Stop after the reference catalog was created\n";
+  print "              -skipoff[set] => Skip the computation of the offset of master catalogs vs. the astrometric catalog\n";
+  print "              -(no)plot  => Make/skip plots\n";
+  print "              -(no)ovheads => Choose if rewrite or not headers (def: yes)\n";
+  print "              -(no)ovscats => Choose if rewrite or not SExtractor catalogs (def: no)\n";
+  print "              -(no)ovmcats => Choose if rewrite or not multi-catalogs (def: yes)\n";
+  print "              -(no)runsex => Choose if run or not SExtractor (def: yes)\n";
+  print "              -redo      => redo all (=> -ovheads -ovscats -ovmcats)\n";
+  print "              -additer   => Do not initialize headers\n";
+  print "              -debug     => Print debugging informations\n";
+  print "              -check     => List-only mode\n";
+  print "              -verbose   => Display the log on the screen\n";
+
+  #
+
+  if (! $optctl{'help'}) {
+    print "One of the options -mkconf|-initk|-linfix|-global|-analyze MUST be given !\n"
+  }
+  die "\n";
+
+}
+
+
+print "Process started with PID: $$ \n";
+
+
+InitAstrom();
+if (! -e $CFILE) {mkAstConf($CFILE)} else {ReadAstConf($CFILE)}
+
+
+my ($n, $bin) = fileparse ($0, '.pl');
+my $findpmm="findusnoa2 ";
+
+
+    $GROUPCCD=0 if (lc(substr($AstCVals{GROUPCCD},0,1)) eq 'n') ;
+
+
+if (defined $optctl{'set'}) {
+
+  my @keys=@{$optctl{'set'}};
+  foreach my $key (@keys) {
+    my @s=split('=', $key, 2);
+    if ($#s!=1) {
+      print "Syntax error in -set $key \n";
+      next;
+    }
+    $s[0]=uc($s[0]);
+
+       $AstCVals{$s[0]}=$s[1];
+
+  }
+  mkAstConf($CFILE);
+}
+
+if ($MKCONF==1) {
+ print "Configuration file $CFILE written: exiting !\n";;
+ print "DONE\n";
+ die "\n";;
+}
+
+my $wget=$AstCVals{WGET};
+my $gzip=$AstCVals{GZIP};
+my $sexec=$AstCVals{SEX};
+
+$wtype=$AstCVals{WTYPE};
+
+if ($inlist eq '') {@inlists=split(/,/, $AstCVals{LIST})}
+else {@inlists=split(/,/, $inlist)}
+
+my @c=();
+foreach my $tl (@inlists) {
+  if (rindex($tl, '*')==-1) {
+    push @c, $tl;
+    next;
+  }
+  my @xl=glob($tl);
+
+  push @c, @xl;
+}
+@inlists=@c;
+
+if ($#inlists==-1) {
+   print "ERROR: No list was given ????????????\n";
+   print "ERROR\n";
+   die "\n";
+}
+
+
+if ($AstCVals{FITS_DIR} ne '') {
+  $AstCVals{FITS_DIR} =~ s/\s+//;
+  @fits_dir=split(/,/, $AstCVals{FITS_DIR});
+  if ($#fits_dir > 0 && $#fits_dir != $#inlists) {
+    print "The number of FITS_DIR must match the number of lists !\n";
+   print "ERROR\n";
+   die "\n";
+  }
+  elsif ($#fits_dir==0 && $fits_dir[0] eq '') {$fits_dir[0]='.'}
+}
+
+
+
+# The main level directory
+
+my $outdir_top='.';
+if ($AstCVals{OUTDIR_TOP} ne '') {
+  $outdir_top=$AstCVals{OUTDIR_TOP}
+}
+$outdir_top.='/' if ($outdir_top !~ /\/$/);
+
+if (! -d $outdir_top) {
+    die "Could not create $outdir_top ($!) !\n" unless (mkdir $outdir_top)
+}
+
+die "Can't write to  $outdir_top !\n" if (! -w $outdir_top);
+
+my $sexconfdir=$outdir_top;
+
+# The directories for headers/catalogs
+
+if ($AstCVals{OUTDIR} ne '') {
+  @outdir=split(/,/, $AstCVals{OUTDIR});
+  if ($#outdir >0 && $#outdir != $#inlists) {
+    print "The number of output dirs does not match the number of lists !\n";
+   print "ERROR\n";
+   die "\n";
+  }
+}
+
+# The diagnostic directory
+
+if ($AstCVals{DIAGDIR} ne '') {$DIAGDIR=$AstCVals{DIAGDIR}.'/'}
+
+$DIAGDIR=$outdir_top.$DIAGDIR;
+
+     if (! -d $DIAGDIR) {
+         die "Could not create $DIAGDIR ($!) !\n" unless (mkdir $DIAGDIR)
+        }
+
+
+my $logfile=$DIAGDIR.$logroot;
+my $alogroot="pslog.txt";
+my $alogfile=$DIAGDIR.$alogroot;
+
+
+
+
+if ($AstCVals{CATALOG} ne '') {
+  $refcoor= $AstCVals{CATALOG} ;
+  if (uc($refcoor) eq 'USNO1') {$findpmm="findpmm1 "}
+  elsif (uc($refcoor) eq 'USNOB1') {$findpmm="findusnob1 "}
+  elsif (uc($refcoor) eq 'GSC2') {$findpmm="findgsc2.2 "}
+  elsif (uc($refcoor) eq 'UCAC2') {$findpmm="finducac2 "}
+  elsif (uc($refcoor) eq '2MASS') {$findpmm="find2mass "}
+  elsif (uc($refcoor) eq 'SDSS3') {$findpmm="findsdss3 "}
+  elsif (uc($refcoor) eq 'SDSS4') {$findpmm="findsdss4 "}
+  elsif (uc($refcoor) eq 'SDSS5') {$findpmm="findsdss5 "}
+} else {$refcoor='USNO'}
+
+my $ASK_WEB=0;
+ $ASK_WEB=1 if (lc(substr($AstCVals{ASKWEB},0,1)) ne 'n' &&
+          ( $refcoor =~ /^usno/i
+             || $refcoor =~ /^gsc2/i
+             || $refcoor =~ /^ucac2/i
+             || $refcoor =~ /^sdss/i
+             || $refcoor =~ /^2mass/i
+          )
+   );
+
+
+$reflist=$AstCVals{TABLE};
+
+#if (defined $optctl{'ktable'}) {
+
+if ($KCALC==1) {unlink $reflist if (-e $reflist); $KCALC=1};
+if ($AstCVals{KANGLE} =~ /\d+/) {$kangle=$AstCVals{KANGLE}} else {$kangle='off'}
+
+#}
+
+# ------------- INITIALIZATIONS
+
+
+my $datadir;
+
+
+@sfiles=();
+@scoord=();
+
+my $tlog;
+my $locdir=cwd;
+
+my ($refa, $refd, $rmag);
+
+# ------------- DEFINITION OF THE PARAMETERS
+
+$HDRSUF='.head';
+
+
+if ($ANALYZE =~ /xhead/i) {
+  #=================   We just want to analyze headers
+
+
+  # given a list of FITS files, this will create a list of input catalogs,
+  # copy the headers and create links to FITS files
+ INLIST: foreach my $nlist (0..$#inlists) {
+
+    my $list=$inlists[$nlist];
+
+    if (! -e $list){
+      warn "List $list not found !!!!!\n";
+      next INLIST;
+    }
+
+    my @hdrs=();
+    my @sfiles=();
+
+    my $fits_dir;
+    if ($#fits_dir==$#inlists) {$fits_dir=$fits_dir[$nlist]}
+    else {$fits_dir=$fits_dir[0]}
+
+
+    open (INLIST, "<$list");
+
+
+    while (<INLIST>) {
+      chomp $_;
+
+      my $image=$_;
+
+      #   if (! -e $image) {warn "Image $image not found !!"; next}
+      push @sfiles, $image;
+
+
+      # Build Headers
+      my @s=split(/\./, $image);
+      $s[-1]='head';
+      my $hfile=join ('.', @s);
+
+      push @hdrs, $hfile;
+
+
+    }
+
+    xheadreg($fits_dir, \@sfiles, \@hdrs, $ANALYZE, $list);
+
+    close (INLIST);
+
+  }
+
+  print "ANALYSIS completed !\n";
+  print "DONE\n";
+  die "\n";
+}
+
+
+
+# ================ we want to compute plate solutions from list(s) of WCS fixed files
+
+
+#if (-e $logfile) {rename $logfile, $logfile.'bck'}
+my $today=&mkdate;
+plog ('', 'DATE', $today);
+
+#====== Insert initial values for the CD matrix
+  my $STEP="K-PRECD";
+  my  $incd=null;
+     my $ccd0s;
+
+my $prelist='';
+$prelist=$AstCVals{INITCD} if (defined $AstCVals{INITCD});
+
+
+
+    $prelist=$outdir_top.$prelist unless (substr($prelist,0,1) eq '/');
+    print "Pre Ktable: $prelist\n" if ($DEBUG);
+
+
+
+    if (-e $prelist) {
+
+      plog ("I", $STEP, "Reading pre-CD from $prelist");
+
+      open (FILE, "<$prelist");
+
+       my @ccd=(); my @cd=();
+      while (<FILE>) {
+	my $s=$_;
+	my @s=split(/\s+/,$s);
+	if ($s[0] !~ /\d/) {
+	  next;
+	}
+	push (@ccd, $s[0]);
+        if ($#s>6) {
+            push @cd, float(splice (@s, 1, 8));
+        }
+      }
+
+      close (FILE);
+
+
+      $ccd0s=short(@ccd);
+      $incd=cat @cd if ($#cd >-1);
+
+    }
+
+# =======================================
+
+if ($DOGLOBAL==0 && ($LINFIX==1 || $KCALC==1)) {
+  #We want to compute/apply the K-table and fix the linear WCS
+  my $nlist=0;
+
+
+  #BUILD LISTS
+  # Strategy: N lists of preprocessed FITS files are given as input lists
+  #  0. The K table is computed from one reference list
+  #  1. For each list, catalogs and headers are created; the linear WCS is fixed
+  #  2. Rerun the procedure starting from the new directories to make the global astrometry
+  #      The master catalogs are written to an "archive" directory (e.g.: global)
+
+
+ INLIST: foreach my $nlist (0..$#inlists) {
+
+
+    my $list=$inlists[$nlist];
+
+
+
+    plog ("I", "PREP-LIN", "Processing list $list");
+
+
+    if (! -e $list){
+      plog ("E","PREP-LIN" ," List $list  not found !!!!!");
+      next INLIST;
+    }
+
+    my @hdrs;
+
+    my $fits_dir;
+    if ($#fits_dir==$#inlists) {$fits_dir=$fits_dir[$nlist]}
+    else {$fits_dir=$fits_dir[0]}
+
+
+    my $outdir='';
+
+
+    #==== Loop on the lists
+
+    open (INLIST, "<$list");
+
+    my $label=$list;
+
+    my @sl=split(/[\/\.]/, $list);
+    $label=$sl[-2] if ($#sl>0);
+
+
+    while (<INLIST>) {
+      chomp $_;
+      my @s=split(/\//, $_);
+
+
+
+      # ==== set the output directory
+      # 1. It was given as an argument, then
+      #   1a there is one directory per list OR
+      #   1b all will be put in a common directory
+      # 2. It is not given, then try to extract if from the list
+      # 3. There is no dir info in the list, then give a default (===> astrom)
+
+      if ($outdir eq '') {
+	my $rdir='';
+	if ($#outdir>=0) {
+	  if ($#outdir>0) {
+	    $rdir=$outdir[$nlist];
+	  } else {$rdir=$outdir[0]}
+	}
+	my $o=$outdir_top.$rdir;
+	 if ($o ne '' && !-d $o) {die "Could not create $o !\n" unless (mkdir $o)}
+	
+	if ($#s >= 1) {
+	  $outdir=$s[-2];
+	  $outdir=$rdir.'/'.$outdir if ($rdir ne '');
+	} else {
+	  if ($rdir ne '') {$outdir=$rdir}
+	  else {$outdir='astrom'}
+	}
+
+          my $o=$outdir_top.$outdir;
+
+	 if (! -d $o) {die "Could not create $o !\n" unless (mkdir $o)};
+
+	print "Directory created:  $o\n" if ($DEBUG);
+      }
+
+
+      my $image=$fits_dir.'/'.$_;
+      my $ofile=$outdir_top.$outdir.'/'.$s[-1];
+      if (! -e $image) {warn "Image $image not found !!"; next}
+
+      push @sfiles, $image ;
+
+
+      # Extract headers to the output directory
+
+      @s=split(/\./, $ofile);
+      my $type=$s[-1];
+      $s[-1]='head';
+      my $hfile=join ('.', @s);
+
+      if ($CHECK==1) {next}
+
+      if (-e $hfile && $OVHEADS==1) { unlink $hfile}
+
+      if (! -e $hfile) {
+	
+	my %fh;
+	tie (%fh, 'Tie::IxHash');
+	if ($type eq 'head') {
+	  %fh=rheadasc($image)
+	} else {	
+	  %fh=rhead($image, 0);  # 0 means: do not read comment/history
+	}
+	
+	if (!exists $fh{IMAGEID}) {
+         if ($GROUPCCD==1) {
+         # Set IMAGEID according to the CCD in the filename
+            my $rexp=$AstCVals{EXPNAME};
+           if (/$rexp/) {
+	       $fh{IMAGEID}=$2;
+	     } else { $fh{IMAGEID}=0}
+          } else { $fh{IMAGEID}=0}
+         };
+
+	if (!exists $fh{BADCCD}) {
+          $fh{BADCCD}=0
+        }
+
+
+# Write initial CD matrix, if any
+
+      if (! $incd->isempty) {
+        my $tcd;
+
+	if (! exists $fh{IMAGEID}) {
+	  my $rexp=$AstCVals{EXPNAME};
+	  $_=$hfile;
+	  if (/$rexp/) {$fh{IMAGEID}=$2}
+print ">>>>>>>>>>>>>>>>>>>>>> $hfile: $2\n" if ($DEBUG);
+	}
+
+	#$fh{IMAGEID}=$j
+	my $tccd=$fh{IMAGEID};
+	my $idx=which($ccd0s==$tccd);
+
+	my $ij=$idx->at(0);
+
+        my @d=$incd->dims;
+        if ($#d>0) {$tcd=$incd->slice(":,($ij)")} else {
+             $tcd=$incd;
+        };
+	warn "applying to $hfile: $tcd \n" if ($DEBUG) ;
+        $fh{CRPIX1} = $tcd->at(0) if ($tcd->at(0) =~ /\d+/);
+        $fh{CRPIX2} = $tcd->at(1) if ($tcd->at(1) =~ /\d+/);
+        $fh{CRVAL1} = $tcd->at(2) if ($tcd->at(2) =~ /\d+/);
+        $fh{CRVAL2} = $tcd->at(3) if ($tcd->at(3) =~ /\d+/);
+        $fh{CD1_1} = $tcd->at(4) if ($tcd->at(4) =~ /\d+/);
+        $fh{CD1_2} = $tcd->at(5) if ($tcd->at(5) =~ /\d+/);
+        $fh{CD2_1} = $tcd->at(6) if ($tcd->at(6) =~ /\d+/);
+        $fh{CD2_2} = $tcd->at(7) if ($tcd->at(7) =~ /\d+/);
+      }
+
+#==============================================
+	my $imagename=basename($image);
+	my $ret=wheadasc($hfile, \%fh, 'astrom', "ASTROM", "Header from $imagename")
+      }
+      else {print "$hfile exists !\n"}
+
+      print "$hfile written !\n" if ($DEBUG);
+
+      push @hdrs, $hfile;
+
+      #   print OLIST "$ofile\n";
+    }
+    close (INLIST);
+    #close (OLIST);
+
+
+
+    if ($ANALYZE eq '') {
+
+      doAstrom (\@sfiles, \@hdrs, {outdir=>$outdir_top.$outdir, label=>$label}) if ($CHECK==0);
+
+       if (lc(substr($AstCVals{HDRFITS},0,1)) eq 'y') {
+           UpHead(\@sfiles, \@hdrs);
+        }
+
+
+      @sfiles=();
+    }
+
+  }
+
+
+  if ($ANALYZE ne '') {
+    if (lc (substr($ANALYZE,0,3)) eq 'mkl') {
+      mkgroups(\@sfiles, $fits_dir[0], $AstCVals{OBSERVATORY} ) ;
+       print "ANALYZE $ANALYZE completed !\n";
+       print "DONE\n";
+    } else {print "ANALYZE: option $ANALYZE not recognized !!!\n"}
+   die "\n";
+  }
+}
+else {
+  #=================   To compute the plate solution we need a directory containing
+  #=================      WCS-fixed headers & links to fits files,
+  #=================        and a list of input cleaned catalogs (to be cross-correlated)
+
+#  my $globlist="astroglob.lst";
+
+  my $outdir="astglob";
+  $outdir=$outdir[0] if ($#outdir>-1);
+
+  my $o=$outdir_top.$outdir;
+
+   if (! -d $o) {die "Could not create directory $o ! \n" unless (mkdir $o)};
+
+
+  my @sfiles=(); my @hdrs=();
+
+#  open (OLIST, ">$globlist");
+
+  # given a list of FITS files, this will create a list of input catalogs,
+  # copy the headers and create links to FITS files
+ INLIST: foreach my $nlist (0..$#inlists) {
+
+    my $list=$inlists[$nlist];
+
+    plog ("I", "PREP-GLOB", "Processing list $list");
+
+    if ($CHECK==1) {next INLIST}
+
+    if (! -e $list){
+      plog ("E","PREP-GLOB" ," List $list  not found !!!!!");
+      next INLIST;
+    }
+
+
+
+    my $cats_dir='.';
+    my @cats_dir=();
+
+    if ($AstCVals{CATS_DIR} ne '') {
+      @cats_dir=split(/,/, $AstCVals{CATS_DIR});
+      if ($#cats_dir > 0 && $#cats_dir != $#inlists) {
+	print "The number of CATS_DIR must match the number of lists !\n";
+        print "ERROR\n";
+         die "\n";
+      }
+    }
+
+
+    if ($#cats_dir==$#inlists) {$cats_dir=$cats_dir[$nlist]}
+    else {$cats_dir=$cats_dir[0] if ($#cats_dir>-1)}
+
+    if ($cats_dir eq '') {$cats_dir='astrom'}
+
+    open (INLIST, "<$list");
+    while (<INLIST>) {
+      chomp $_;
+      my @s=split(/\//, $_);
+      my @xs=split(/\./, $s[-1]);
+      $xs[-1]='ldac';
+      $s[-1]=join('.', @xs);
+      my $image=$outdir_top.$cats_dir.'/'.join('/', @s);
+
+      my $ofile=$outdir_top.$outdir.'/'.$s[-1];
+      if (! -e $image) {plog ('W', 'SEX-PREP', "Image $image not found !!"); next}
+      push @sfiles, $image;
+
+
+      # Extract headers to the output directory
+      @s=split(/\./, $image);
+      $s[-1]='head';
+      my $ihfile=join ('.', @s);
+
+      @s=split(/\./, $ofile);
+      $s[-1]='head';
+      my $ohfile=join ('.', @s);
+
+      if ($noinitps==0) {
+	#   print ("cp $ihfile $ohfile");
+	if (!-e $ihfile) {print "Header $ihfile not found !\nERROR\n"; die "\n"};
+	my %fih;
+	tie (%fih, 'Tie::IxHash');
+#        if ($type eq 'head') {
+#	  %fih=rheadasc($ihfile)
+#	} else {	
+#	  %fih=rhead($ihfile);
+#	}
+	%fih=rheadasc($ihfile);
+	$fih{INLIST}="\'$list\'";
+	my $ret=wheadasc($ohfile, \%fih, undef, "ASTROM")
+      } else {
+	if (! -e $ohfile) {
+	  print "ERROR: -additer given but header $ohfile was not found !\n";
+	  #die;
+	}
+      }
+      push @hdrs, $ohfile;
+
+#      print OLIST "$ofile\n";
+
+
+    }
+    close (INLIST);
+
+  }
+
+#  close (OLIST);
+
+
+#  $logfile=$outdir.'/'.$logroot;
+  $alogfile=$DIAGDIR.'globlog.txt';
+
+
+
+  doAstrom (\@sfiles, \@hdrs, {outdir=>$outdir_top.$outdir, global=>'y',
+			       noinitps=>$noinitps}) if ($CHECK==0);
+
+     if (lc(substr($AstCVals{HDRFITS},0,1)) eq 'y') {
+       UpHead (\@sfiles, \@hdrs);
+     }
+
+
+}
+
+
+print "Astrometry completed !\n" if ($CHECK==0);
+print "DONE\n";
+
+
+
+
+#end of main driver
+
+
+sub doAstrom
+  {
+
+    my ($sfiles, $hdrs, $opt)=@_;
+
+    my $datadir;
+    my $locdir=cwd;
+    my $label="check.ps";
+
+
+
+    my $DOGLOBAL=0;
+
+    my $INITPS=1;
+
+    if (exists $opt->{outdir} ) {$datadir=$$opt{outdir}}
+
+    if (exists $opt->{global} && $opt->{global} =~ /y/i ) {$DOGLOBAL=1}
+
+    if (exists $opt->{noinitps} && $opt->{noinitps}==1) {$INITPS=0} ;
+
+    if (exists $opt->{label}) {
+      my @sl=split(/\//, $$opt{label});
+      @sl=($$opt{label}) if ($#sl==-1);
+      $sl[-1]='ch_'.$sl[-1];
+      $label=join('_', @sl).'.ps';
+    }
+
+    my $reflist=$AstCVals{TABLE};
+    my $ERRCAT=$AstCVals{ERRCAT};
+    if ($ERRCAT !~ /\d+/) {$ERRCAT = "undef"}
+
+
+
+    my $ITERPS=$AstCVals{ITERATIONS};
+    my $lintol=$AstCVals{LINTOL};
+    my $PSRADIUS=$AstCVals{PSTOL};
+
+    my $NARROW=0;
+    $NARROW=1 if (lc(substr($AstCVals{NARROW},0,1)) eq 'y');
+
+
+    my @sfiles=@$sfiles;
+    my @hdrs=@$hdrs;
+
+
+    my @s=split(/\//, $refcoor);
+
+    my $orefcoor=$refcoor;
+
+    $refcoor=$datadir.'/'.$s[-1]; #if ($#s==0);
+
+    if ($ASK_WEB !=1) {
+      #User-defined catalog: copy it to the output directory
+      if (! -e $orefcoor) {
+          print "Catalog $orefcoor not found !\nERROR\n"; die"\n";
+      }
+     system ("cp $orefcoor $refcoor")
+    };
+    print "Astrometric catalog: $refcoor\n" if ($DEBUG);
+
+    my $STEP;
+
+    my @mcats;
+
+    my $nccd=0;
+    my @xlist=@hdrs;
+    my @stack=();
+
+
+    # Get the maximum number of CCDs per set ($nccd)
+
+
+    my $maxra=0;
+    my $minra=1000;
+    my $mindec=1000;
+    my $maxdec=-1000;
+
+    my $gEQUINOX=0;
+    my $gRA=0;
+    my $gDEC=0;
+
+
+    if ($#xlist==-1) {print "No header was found! - END\nDONE\n"; die "\n";}
+
+    while (@xlist) {
+      my @s=split(/\//, $xlist[0]);
+      my $name=$s[-1];
+      # my @string=/(.*\d+[a-z]+\D*)(\d+)(\D*)$/;
+      # my @string=/(.*\d+[a-z]+\D*)(\d+)(\D*)$/;
+
+      if ($DOGLOBAL && $ASK_WEB==1 ) {
+	if (!-e $xlist[0]) {print cwd, " could not read header of $xlist[0]\n!";
+			    return}
+	my %fh;
+	tie (%fh, 'Tie::IxHash');
+	%fh=rheadasc($xlist[0]);
+  	if ($gEQUINOX==0) {
+  	    if (! exists $fh{EQUINOX}) {$gEQUINOX=2000.}
+  	    else {$gEQUINOX=$fh{EQUINOX}}
+  	 }   	
+	$maxra=$fh{CRVAL1} if ($fh{CRVAL1} > $maxra);
+	$maxdec=$fh{CRVAL2} if ($fh{CRVAL2}>$maxdec);
+	$minra=$fh{CRVAL1} if ($fh{CRVAL1}<$minra);
+	$mindec=$fh{CRVAL2} if ($fh{CRVAL2}<$mindec);
+      }
+
+
+      my $root='';
+
+      #-----------
+      if ($GROUPCCD==0) {
+# Files are not grouped by ccd: I assume that all files in the list belong to the same ccd
+	$root=$xlist[0];
+ 	my @t=split(/\//, $root);
+ 	@t=split(/\./, $t[-1]);
+ 	$root=$t[0];
+	$nccd=1;
+      }
+      #-------------
+      else {
+	$_=$name;	
+         my $rexp=$AstCVals{EXPNAME};
+        if (/$rexp/) {$root=$1}
+	else {print "$_: could not decode while making list!!"; return}
+	#@string=/(.*\D)(\d+)(\D+)$/;
+
+	my $t=grep(/\Q$root\E/, @xlist);
+	if ($t>$nccd) {$nccd=$t}
+      }
+
+      print "$root added to list !\n" if ($DEBUG);
+
+      push (@stack, $root);
+      @xlist=grep(!/\Q$root\E/, @xlist);
+    }
+
+    print "NCCD: $nccd !\n" if ($DEBUG);
+
+
+    my @xcat=();
+    #my @fitsfiles=@sfiles;
+
+
+    if ($DOGLOBAL) {
+
+      if ($OVMCATS==1) {
+	#be sure that saturated stars are not included
+        if (lc(substr($AstCVals{XSATUR},0,1) eq 'n')) {	
+                @xcat=cleancat(@sfiles, {MODE=>['area']})
+        } else {
+	   @xcat=cleancat(@sfiles, {MODE=>['area', 'satur']});
+	}
+
+	#my $thresh=-1;
+	#$thresh=$AstCVals{XTHRESH} if ($AstCVals{XTHRESH} =~ /\d+/);
+	#print "cleaning cats -> $thresh\n";
+	#@xcat=cleancat(@sfiles, {MODE=>['area', 'satur',"thresh=$thresh"]});
+	#@xcat=cleancat(@sfiles, {MODE=>['area']});
+      } else {
+	#master catalogs are already built, so keep the SEx catalogs unchanged
+	
+	foreach my $sf (@sfiles) {
+	  my @s= split(/\//,$sf);
+	  my @xs=split(/\./,$s[-1]); #find extension
+	  $xs[-1]='ldac';
+	  $s[-1]='x'.join('.', @xs);
+	  my $xcat=join('/', @s);
+	  push (@xcat, $xcat);
+	}
+	
+      }
+
+      if ($ASK_WEB==1) {
+      	if ($gEQUINOX != 2000)
+        {
+	  ($minra, $mindec)=precess($minra / 15., $mindec);
+	  ($maxra, $maxdec)=precess($maxra / 15., $maxdec);
+	}
+	$gRA=($minra+$maxra)/2.;
+	$gDEC=($mindec+$maxdec)/2.;
+	
+	warn "retrieving catalog for $gRA $gDEC...";
+	
+	my $maxnum=100000;
+        $maxnum=$AstCVals{MAXNUM_GLOB} if ($AstCVals{MAXNUM_GLOB} >=0);
+
+	my $xra=($maxra-$minra);
+	my $xdec=($maxdec-$mindec);
+
+	my $xfield;
+	if ($xra>$xdec) {$xfield=$xra} else {$xfield=$xdec}
+	
+	my $radius= $AstCVals{RADIUS};
+	$radius=40 if ($radius !~ /\d+/);
+	
+	$xfield=$xfield*60 + $radius;
+	my $ret;
+	
+	$ret=&read_CDS($mode, $findpmm, $refcoor, $gRA, $gDEC, $xfield, $maxnum);
+	if ($ret==-1) {print "The catalog $refcoor could not be written !\n"; return};
+
+      }
+
+      if (defined $optctl{stopmkcat}) {print "CATALOG $refcoor HAS BEEN BUILT - END\nDONE\n";die "\n";}
+
+      goto DOGLOBAL;
+    }				#could be replaced by a 'big' if....
+
+    # Make the catalogs using SExtractor
+
+    print " -- Extracting catalogs....(replace: $OVSEXCATS)\n";
+    my $thresh=$AstCVals{THRESH};
+
+
+     plog ("W", $STEP, "SExtractor will NOT be run to create catalogs (-nomksex was given)") if ($MKSEX==0);
+
+    @scoord=sexcat(\@sfiles, $datadir,
+             {THRESH=>$thresh, WEIGHT_TYPE=>$main::wtype, REWRITE=>$OVSEXCATS, EXEC=>$sexec, CONFDIR=>$sexconfdir, RUN=>$MKSEX}
+        );
+
+    if ($#scoord<0) {print "Stopping because Sextractor returned no file \nERROR\n"; die "\n";}
+
+    @xcat=cleancat(@scoord, {MODE=>'area'});
+    # @xcat=cleancat(@scoord, {MODE=>'area', 'thresh=10'});
+    # @xcat=cleancat(@scoord, {MODE=>['area', 'satur']});
+
+    if ($#xcat==-1) {
+      print "Fatal error: Could not clean cats\n" ; return;
+    }
+
+    if (defined $optctl{stopscats}) {print "CATALOG EXTRACTION - END\nDONE\n";die "\n";}
+
+
+    # ------------- THIS SHOULD BE MODIFIED IN ORDER TO DEAL WITH A REFERENCE FRAME
+
+
+    #Read the USNO catalogue from CDS/GSC
+    if ($ASK_WEB==1) {
+      # Read from the header RA and DEC
+      my ($RA, $DEC) = &rhead_coo($sfiles[0]);
+      print "Field center: $RA $DEC\n";
+      my $ret;
+
+      my $radius= $AstCVals{RADIUS};
+      $radius=40 if ($radius !~ /\d+/);
+
+      my $maxnum=9999;
+      $maxnum=$AstCVals{MAXNUM_LIN} if ($AstCVals{MAXNUM_LIN} >=0);
+
+      $ret=&read_CDS($mode, $findpmm, $refcoor, $RA, $DEC, $radius, $maxnum);
+
+    }
+  if (defined $optctl{stopmkcat}) {print "CATALOG $refcoor HAS BEEN BUILT - END\nDONE\n";die "\n";}
+
+    # else {&read_mycat()}
+
+#  goto LINFIX;
+
+
+    # ------------- COMPUTE OFFSETS, ROTATIONS AND SCALING FACTORS FROM A REFERENCE FRAME
+
+    $STEP="K-CALC";
+
+    my $astroref=$stack[0];
+    my ($ccd0s, $offx, $offy, $angle, $scale, $cd);
+    $cd=null;
+
+
+    # ***** If the file $reflist is found then read the parameters
+    #          otherwise compute and store them
+
+
+    #@s=split(/\//, $reflist);
+    #$reflist=$locdir.'/'.$s[-1] if ($#s==0);
+
+    $reflist=$outdir_top.$reflist unless (substr($reflist,0,1) eq '/' || $reflist eq '');
+
+
+    print "Ktable: $reflist \n" if ($DEBUG);
+
+
+
+ if ($reflist ne '') {
+
+    if (-e $reflist) {
+
+      plog ("I", $STEP, "Reading K-vals from $reflist");
+
+      open (FILE, "<$reflist");
+
+      my @ccd=(); my @offx=(); my @offy=(); my @angle=(); my @scale=(); my @cd=();
+
+      while (<FILE>) {
+	my $s=$_;
+	my @s=split(/\s+/,$s);
+	if ($s[0] !~ /\d/) {
+	  next;
+	}
+	push (@ccd, $s[0]);
+	push (@offx, $s[1]); push (@offy, $s[2]);
+	push (@angle, $s[3]); push (@scale, $s[4]);
+        if ($#s>4) {
+            push @cd, float(splice (@s, 5, 6));
+        }
+      }
+
+      close (FILE);
+
+      if ($#offx==0) {
+	$ccd0s=zeroes(short,1);
+	$offx=zeroes(double,1);
+	$offy=zeroes(double,1);
+	$angle=zeroes(double,1);
+	$scale= zeroes(double,1);
+        if ($#cd >-1) {$cd=float($cd[0])}
+	set $ccd0s, 0, $ccd[0];
+	set $offx, 0, $offx[0];
+	set $offy, 0, $offy[0];
+	set $angle, 0, $angle[0];
+	set $scale, 0, $scale[0];
+      }
+      else {
+	$ccd0s=short(@ccd);
+	$offx=double(@offx);
+	$offy=double(@offy);
+	$angle=double(@angle);
+	$scale=double(@scale);
+        $cd=cat @cd if ($#cd >-1);
+      }
+    }
+    else {
+
+      plog ("I", $STEP, "Computing K-vals from list $astroref => $reflist");
+
+      my $refps;
+
+      my @s=split(/\./, $reflist);
+      if ($#s>0) {
+	$s[-1]='ps';
+	$refps=join '.', @s ;
+      } else {$refps=$reflist.'.ps'}
+
+print "#### $refps $reflist\n";
+
+      @s=split(/\//, $refps);
+      $refps=$DIAGDIR.$s[-1];
+
+      my $REJANGLE=1.5;
+      if (exists $AstCVals{REJANGLE} && $AstCVals{REJANGLE} ne '') {
+             $REJANGLE= $AstCVals{REJANGLE}
+        }
+
+       my $DELTANGLE=1.;
+      if (exists $AstCVals{DELTANGLE} && $AstCVals{DELTANGLE} ne '') {
+             $DELTANGLE= $AstCVals{DELTANGLE}
+        }
+
+
+
+      ($ccd0s, $offx, $offy, $angle, $scale, $cd)=four_get_offset({RFRAME=>$astroref, NCCD=>$nccd, ASTCAT=>$refcoor, CATS=>\@xcat, FITS =>\@hdrs, ANGLE=>$main::kangle, REJANGLE=>$REJANGLE, DELTANGLE=>$DELTANGLE, LABEL=>$refps});
+
+      # ***** Write the parameters into an ASCII file
+      my $ncoeff=$offx->nelem;
+      open (FILE, ">$reflist");
+      my $today=&mkdate;
+      printf FILE "#Created from list $astroref using catalog $refcoor\n";
+      printf FILE "#Date: $today\n";
+      printf FILE '#CCD  Offx (arcsec) Offy (arcsec) Angle (degr) Scale  ';
+      printf FILE 'CRPIX1  CRPIX2  CD1_1  CD1_2  CD2_1  CD2_2';
+      printf FILE "\n";
+      for (my $i=0; $i<$ncoeff;$i++) {
+	printf FILE "%d %.2f %.2f %.2f %.2f ", $ccd0s->at($i), $offx->at($i), $offy->at($i),
+	$angle->at($i), $scale->at($i);
+
+       my $tcd=$cd->slice(":,($i)");
+	print FILE sprintf "%.3f %.3f %.6e %.6e %.6e %.6e\n", list $tcd;
+
+      }
+      close (FILE);
+
+      warn "====> $reflist WRITTEN !!! <======" if ($DEBUG);
+
+    }
+
+    if (defined $optctl{stopreg}) {print "REGISTRATION - END\nDONE\n"; die "\n"}
+
+    #====================================================================================
+    #           h
+    #====================================================================================
+
+
+
+    # ------------- APPLY TO ALL THE FRAMES THE SO FOUND ROTATION, SCALING AND OFFSET,
+    #                     THEN RECOMPUTE THE WCS
+
+
+#goto GOAHEAD;
+
+    $STEP="K-CORR";
+
+    plog ("I", $STEP, "Applying K-VALS");
+
+    for (my $i=0; $i<=$#stack; $i++) {
+      my @xfiles=grep(/\Q$stack[$i]\E/,@hdrs);
+
+      my ($crval1r, $crval2r);
+
+      for (my $j=0; $j<$nccd; $j++) {
+
+	if ($j>$#xfiles) {last}
+	my $tmp=$xfiles[$j];
+	if (! -e $tmp) {warn "Header $tmp not found !!"; next;}
+	my %h;
+         tie (%h, 'Tie::IxHash');
+        %h=rheadasc($tmp);	
+
+# CRVAL1 and CRVAL2 must be the same for all CCDs
+        if ($j==0) {$crval1r=$h{CRVAL1}; $crval2r=$h{CRVAL2}}
+        else {$h{CRVAL1}=$crval1r; $h{CRVAL2}=$crval2r}
+	
+        $h{IMAGEID}=$j if (! exists $h{IMAGEID});
+
+	my $tccd=$h{IMAGEID};
+	my $idx=which($ccd0s==$tccd);
+
+	if ($idx->isempty) {plog ("E", $STEP,"$tmp: no entry found for initial registration !"); return}
+	if ($idx->nelem != 1) {plog ("E", $STEP, "$tmp: multiple entries found for initial registration !"); return}
+	my $ij=$idx->at(0);
+
+	
+	if ($cd->isempty) {
+	warn "applying to $tmp: ", $offx->at($ij), " ",$offy->at($ij),
+	"  ",$angle->at($ij), "  ", $scale->at($ij) if ($DEBUG) ;
+	
+	my $kvals=sprintf "x %.2f y %.2f a %.2f s %.1f",
+	$offx->at($ij),$offy->at($ij), ,$angle->at($ij), $scale->at($ij);
+	
+	my $ret=&chgwcs($tmp, {offx=>$offx->at($ij), offy=>$offy->at($ij),
+			       angle=>$angle->at($ij), scale=>$scale->at($ij), key=>'KVALS', kvalue=>$kvals});
+	
+	if ($ret) {print "$ret\n"}
+	
+      }
+      else {
+
+        my $tcd;
+        my @d=$cd->dims;
+        if ($#d>0) {$tcd=$cd->slice(":,($ij)")} else {
+             $tcd=$cd;
+        };
+	warn "applying to $tmp: $tcd \n" if ($DEBUG) ;
+        $h{CRPIX1} = $tcd->at(0);
+        $h{CRPIX2} = $tcd->at(1);
+        $h{CD1_1} = $tcd->at(2);
+        $h{CD1_2} = $tcd->at(3);
+        $h{CD2_1} = $tcd->at(4);
+        $h{CD2_2} = $tcd->at(5);
+         my $ret=wheadasc($tmp, \%h, undef, "ASTROM", "applying linear transformation from ref. image");
+
+ 	if ($ret) {print "$ret\n"}
+         }
+
+      }
+    }
+
+    if (defined $optctl{stopk}) {print "K-VALS applied - END\n"; return}
+ } else {plog ("W", $STEP,"No table for initial registration was provided !")}
+
+
+#  GOAHEAD:
+
+    #=========================================================================================
+    #    Good, the linear astrometry should be, at least approximately, internally correct
+    #         Now the global offsets ( set to set and finally to the astrometric catalog)
+    #               must be computed
+    #=========================================================================================
+
+# It is not necessary to compute the offset
+#   IF the same list as that on which the K-TABLE was computed
+#     is processed
+
+    $SKIPMOFF=1 if ($#inlists==0 && $KCALC==1 && $SKIPMOFF==-1);
+
+    $STEP="INT_OFFSET";
+
+    #MKMASTER:
+
+    #creates master catalogs (@stack) from the catalogs (@xcat)
+
+    my $sum=sprintf ("%d cats, %d hdrs, %d images, %d CCDs",
+		     $#xcat+1, $#hdrs+1, $#stack+1, $nccd);
+
+    plog ("I",$STEP, "Creating master catalogs", $sum);
+
+    @mcats=mkMaster(\@xcat, \@hdrs, \@stack, $nccd, $datadir);
+
+
+    if ($#stack<1) {plog ("W", $STEP, "#WARNING: only 1 pointing in the stack")}
+    else {
+
+      # SHIFT2:
+      # ------------- REGISTER ALL THE 'MASTER' CATALOGS TO THE FIRST ONE IN THE LIST
+
+      plog("I", $STEP, "REGISTRATION OF THE MASTER CATALOGS TO THE FIRST IN THE LIST");
+
+
+      my @fields=('NUMBER','X_IMAGE','Y_IMAGE','X_PROJ','Y_PROJ','ALPHA_J2000','DELTA_J2000', 'CCD','NFOUND');	
+
+      my $tform = [ qw( 1J 1E 1E 1E 1E 1E 1E 1J 1J) ];
+      my $ttype = [ qw( NUMBER X_IMAGE Y_IMAGE X_PROJ Y_PROJ ALPHA_J2000 DELTA_J2000 CCD NFOUND) ];
+      my $tunit = [ ( '', 'pixel', 'pixel', 'arcsec', 'arcsec', 'arcsec', 'arcsec', '','') ];
+
+
+      my $rname=$datadir.'/'.'M'.$stack[0].'.ldac';
+
+
+      my ($number, $xpix, $ypix, $rxproj, $ryproj, $rra, $rdec, $ccd, $found) = read_ldac($rname, 0, @fields);
+
+      $rra/=3600.;
+      $rdec/=3600.;
+
+      for (my $i=1; $i<=$#stack; $i++) {
+	
+	my @xfiles=grep(/\Q$stack[$i]\E/,@hdrs);
+	my $head= $xfiles[0];
+	
+	my %fh;
+	tie (%fh, 'Tie::IxHash');
+	%fh=rheadasc($head);
+	
+	my $crval1=$fh{CRVAL1};
+	my $crval2=$fh{CRVAL2};
+	
+	#Convert the REFERENCE world coordinates to projected coordinates
+	#using the system of the current frame......
+
+
+my $nz=which($number>-1);
+	
+	($rxproj, $ryproj)= Mylib::Astrom::celfwd($rra->index($nz), $rdec->index($nz), $crval1, $crval2);
+
+	$rxproj *= 3600; $ryproj *= 3600;
+	
+	my $mname=$datadir.'/'.'M'.$stack[$i].'.ldac';
+	
+	#read positions in pixels
+	my @fields=('NUMBER','X_IMAGE','Y_IMAGE','X_PROJ','Y_PROJ','CCD','NFOUND');	
+	my ($number, $xpix, $ypix, $xproj, $yproj,$ccd, $found) = read_ldac($mname, 0, @fields);
+
+
+     my $nz=which($number>0);
+
+	my ($zoffx, $zoffy)=getOffset($rxproj, $ryproj,
+	$xproj->index($nz), $yproj->index($nz), -1);	
+
+	my ($ra, $dec)= Mylib::Astrom::celrev($xproj/3600, $yproj/3600, $crval1, $crval2);
+
+	
+	wldac($mname,$number, $xpix, $ypix, $xproj, $yproj, $ra*3600, $dec*3600, $ccd, $found, $ttype, $tform, $tunit);
+	print "-- SHIFT2: $mname updated !\n" if ($DEBUG);
+	
+	$tlog=sprintf "  Set %d: zoffx = %.2f, zoffy = %.2f",
+	$i+1,$zoffx, $zoffy;
+	plog ("I",$STEP,$tlog);
+	
+	#update the headers
+#	my @xfiles=grep(/\Q$stack[$i]\E/,@hdrs);
+	for (my $j=0; $j<$nccd; $j++) {
+	  if ($j>$#xfiles) {last}
+	  my $tmp=$xfiles[$j];
+	  print "######## SHIFT2: Updating $tmp (offset: $zoffx $zoffy)\n" if ($DEBUG);
+	  my $ret=&chgwcs($tmp, {offx=>$zoffx, offy=>$zoffy, key=>'INTREG', kvalue=>$stack[0]});
+	  if ($ret) {plog("W",$STEP, "$tmp: chgwcs returns $ret")}
+	}
+	
+      }
+
+
+# This was intended to keep only sources appearing more than a given limit in all catalogs
+    #CORREL:
+
+      # ------------- CROSS-IDENTIFY COMMON SOURCES IN ALL THE CATALOGS
+
+      # plog ("I", $STEP, "Cross-correlating catalogs");
+      # CrossCats(\@mcats);
+
+    #XCOMM:
+
+      # ------------- EXTRACT THE ENTRIES WITH COUNT >=LIMIT
+      # Currently used only in GETOFFSET
+
+      #my $limit=int($#stack*.3);
+      # my $limit=0;
+
+      # xlimCats(@mcats, $limit);
+
+      #$tlog=sprintf("--- Extract entries appearing at least %d times\n", $limit+1);
+      #plog ($tlog);
+
+    }				#end of if (more than one pointings)......
+
+
+
+  GETOFFSET:
+
+$STEP='ASTR_OFFSET';
+
+my $mastoff=zeroes(float, 2);
+my ($refa, $refd);
+
+ if ($SKIPMOFF==1) {
+    plog("I", $STEP, "SKIPPING THE COMPUTATION OF THE OFFSET OF MASTER CATALOGS vs. ASTROMETRIC CATALOG");
+ }
+ else {
+
+    # ------------- COMPUTE THE OFFSET TO THE ASTROMETRIC CATALOG
+    #                    WILL TAKE THE MEDIAN OF THE SO FOUND VALUES AT THE END
+
+    plog("I", $STEP, "COMPUTATION OF THE OFFSET OF MASTER CATALOGS vs. ASTROMETRIC CATALOG");
+    my $toff=zeroes(double, $#stack+1, 2);
+
+    my @fields=('NUMBER','X_IMAGE','Y_IMAGE','X_PROJ','Y_PROJ','CCD','NFOUND');	
+    ($refa, $refd)=read_asc($refcoor,'');
+
+    for (my $i=0; $i<=$#stack; $i++) {
+      my $mname=$mcats[$i];
+      my @s=split(/\//, $mname);
+      $s[-1]='n'.$s[-1];
+      my @xfiles=grep(/\Q$stack[$i]\E/,@hdrs);
+      my $hdr=$xfiles[0];
+
+      if ($DEBUG) {print "##DEBUG $mname / $hdr\n"};
+      my %fh;
+      tie (%fh, 'Tie::IxHash');
+      %fh=rheadasc($hdr);
+      my $crval1=$fh{CRVAL1};
+      my $crval2=$fh{CRVAL2};
+
+
+      my ($number, $xpix, $ypix, $xproj, $yproj,$ccd, $found) = read_ldac($mname, 0, @fields);
+      my $nz=which($number>0);
+	$xproj=$xproj->index($nz); $yproj=$yproj->index($nz);
+
+      my $a=cat $xproj, $yproj;
+
+
+      #my $refa=$rcat->slice(':,(0)');
+      #my $refd=$rcat->slice(':,(1)');
+      my ($prefx, $prefy) = Mylib::Astrom::celfwd($refa, $refd, $crval1, $crval2);
+      $prefx*=3600.;
+      $prefy*=3600.;
+
+      my ($offx, $offy)=getOffset($prefx, $prefy, $xproj, $yproj, $nccd);
+
+      set $toff, $i,0, $offx;
+      set $toff, $i,1, $offy;
+
+      my $tlog=sprintf "Set %d: xshift = %.2f, yshift = %.2f",
+      $i+1,$offx, $offy;
+      plog ("I", $STEP, $tlog);
+
+    }
+
+
+    # Now apply to the header the so found offset
+    # From now we must use the WCS in the headers !
+
+    $mastoff=medover($toff);
+
+    my $tlog=sprintf "==> Median:  xshift = %.2f, yshift = %.2f",
+    $mastoff->at(0), $mastoff->at(1);
+    plog ("I", $STEP, "",  $tlog);
+
+
+    # =============== Apply the computed offset to all headers
+ }
+
+ if ($SKIPMOFF!=1 || $DOPLOT==1) {
+
+    ($refa, $refd)=read_asc($refcoor,'') if ($SKIPMOFF==1);
+
+    my $psname=$DIAGDIR.$label;
+    dev("$psname/PS") if ($DOPLOT);
+
+    for (my $i=0; $i<=$#stack; $i++) {
+      my @xfiles=grep(/\Q$stack[$i]\E/,@hdrs);
+
+      if ($SKIPMOFF!=1) {
+       for (my $j=0; $j<=$#xfiles; $j++) {
+	  my $thead=$xfiles[$j];
+	   warn "$thead", $mastoff if ($DEBUG);
+	
+	   my $kval=sprintf "x %.3f y %.3f", $mastoff->at(0), $mastoff->at(1);
+	   &chgwcs($thead, {offx=>$mastoff->at(0), offy=>$mastoff->at(1), key=>'OFFSET', kvalue=>$kval});
+        }
+    }
+      ######
+      if ($DOPLOT) {
+# === Plot residuals, one plot for each mosaic
+	
+	my @rfields=('X_PROJ','Y_PROJ');
+	my $rname=$datadir.'/'.'M'.$stack[$i].'.ldac';
+	my ($xproj, $yproj) = read_ldac($rname, 0, @rfields);
+	$xproj+=$mastoff->at(0);   $yproj+=$mastoff->at(1);
+	
+	my $hdr=$xfiles[0];
+	my %fh;
+	tie (%fh, 'Tie::IxHash');
+	%fh=rheadasc($hdr);
+	my $crval1=$fh{CRVAL1};
+	my $crval2=$fh{CRVAL2};
+	
+	my ($prefx, $prefy) = Mylib::Astrom::celfwd($refa, $refd, $crval1, $crval2);
+	$prefx*=3600.;
+	$prefy*=3600.;
+
+        my ($xi, $m)=Mylib::Astrom::matchCats($prefx, $prefy, $xproj, $yproj, 5);
+
+
+        my $dx=($xproj->index($m)-$prefx->index($xi));
+        my $dy=($yproj->index($m)-$prefy->index($xi));
+
+        my $midx=median($dx);
+	my $midy=median($dy);
+	
+        my $title=sprintf "%s - %s (\\gDx:%5.2f \\gDy:%5.2f)",
+                $stack[$i], $refcoor, $midx, $midy;
+
+       # overplot catalog (cross) to image (circles) sources
+
+	env(minmax($xproj),minmax($yproj));
+	label_axes('X (arcsec)','Y (arcsec)', $title,
+		   {CharSize=>1.4});
+	
+	points ($xproj, $yproj, {SYMBOL =>'CIRCLE', CHARSIZE=>1.3} );
+	points ($prefx, $prefy, {SYMBOL =>'CROSS', CHARSIZE=>1.3});
+	
+	# Plot residuals
+
+        my $w=5;
+        env ($midx-$w, $midx+$w, $midy-$w, $midy+$w, {CharSize=>1.6});
+        label_axes('\gD RA (arcsec)','\gD DEC (arcsec)',
+                 $title, {CharSize=>1.4});
+
+          points ($dx, $dy, {CHARSIZE=>0.9});
+	
+      }
+      ####
+
+    }
+
+   close_window if ($DOPLOT);
+
+    system ("$gzip -f $psname") if (-e $psname && $DOPLOT);
+
+
+
+    #warn "================== STOP !!!!!!!!"; die;
+
+
+  }
+
+  LINFIX:
+
+    $STEP="LINWCS";
+
+    plog ("I", $STEP, "Fixing linear WCS with catalog: $refcoor");
+
+    ($refa, $refd, $rmag) =read_asc($refcoor,'');
+
+
+    # Now, for each header refine the correction of the linear metrics
+    my @xfields=('X_IMAGE','Y_IMAGE','ERRX2_WORLD', 'ERRY2_WORLD');
+
+    for (my $i=0; $i<=$#stack; $i++) {
+      my @xfiles=grep(/\Q$stack[$i]\E/,@hdrs);
+      my @lcats=grep(/\Q$stack[$i]\E/,@xcat);
+      for (my $j=0; $j<=$#xfiles; $j++) {
+        my $bad=0;
+
+	my $thead=$xfiles[$j];
+	my $tcat=$lcats[$j];
+	
+	##############################################################
+	# Fix the CD array to match the astrometric catalog  #
+	##############################################################
+	
+	my %fh;
+	tie (%fh, 'Tie::IxHash');
+	%fh=rheadasc($thead);
+	
+	my $crval1=$fh{CRVAL1};
+	my $crval2=$fh{CRVAL2};
+	my $crpix1=$fh{CRPIX1};
+	my $crpix2=$fh{CRPIX2};
+	my $cd11 = $fh{CD1_1};
+	my $cd21 = $fh{CD2_1};
+	my $cd12 = $fh{CD1_2};
+	my $cd22 = $fh{CD2_2};
+	if (!exists $fh{BADCCD})
+        {
+	    $fh{BADCCD}=0;
+        }
+	my $badccd = $fh{BADCCD};
+
+	if ($badccd == 1)
+        {
+             $fh{ASTBAD}=1;
+	     wheadasc($thead, \%fh, undef, "ASTROM", "BADCCD is transfered to ASTBAD !!");
+             next	
+	}
+
+	my ($fxp, $fyp, $errx, $erry)=read_ldac($tcat, 0, @xfields);
+	if (ref($fxp) ne 'PDL') {
+           plog ("E", $STEP, "$thead: could not read catalog !");
+             $fh{ASTBAD}=1;
+	     wheadasc($thead, \%fh, undef, "ASTROM", "previous catalog not found !!!");
+             next
+             }
+
+	#Apply the linear WCS
+	
+	print "#DEBUG $thead - $tcat $crpix1 $crpix2 $cd11 $cd22 $crval1 $crval2\n" if ($DEBUG);
+	
+	my $fxpt = $fxp-$crpix1; my $fypt  = $fyp-$crpix2;
+	my $fxpr = $cd11*$fxpt + $cd12*$fypt;
+	my $fypr = $cd21*$fxpt + $cd22*$fypt;
+	
+	
+	# Convert the catalog coordinates to projected coordinates
+	my ($xir, $etar) = Mylib::Astrom::celfwd($refa, $refd, $crval1, $crval2);
+	
+	my $rcat = cat $xir, $etar, $rmag;
+	my $tfpr = cat $fxpr, $fypr;
+	# Cut the relevant section of the catalog
+	
+	my $b = xsubcat($tfpr, $rcat, 0.);
+	if ($b->nelem<10) {plog ("E", $STEP, "$thead: no overlap with reference catalog !"); $bad=1}
+	else {
+	  $b = xsubcat($tfpr, $rcat, 10./60);
+	  $xir=$b->slice(':,(0)');
+	  $etar=$b->slice(':,(1)');
+	
+	  #Find the indexes of matching points
+	  my ($ridx,$cidx) =Mylib::Astrom::matchCats($xir*3600, $etar*3600, $fxpr*3600, $fypr*3600, $lintol);
+	
+	  if ($ridx->isempty || $ridx->nelem<$MINASTID) {plog ("E", $STEP, "$tcat: no match with reference catalog !"); $bad=1}
+	  else {
+	    my $txir= $xir->index($ridx); ;
+	    my $tetar= $etar->index($ridx);
+	
+	    #ok, we store here the number of identified sources
+	    my $num_astcat=$txir->nelem;  		
+	
+	
+	    my $sig=ones(float, $num_astcat);
+	    #my $sig=1./sqrt($errx+$erry);
+	
+	    my $tfxp=$fxp->index($cidx);
+	    my $tfyp=$fyp->index($cidx);
+	
+	
+	    my $niter=$AstCVals{NITERFIT};
+	    my $sigma=$AstCVals{SIGMA};
+	
+	
+	    my $mrej=zeroes(short, $num_astcat);
+	
+	    my $it=0;
+	
+	    my $lxrms=0;
+	    my $lyrms=0;
+	
+	    for ($it=0; $it <=$niter; $it++) {
+	      my $idx=which($mrej==0);
+	      my $f_fxp=$tfxp->index($idx);
+	      my $f_fyp=$tfyp->index($idx);
+	      my $f_xir=$txir->index($idx);
+	      my $f_etar=$tetar->index($idx);
+	      my $f_sig=$sig->index($idx);
+
+	      if ($DEBUG) {print "Calling Pfit with ",$f_fxp->nelem," sources\n"}	
+	
+	      my $aa = Mylib::Pfit::pfitxy($f_fxp, $f_fyp, $f_xir, $f_sig, 1);
+	      my $ad = Mylib::Pfit::pfitxy($f_fxp, $f_fyp, $f_etar, $f_sig, 1);
+	
+	      my $ax=$aa->at(0);	
+	      $cd11=$aa->at(1);
+	      $cd12=$aa->at(2);
+	
+	      my $ay=$ad->at(0);
+	      $cd21=$ad->at(1);
+	      $cd22=$ad->at(2);
+	
+	
+#	      $crpix2 = ($ay-$cd21/$cd11*$ax)/($cd21/$cd11*$cd12-$cd22);
+#	      $crpix1 = ($ax+$cd12*$crpix2)/(-$cd11);
+	
+
+	      $crpix2 = ($cd11*$ay-$cd21*$ax)/($cd21*$cd12-$cd22*$cd11);
+	      $crpix1 = ($cd22*$ax-$cd12*$ay)/($cd12*$cd21-$cd11*$cd22);
+
+	
+	      #Evaluate the residuals for ALL points
+	      my $xf=$cd11*($tfxp-$crpix1)+$cd12*($tfyp-$crpix2);
+	      my $yf=$cd21*($tfxp-$crpix1)+$cd22*($tfyp-$crpix2);
+	
+	      my $xdev=abs($xf-$txir);
+	      my $ydev=abs($yf-$tetar);
+	
+	
+	
+	      # Now extract only the residuals for those  points which
+	      # were not already rejected ...
+	      my $f_xdev=$xdev->index($idx);
+	      my $f_ydev=$ydev->index($idx);
+	
+	      # ... and compute the rms
+	      $lxrms = sqrt(sum($f_xdev*$f_xdev)/($f_xdev->nelem));
+	      $lyrms = sqrt(sum($f_ydev*$f_ydev)/($f_ydev->nelem));
+	
+	
+	      print "iter $it; rms:", 3600*$lxrms,"/",3600*$lyrms,"; points: ",$idx->nelem,"\n" if ($DEBUG);
+	
+	      # Reject points if it is not the last iteraction
+	      if ($it==$niter) {last}
+	      else {
+		$idx=which($mrej==0 & ($xdev > $sigma*$lxrms | $ydev > $sigma*$lyrms));
+		if ( (($tfxp->nelem-$idx->nelem) <=10) || ($idx->nelem==0) ) {last}
+		else {
+		  my $tm=$mrej->index($idx);
+		  $tm .= 1;
+		}
+	      }
+	    }			#end loop on iter
+
+	    # 2) Ok, update the header	
+	    if ($bad==0) {
+	      $fh{CRPIX1}=$crpix1;
+	      $fh{CRPIX2}=$crpix2;
+	      $fh{CD1_1} =$cd11  ;
+	      $fh{CD2_1} =$cd21  ;
+	      $fh{CD1_2} =$cd12  ;
+	      $fh{CD2_2} =$cd22  ;
+	      $fh{LINXRMS} = sprintf "%.3f", 3600*$lxrms;
+	      $fh{LINYRMS} = sprintf "%.3f", 3600*$lyrms;
+	      warn "#DEBUG: found:  $crpix1 $crpix2 $cd11 $cd22 $cd12 $cd21 to $thead\n" if ($DEBUG);
+	    $fh{EQUINOX} = 2000.;
+	    $fh{LINCAT} = "\'$refcoor\'";
+	    $fh{LINTOL} = $lintol;		
+	   }
+	
+	    if (lc(substr($AstCVals{LINPSOL},0,1)) eq 'y' && $bad==0)  {
+
+# ============ Now let's compute the plate solution
+print "#DEBUG Computing astrometric solution\n" if ($DEBUG);
+
+my $XPSOL=0;
+#$AstCVals{XPSOL}='psol.dat';
+if (-e $AstCVals{XPSOL}) {$XPSOL=CopyXPsol($AstCVals{XPSOL}, \%fh)}
+
+
+
+my $distord=$AstCVals{PSORD_OL_OFF};
+my $olframes=0;
+my $sigma=$AstCVals{SIGMA};
+my $ITERPS=$AstCVals{ITERATIONS};
+my $niter=$AstCVals{NITERFIT};
+ 	
+ my $tol=$lintol; #The radius of the search box (arcsec)
+
+ if ($XPSOL==0)  {
+      foreach my $key (keys %fh) {if ($key =~ /PV/) { delete $fh{$key}}}
+ }
+#else {
+#      foreach my $key (keys %fh) {print "$key -> $fh{$key}\n"}
+#}
+
+
+	$fxpt = $fxp-$crpix1; my $fypt  = $fyp-$crpix2;
+	$fxpr = $cd11*$fxpt + $cd12*$fypt;
+	$fypr = $cd21*$fxpt + $cd22*$fypt;
+
+
+################################################################
+
+       # Start the loop HERE
+
+
+	    foreach my $iter (0..$ITERPS) {
+            my ($pfxpr, $pfypr);
+
+	    if ($iter==0 && $XPSOL==0) {
+                $pfxpr=$fxpr; $pfypr=$fypr;
+	      }
+            else {
+	      my $h_distord=$fh{PSORD};
+	      my $h_ncoeffs=&Mylib::Astrom::calcNcoeffs($h_distord);
+	
+	      my $pv1=zeroes(double, $h_ncoeffs);
+	      my $pv2=zeroes(double, $h_ncoeffs);
+	
+	      if (exists $fh{PV1_0}) {
+                &Mylib::Astrom::ReadPV($pv1, \%fh, ,'PV1', $h_ncoeffs );
+                &Mylib::Astrom::ReadPV($pv2, \%fh, ,'PV2', $h_ncoeffs );
+	
+		 if (! $pv1->isempty) {
+		  $pfxpr=&Mylib::Astrom::pveval($pv1, $fxpr, $fypr, $h_distord);
+		  $pfypr=&Mylib::Astrom::pveval($pv2, $fypr, $fxpr, $h_distord);
+		 }
+	        }
+	      }
+# Match coordinates again
+            ($ridx,$cidx) =Mylib::Astrom::matchCats($xir*3600, $etar*3600, $pfxpr*3600, $pfypr*3600, $tol);
+
+	    if ($ridx->isempty || $ridx->nelem<$MINASTID) {
+               plog ("E", $STEP, "$thead: no overlap with reference catalog !");
+	       $bad=1;
+               last
+             }
+
+	    my $txir= $xir->index($ridx);
+	    my $tetar= $etar->index($ridx);
+	    my $tsig = ones(double,$txir->nelem);
+		
+	    my $sfxpr= $fxpr->index($cidx);
+	    my $sfypr= $fypr->index($cidx);
+	    my $num_astcat=$sfxpr->nelem;
+
+       my ($xpsol, $ypsol, $xdev, $ydev, $xif, $etaf, $mrej,
+       $tdistord, $xrms_ast, $yrms_ast,  $xrms_ol, $yrms_ol, $nf_ast, $nf_ol)=
+          CalcPSol($thead,
+            $sfxpr, $sfypr, $txir, $tetar,  $tsig, $sigma,
+              $num_astcat, $olframes, $distord, $niter, $DEBUG);
+
+      	astlog ($iter, $thead, $fh{IMAGEID}, $xrms_ast, $yrms_ast, $nf_ast, $xrms_ol, $yrms_ol, $nf_ol, $tdistord);
+
+# Ok, update the header
+	# build pv ...
+	
+#	if ($xrms_ast < 0.5 && $yrms_ast<0.5) {
+	
+	$fh{CTYPE1} = "'RA---TAN'";
+	$fh{CTYPE2} = "'DEC--TAN'";
+	$fh{PSORD} = $tdistord;
+	$fh{PSCAT} = "\'$refcoor\'";
+	$fh{PSTOL} = $tol;	
+	$fh{ASTERR} = $ERRCAT;
+
+	my $today=&mkdate;
+	$fh{PROCDATE} = $today;
+		
+       my ($pv1, $pv2)=UpdatePV($xpsol, $ypsol, $tdistord, \%fh);
+#      } else {$fh{ASTBAD)=1}
+
+ 	$fh{ASTXRMS} = sprintf "%.3f", $xrms_ast;
+	$fh{ASTYRMS} = sprintf "%.3f", $yrms_ast;
+
+   } # end of iterations
+
+}
+
+	
+	  }			#end if match found
+	}			#end if overlap found
+
+	my $today=&mkdate;
+	$fh{PROCDATE} = $today;	
+	
+	$fh{ASTBAD}=1 if ($bad==1);
+	
+	    unlink $thead;
+	    my $ret=wheadasc($thead, \%fh, undef, "ASTROM", "fix linear astrometrix solution");
+	    if ($ret) {warn "whead $thead: $ret";}
+
+	
+      }				#end loop on single images
+    }				#end loop on stack
+
+
+    #=====================================================================
+    # END OF THE PART WHICH SHOULD BE DONE FOR EACH POINTING INDIVIDUALLY
+    #=====================================================================
+
+    print "LINEAR FIX OF WCS: DONE !!\n";
+    return;
+
+
+  DOGLOBAL:
+
+    $STEP="GLOBAL";
+
+    #========  MERGE ALL THE CATALOGS FROM DIFFERENT POINTINGS !
+
+    my @nset=();
+
+    #if ($DOGLOBAL==1) {
+
+    if ($OVMCATS==1) {
+
+      my $sum=sprintf ("%d cats, %d hdrs, %d images, %d CCDs",
+		       $#xcat+1, $#hdrs+1, $#stack+1, $nccd);
+
+      plog ("I",$STEP, "Creating master catalogs", $sum);
+
+      print "Cross correlating catalogs....\n";
+      print "#DEBUG making master catalogs\n" if ($DEBUG);
+
+      @mcats=mkMaster(\@xcat, \@hdrs, \@stack, $nccd, $datadir);
+
+      print "#DEBUG cross correlating catalogs\n" if ($DEBUG);
+      CrossCats(\@mcats);
+
+      $sum=sprintf ("%d master catalogs written", $#mcats+1);
+      plog ("I",$STEP, $sum);
+
+
+    } elsif ($OVMCATS==0) {
+      #==== Use existing master catalogs, try to load names and indexes
+      my $idfile=$datadir.'/index.db';
+
+      if (-e $idfile) {
+	my @widx=(); my @wstack=();
+	open (IDX, "<$idfile");
+	while (<IDX>) {
+	  chomp $_;
+	  s/^\s+//;
+	  next if (/^\#/) ;
+	  my ($idx, $name)=split(/\s+/);
+	  next if ($idx !~ /\d+/);
+	  push @widx, $idx; push @wstack, $name;
+	}
+	
+	close (IDX);
+	
+	my @xstack=();
+	
+	
+	foreach my $iws (0..$#wstack) {
+	  push @xstack, "";
+	  foreach my $is (0..$#stack) {
+	    if ($wstack[$iws] eq $stack[$is]) {
+	      $xstack[-1]= $wstack[$iws];
+	      push @nset, $widx[$iws];
+	      #print "---- $xstack[-1] $#wstack  $widx[$iws] $iws\n";
+	      last;
+	    }
+	  }
+	}
+	@stack=@xstack;
+      }
+    }				# End if OVMCATS
+
+
+
+    if (defined $optctl{stopgcats}) {print "CROSS CORRELATION OF CATALOGS - END\nDONE\n";die "\n";}
+
+    if ($#nset==-1)  { @nset=(0..$#stack) }
+    # === Prepend an element to the index of the sets, will contain the reference set
+    unshift @nset, -1;
+
+    #warn "@nset\n @stack\n";
+    #} #End if GLOBAL
+
+  XOVERLAP:
+
+    my $info="Global astrometry";
+    if ($NARROW==1) {$info=$info. " Narrow dither: ON"}
+    plog ("I", $STEP, $info);
+
+    # For each catalog in the list, extract the coordinates of
+    # overlapping points in the other catalogs
+
+    my $globsum=$DIAGDIR.'globsum.dat';
+
+    open (SFILE, ">$globsum");
+    print SFILE "# Name xrms_ast yrms_ast xrms_ol yrms_ol flag\n";
+    close (SFILE);
+
+    #system ("rm rcat.asc");
+
+    my @fields=('NUMBER', 'CCD', 'SCCD', 'SIDX');	
+    my @xfields=('NUMBER','X_IMAGE','Y_IMAGE','ERRX2_WORLD', 'ERRY2_WORLD');
+
+    my @afields=('CCD','SET');
+
+
+    my $num_steps=$#stack;
+
+    my ($refa, $refd, $rmag)=read_asc($refcoor,'');
+
+
+    #print "---> $nccd $num_steps\n";
+
+    my $axrms=zeroes(float, $nccd, $num_steps+1);
+    my $ayrms=zeroes(float, $nccd, $num_steps+1);
+
+    my $oxrms=zeroes(float, $nccd, $num_steps+1);
+    my $oyrms=zeroes(float, $nccd, $num_steps+1);
+
+    my $first_it=1;
+
+#Compute an initial astrometri solution if not already done !!
+
+  if (lc(substr($AstCVals{LINPSOL},0,1)) ne 'y') {
+       $first_it=0;
+    } else {$INITPS=0}
+
+
+    #$first_it=1 if ($ERRCAT eq 'undef');
+
+
+    my $ncoeffs=-1;
+
+    for (my $iter=$first_it; $iter<=$ITERPS; $iter++)  {
+
+      #==============
+      #
+
+      if ($iter==0) {$distord=$AstCVals{PSORD_OL_OFF}}
+      else {$distord=$AstCVals{PSORD_OL_ON}}
+
+      #$ncoeffs=&Mylib::Astrom::calcNcoeffs($distord);
+
+      my $wclock0=time;
+      my $cpu0=(times)[0];
+
+      print "#### ITERATION $iter/$ITERPS\n";
+      #plog ("#### ITERATION $iter/$ITERPS\n");
+
+
+
+    REFSTEP: foreach my $irefset (1..$#nset) {
+	
+	
+	my $refset=$nset[$irefset];
+	next if ($stack[$refset] eq '');
+	#print "%%%%%% $refset $stack[$refset]\n";
+	
+	my @lrcats=grep(/\Q$stack[$refset]\E/,@xcat);
+	my @lrhdr=grep(/\Q$stack[$refset]\E/,@hdrs);
+	
+	next if ($#lrcats==-1 || $#lrhdr==-1);
+	
+	my $mname=$datadir.'/'.'M'.$stack[$refset].'.ldac';
+	my $dbcat=$datadir.'/'.'M'.$stack[$refset].'.db';
+	
+	print "===========================\n $mname\n ===========================\n" if ($DEBUG);
+	
+	
+	if (!-e $mname) {
+           print "????? no $mname [$refset] found, I am now in", cwd,"  !\nERROR\n";
+         die "\n";
+          }
+	my ($num, $rccd,$sccd, $sidx)=read_ldac($mname, 0, @fields);
+	# $num:   the indexes in the current catalog
+	# $rccd:  the CCD number for the current set
+	# $sccd:  the CCD number for matched sources in other sets
+	# $sidx:  the index number for matched sources in other sets
+	
+	
+	#Read wich CCD/sets actually contain matching sources
+	if (!-e $dbcat) {print "????? no $dbcat found !\n"}
+	my ($dbccd, $dbset) = read_ldac($dbcat, 0, @afields);
+	
+	
+      REFCCD: for (my $nc=0; $nc<$nccd; $nc++) {
+	
+	  my $olframes=0;	#the number of frames where overlapping sources were found
+	  my $n_dithseq=1;	#the number of frames in the same dithering sequence
+	
+	  next REFCCD if (! -e $lrcats[$nc]);
+	
+	
+	  # ------------- READ THE TRUE CCD NUMBER IN THE HEADER
+	  my $thead= $lrhdr[$nc];	
+	
+	  my %th;
+	  tie (%th, 'Tie::IxHash');
+	  %th=rheadasc($thead);	
+	
+	  if ($th{ASTBAD}==1) {plog ("W", $STEP, "$thead (ASTBAD=1) skipped !"); next REFCCD}
+	  if ($th{BADCCD}==1) {plog ("W", $STEP, "$thead (BADCCD=1) skipped !"); next REFCCD}
+	
+	  my $rhccd=$th{IMAGEID};
+	  my $rinlist=$th{INLIST};
+	
+	  my $num_astcat=0;
+	
+	  my ($xnum, $xpix, $ypix, $errxpix, $errypix) = read_ldac($lrcats[$nc], 0, @xfields);
+	
+	
+	  my $cidx=which($rccd == $rhccd);
+	
+	  if ($cidx->isempty) {print "XOVERLAP: no entry $rhccd found in $rccd !\n";return;}
+	
+	
+	  if ($cidx->nelem > $xnum->nelem) {
+	
+	    print  $cidx->nelem,"($mname) > ",$xnum->nelem,"($lrcats[$nc]) \n";
+	    print "FATAL internal logical error in XOVERLAP !\n";
+	    next
+	  }
+	
+	  my ($rcrval1, $rcrval2);
+	
+	  my ($rfxpr, $rfypr, $sfxpr, $sfypr, $refidx, $reflidx, $nrefcat);
+	
+	  #this will contain the coordinates to be fitted (astrometric cat. + overlapping)	
+	  my ($txir, $tetar, $tsig);
+	
+	  my (%rfh, $rhead);
+	  tie (%rfh, 'Tie::IxHash');
+	
+	  $txir=null;
+	  $tetar=null;
+	  $sfxpr=null;
+	  $sfypr=null;
+	  my $rfidx=null;
+	
+	  my $tmpnum=$num->index($cidx); #The index numbers in the "reference" catalog
+	
+	  $nset[0]=$refset;
+	  my $first_set=1;
+	
+	TGT_SET: foreach my $set (@nset) {
+	
+	    #print "====> $stack[$set]\n";
+	
+	    next if ($stack[$set] eq '' || ($set==$refset && $first_set==0) );
+	    $first_set=0;
+	
+	    my $xdbset=null;
+	
+	    if ($num_steps >0) {
+	      $xdbset=$dbset->slice(":,($set)");
+	
+	
+	    } else {$xdbset=$dbset->copy}
+	
+	    my $xdbidx=which($xdbset ==1);
+	
+	    if ($DEBUG) {
+	      print "===========================================================\n";
+	      print " ---  STEP $refset -> CCD $nc\n";
+	      print " ---         vs  SET $set : overlap found in CCDs $xdbidx\n";
+	      print " ===========================================================\n";
+	    }
+	
+	    next TGT_SET if ($set != $refset && $xdbset->isempty);
+	
+	    my @lcats=grep(/\Q$stack[$set]\E/,@xcat);
+	    my @lhdr=grep(/\Q$stack[$set]\E/,@hdrs);
+	    my ($tmpccd, $tmpidx);
+	
+	    #print "##### $rccd\n $cidx\n";
+	
+	    if ($set==$refset) {$tmpccd=$rccd->index($cidx); $tmpidx=$tmpnum}
+	    else {
+	      my $t;
+	      $t=$sccd->slice(":,($set)");
+	      $tmpccd=$t->index($cidx);
+	      $t=$sidx->slice(":,($set)");		
+	      $tmpidx=$t->index($cidx);
+	    };			#extract ALL data for a given CCD
+	
+	    if ($DEBUG) {print "Looping on CCDs...\n"}
+	
+	    # FOR EACH SET LOOP ON CCDs	
+	  TGT_CCD:  for (my $ks=-1;$ks<$nccd; $ks++) {
+	      # we want to read first the current "reference" CCD
+	      next if (($ks==-1 && $set!=$refset) || ($ks!=-1 && $set==$refset));
+	      my $k=$ks;
+	      $k=$nc if ($ks==-1);
+	
+	      next if (!-e $lcats[$k]);
+	
+	      #hummmm, some confusion here if min(CCD)>0: $k should not be $thccd ???	
+	      next TGT_CCD if ($set!=$refset && $xdbset->at($k)==0);	
+	
+	
+	      my $head= $lhdr[$k];
+	
+	      #=====
+	
+	      if ($DEBUG) {print "Reading header $head/$lcats[$k]...\n"}
+	
+	      my %fh;
+	      tie (%fh, 'Tie::IxHash');
+	      %fh=rheadasc($head);
+	
+	      my $thccd=$fh{IMAGEID};
+	
+	
+	      if ($fh{ASTBAD}==1) {plog ("W", $STEP, "$head (ASTBAD=1) skipped !"); next TGT_CCD}
+	      if ($fh{BADCCD}==1) {plog ("W", $STEP, "$head (BADCCD=1) skipped !"); next TGT_CCD}
+
+	
+	      #CFH12K data: data from CHIP 06 before November 1999 should be skipped !
+	      if (uc($AstCVals{OBSERVATORY}) eq 'CFH12K' &&  $thccd==6) {
+		if (! exists $fh{DATE}) {
+		  if ($thead !~ /\/4\w+06M/ && $head =~ /\/4\w+06M/) {
+		    plog ("W", $STEP, "$head (DATE) skipped !");
+		    next TGT_CCD
+		  }
+		
+		} else {
+		  # First check that the reference CCD is NOT before november 1999
+		  my $date=$th{DATE};
+		  $date =~tr/'//d;
+                  my ($year, $hh)=split(/T/,$date,2);
+                  my @ys=split(/-/, $year);
+                  if  ($ys[0]>1999 || ($ys[0]==1999 && $ys[1] >5)) {
+                  # ok, check the target header
+
+                  $date=$fh{DATE};
+                  $date =~tr/'//d;
+		  ($year, $hh)=split(/T/,$date,2);
+		  @ys=split(/-/, $year);
+		  if ($ys[0]<1999 || ($ys[0]==1999 && $ys[1] <=5)) {
+		    plog ("W", $STEP,"$head ($date) skipped ");
+		    next TGT_CCD;
+		  }		
+		}
+	      }	
+	    }
+	    	
+	
+	    my $tinlist=$fh{INLIST};
+	    my $NEW_POINT=0;
+	    $NEW_POINT=1 if ($tinlist ne $rinlist);	
+	
+	    my $crval1=$fh{CRVAL1};
+	    my $crval2=$fh{CRVAL2};
+	    my $crpix1=$fh{CRPIX1};
+	    my $crpix2=$fh{CRPIX2};
+	    my $cd11 = $fh{CD1_1};
+	    my $cd21 = $fh{CD2_1};
+	    my $cd12 = $fh{CD1_2};
+	    my $cd22 = $fh{CD2_2};
+	
+	
+	    #print "### $tmpccd\n $thccd\n";
+	
+	    my $fidx=which($tmpccd==$thccd); #extract the subset for the current CCD
+	
+	    if ($DEBUG) {print $fidx->nelem, " sources expected...\n"}
+	
+	    next if $fidx->isempty; #go to next one if empty (no points for this CCD)
+	
+	
+	    my $t2idx=$tmpidx->index($fidx); #select the entries
+	    my $t2num=$tmpnum->index($fidx);
+	
+	    if ($DEBUG) {print "computing errors....\n"}
+	
+	    my ($olidx,$fxp, $fyp, $errfx, $errfy)=read_ldac($lcats[$k], 0, @xfields);
+	
+	    my $iz=which($olidx< 0 | $errfx<=0 | $errfy<=0 );
+	    if (! $iz->isempty) {
+	      my $niz=which($olidx>= 0 & $errfx>0 & $errfy>0 );
+	      $olidx=$olidx->index($niz);
+	      $fxp=$fxp->index($niz);
+	      $fyp=$fyp->index($niz);
+	      $errfx=$errfx->index($niz);
+	      $errfy=$errfy->index($niz);
+	
+	      warn "non positive indexes/uncertainties in $lcats[$k] (vs.: $lrcats[$nc]) ???" ;
+	
+	    }
+	
+	    my $errf=1./(3600.*sqrt($errfx+$errfy));
+	
+	
+	    # first extract the matching values in the object catalog
+	    my ($ridx, $n);
+	    ($ridx, $n)=vmatch($olidx, $t2idx);
+	    if ($n==0) {
+	      my $pl="Possible error in comparison between $lrcats[$nc] and $lcats[$k]\n";
+	      plog("W", $STEP, $pl);
+	      next TGT_CCD;
+	    }
+	    $n--;
+	    $ridx=$ridx->slice("0:$n");
+	    $olidx=$olidx->index($ridx);
+	    $fxp=$fxp->index($ridx);
+	    $fyp=$fyp->index($ridx);
+	    $errf=$errf->index($ridx);
+	
+	
+	    if ($DEBUG) {print "Applying linear WCS.....\n"}
+	
+	    #Apply the linear WCS
+	    my $fxpt = $fxp-$crpix1; my $fypt  = $fyp-$crpix2;
+	    my $fxpr = $cd11*$fxpt + $cd12*$fypt;
+	    my $fypr = $cd21*$fxpt + $cd22*$fypt;
+	
+	    my ($pfxpr, $pfypr);
+	
+	    if ($DEBUG) {print "Looking for matching objects....\n"}
+	
+	    # Now find in the master catalog the values matching the object catalog
+	    my $lridx;
+	    ($ridx, $n)=vmatch($t2idx,$olidx); #Find the indexes of the same values in the two arrays			
+	    $n--; $ridx=$ridx->slice("0:$n");
+	
+	
+	    #================= Apply the plate solution if it is not the first iteration
+	    if ($iter > $first_it || $INITPS==0) {
+	
+	      if ($DEBUG) {print "applying the plate solution\n"}
+	
+	      my ($pv1, $pv2);
+	
+	      my $h_distord=$fh{PSORD};
+	      my $h_ncoeffs=&Mylib::Astrom::calcNcoeffs($h_distord);
+	
+	      $pv1=zeroes(double, $h_ncoeffs);
+	      $pv2=zeroes(double, $h_ncoeffs);
+	
+	      if (exists $fh{PV1_0}) {
+                &Mylib::Astrom::ReadPV($pv1, \%fh, ,'PV1', $h_ncoeffs );
+                &Mylib::Astrom::ReadPV($pv2, \%fh, ,'PV2', $h_ncoeffs );
+	
+		  if (! $pv1->isempty) {
+		  my $dfxpr=&Mylib::Astrom::pveval($pv1, $fxpr, $fypr, $h_distord);
+		  my $dfypr=&Mylib::Astrom::pveval($pv2, $fypr, $fxpr, $h_distord);
+		
+		  # If this is the reference set we just make a copy of the
+		  #  transformed coords for catalog matching,
+		  # otherwise we substitute the coordinates with the transformed ones
+		
+		  if ($set==$refset) {$pfxpr=$dfxpr->copy; $pfypr=$dfypr->copy}
+                  else {$fxpr=$dfxpr->copy; $fypr=$dfypr->copy;}
+		
+		}
+	      }			#end if defined PV
+	    }			#end if iter
+	
+	
+	    if ($set==$refset) {
+	
+	      # THIS IS THE REFERENCE SET, so copy the coordinates and initialize
+	      #  the plate  solutions if it is the first iteration
+
+	      $rfidx=$ridx->copy;
+	      %rfh=%fh;
+	      $rhead=$head;
+	
+	      $rcrval1=$crval1; $rcrval2=$crval2;
+	      $refidx=$t2num->copy; $refidx=$refidx->index($rfidx);
+	
+	      $reflidx=$olidx->copy;
+	
+	
+	      if ($iter==$first_it && $INITPS==1) {
+		#Initialize the plate solution !
+		foreach my $key (keys %fh) {
+		  if ($key =~ /PV/) { delete $fh{$key}};
+		}	
+		
+		unlink $head;
+		my $ret=wheadasc($head, \%fh, undef, "ASTROM", "Apply initial plate solution");
+		if ($ret) {print "whead $head: $ret\n";}
+	      }
+	
+	
+	      #Cross-identify sources in the astrometric catalog and in the image
+	      if ($DEBUG) {print "Looking for astrometric sources....\n"}
+	
+	
+	      my $tol=$PSRADIUS; #The radius of the search box (arcsec)
+	
+	
+	      my ($xir, $etar) = Mylib::Astrom::celfwd($refa, $refd, $crval1, $crval2);
+	
+		if ($iter==$first_it) {
+		  $pfxpr=$fxpr; $pfypr=$fypr;
+		}
+
+
+	      my $rcat = cat $xir, $etar, $rmag;
+	      my $tfpr = cat $pfxpr, $pfypr;
+	
+	      my $b = xsubcat($tfpr, $rcat, 5./60); #extract a subcatalog with a radius of 5"
+	
+	      if ($b->isempty ) {
+                plog ("E", $STEP,"$head: no overlap with reference catalog !");
+                # mark chip as bad:
+                # The flag only takes effect on the 'next' iteration, not
+                # in the current one (to be improved)
+                $rfh{ASTBAD} = 1;
+                return;
+              } else {
+		$xir=$b->slice(':,(0)');
+		$etar=$b->slice(':,(1)');
+		
+		my ($ridx,$cidx) =Mylib::Astrom::matchCats($xir*3600, $etar*3600, $pfxpr*3600, $pfypr*3600, $tol);
+		
+		if ($ridx->isempty || $ridx->nelem < $MINASTID) {
+		    plog ("W", $STEP, "$head: no match with reference catalog !");
+                    # mark chip as bad:
+                    # The flag only takes effect on the 'next' iteration, not
+                    # in the current one (to be improved)
+                    $rfh{ASTBAD} = 1;
+                } else {		
+		  if ($DEBUG) {print "found ",$ridx->nelem," sources\n"}
+		
+		  #ok, store the values!
+		  $txir= $xir->index($ridx);
+		  $tetar= $etar->index($ridx);
+		  $tsig = ones(double,$txir->nelem);
+		
+		  $sfxpr= $fxpr->index($cidx);
+		  $sfypr= $fypr->index($cidx);
+		  $num_astcat=$sfxpr->nelem;
+		  $nrefcat=$num_astcat; # the number of identified sources
+		
+		}		# end of else 1....
+	      }			#end of else 2....
+	
+	      # Store ALL the projected coordinates
+	      $rfxpr=$fxpr->copy; $rfypr=$fypr->copy;	
+	
+	      if ($iter==0) {last TGT_SET} #Find a first p.s. using the astrometric catalog only
+	      else {next TGT_SET}
+	
+	    }			#end if set=reference set
+	    else{	
+	
+	      #increase the number of "overlapping" frames 	
+	      $olframes++;
+	
+	
+	      # Compute the projected coordinates in the reference framework
+	
+	      my ($rra, $rdec) =  Mylib::Astrom::celrev($fxpr, $fypr, $crval1, $crval2);
+	
+	      ($fxpr, $fypr) = Mylib::Astrom::celfwd($rra, $rdec, $rcrval1, $rcrval2);
+	
+	      if ($DEBUG) {print "Updating array....\n"}
+	
+	      #Append the points
+	
+	      $t2num=$t2num->index($ridx);
+	
+	      my ($cnum, $cn)= vmatch($refidx, $t2num);
+	      $cn--; $cnum=$cnum->slice("0:$cn");
+	      my $trfxpr=$rfxpr->index($cnum);
+	      my $trfypr=$rfypr->index($cnum);
+	
+	      my ($lnum, $ln)= vmatch($t2num, $refidx);
+	      $ln--; $lnum=$lnum->slice("0:$ln");
+	
+	
+	      my ($xnum, $xn)=vmatch($olidx, $t2idx->index($lnum));
+	      $xn--; $xnum=$xnum->slice("0:$xn");
+	
+	      $fxpr=$fxpr->index($xnum);
+	      $fypr=$fypr->index($xnum);
+	      $errf=$errf->index($xnum);
+	
+	      # WE ARE IN THE SAME DITHERING SEQUENCE AND THE CCD IS THE SAME
+	      if  ($NARROW==1 && $NEW_POINT!=1 && $rhccd==$thccd) {
+		$n_dithseq++ ;
+		$errf*=-1;	#the sign will be changed again later
+	      }
+	
+	      $trfxpr=$trfxpr->index($xnum);
+	      $trfypr=$trfypr->index($xnum);
+	
+	
+	
+	      if ($txir->isempty)  {	
+		$txir= $fxpr ;
+		$tetar= $fypr ;
+		$tsig = $errf;
+		
+		$sfxpr= $trfxpr ;
+		$sfypr= $trfypr ;
+	      }
+	      else {
+		# the points to be fitted
+		$txir=append($txir,$fxpr);
+		$tetar=append($tetar,$fypr);
+		$tsig=append($tsig, $errf) ;
+		
+		# the points from the current "reference" CCD
+		$sfxpr=append($sfxpr, $trfxpr) ;
+		$sfypr=append($sfypr, $trfypr) ;
+		
+	      }
+	
+	    }			#end of "if $set is NOT the reference set"	
+	
+	  }			#end loop on 'target' chips
+	}			#end loop on 'target' sets
+	
+	if ($DEBUG) {print "----> computing solution !\n"}
+	
+	#Now we have the reference stars and the overlapping points...
+	# what should we do :?
+	
+	if ($txir->isempty) {
+	  my $plog=sprintf("no reference points found for %s", $lrcats[$nc]);
+	  plog ("W", $STEP, $plog);
+	  next REFCCD
+	}
+	
+	
+	my $tn=$num_astcat-1;
+	
+	# ===========================================================
+	# rescale the weight of the astrometric catalog entries
+	# we impose that  W(ast) = N_ol/N_ast / ERRCAT
+	# ===========================================================
+	
+	
+	if ($olframes >0 && $num_astcat>0) {
+	  # Frames in the same dithering sequence: reduce the weight by the number of frames
+	  my $n_ovlap;
+	  if ($n_dithseq>1 && $NARROW==1) {
+            my $inewpnt=which($tsig<0);
+            my $np_tsig=$tsig->index($inewpnt);
+	    #Reduce the weight of the overlapping points in the same dithering sequence
+	    $np_tsig/=-$n_dithseq;
+	    # Compute the "effective" number of points
+            my $n_oldith=$np_tsig->nelem;
+	    my $n_olxpnt=$txir->nelem-$n_oldith-$num_astcat;
+	    $n_oldith/=$n_dithseq;
+            $n_ovlap=$n_oldith+$n_olxpnt;
+	    #my $plog=sprintf ("XOVERLAP: TOTAL %d, astrometric %d, new point %d, same dither %d, N dither %d\n",
+	    #                  $txir->nelem, $num_astcat, $n_olxpnt ,$n_oldith , $n_dithseq );
+	    #plog ($plog);
+	
+	  } else {$n_ovlap=$txir->nelem-$num_astcat}
+	
+	
+	  #print ">>>>>> ",$txir->nelem, "  $n_ovlap   ($n_dithseq)\n";
+	
+	  #my $rnum=$olframes*($txir->nelem-$num_astcat)/$num_astcat/$ERRCAT;
+	
+	  #my $tmp= $tsig->slice("$num_astcat:-1");
+	  #my $wsum=sum($tmp);
+	  #my $rnum=$ERRCAT*$wsum/$num_astcat;
+	
+	  my $rnum;
+	
+	  if ($ERRCAT eq 'undef') {
+	    my $tmp= $tsig->slice("$num_astcat:-1");
+	    $rnum=$n_ovlap/$num_astcat*median($tmp);
+	    #warn ">>>> $n_ovlap  $num_astcat  -- $rnum";
+	  }
+	  else {$rnum=$n_ovlap/$num_astcat/$ERRCAT}
+	
+	  #my $rnum=($txir->nelem-$num_astcat)/$num_astcat/$ERRCAT;
+	
+	  #my $plog=sprintf ("XOVERLAP/USNO:  factor %f, uncertainty %f\n",
+	  #               $n_ovlap/$num_astcat, 1/$rnum  );
+	  #plog ($plog);
+	
+	  my $tmp = $tsig->slice("0:$tn");
+	  $tmp.= $rnum;
+	} else {
+	  if ($num_astcat<=0) {
+	    my $plog=sprintf("no astrometric points found for %s", $lrcats[$nc]);
+	    plog ("W", $STEP, $plog);
+	  }
+	  if ($olframes==0 && $iter!=0) {
+	    my $plog=sprintf("no overlap points found for %s", $lrcats[$nc]);
+	    plog ("W", $STEP, $plog);
+	  }
+	
+	}
+	
+	
+	
+	my $msig=avg($tsig);
+	$tsig/=$msig;
+	
+#	my $mrej=zeroes(short, $txir->nelem);
+	
+	my $sigma=$AstCVals{SIGMA};
+	my $niter=$AstCVals{NITERFIT};
+	
+	
+
+
+      my ($xpsol, $ypsol, $xdev, $ydev, $xif, $etaf, $mrej,
+       $tdistord, $xrms_ast, $yrms_ast,  $xrms_ol, $yrms_ol, $nf_ast, $nf_ol)=
+          CalcPSol($rhead,
+            $sfxpr, $sfypr, $txir, $tetar,  $tsig, $sigma,
+              $num_astcat, $olframes, $distord, $niter, $DEBUG);
+
+		
+	astlog ($iter, $rhead, $rhccd, $xrms_ast, $yrms_ast, $nf_ast, $xrms_ol, $yrms_ol, $nf_ol, $tdistord);
+	
+	#store the residuals for the final plot
+	
+	set $axrms, $nc, $refset, $xrms_ast ;
+	set $ayrms, $nc, $refset, $yrms_ast ;
+	set $oxrms, $nc, $refset, $xrms_ol ;
+	set $oyrms, $nc, $refset, $yrms_ol ;
+	
+	
+	
+	
+	# build pv ...
+	
+	$rfh{CTYPE1} = "'RA---TAN'";
+	$rfh{CTYPE2} = "'DEC--TAN'";
+	$rfh{PSORD} = $tdistord;
+	$rfh{PSCAT} = "\'$refcoor\'";
+	$rfh{PSTOL} = $PSRADIUS;	
+	$rfh{ASTERR} = $ERRCAT;
+	$rfh{ASTXRMS} = sprintf "%.3f", $xrms_ast;
+	$rfh{ASTYRMS} = sprintf "%.3f", $yrms_ast;
+	$rfh{OLXRMS} = sprintf "%.3f", $xrms_ol;
+	$rfh{OLYRMS} = sprintf "%.3f", $yrms_ol;
+	my $today=&mkdate;
+	$rfh{PROCDATE} = $today;
+	
+         my ($pv1, $pv2)=UpdatePV($xpsol, $ypsol, $tdistord, \%rfh);
+	
+	unlink $rhead;
+	my $ret=wheadasc($rhead, \%rfh, undef, "ASTROM", "Applying global astrom from Iter. $iter");
+	
+	
+	
+	
+	if  ($iter == $ITERPS) {
+	  my @name=split (/\//,  $lrcats[$nc]);
+	  my $fname=$datadir.'/'.$name[-1];
+	  my @s=split(/\./, $fname);
+	  $s[$#s]='fits';
+	  $fname = join '.', @s;
+	  my $flag="OK";
+	  $flag="BAD" if ($xrms_ol >0.15 && $yrms_ol> 0.15) ;
+	
+	  open (SFILE, ">>$globsum");
+	  print SFILE sprintf "%s  %.3f %.3f  %.3f %.3f   %s\n",
+  $fname, $xrms_ast, $yrms_ast, $xrms_ol, $yrms_ol, $flag;
+	  close (SFILE);
+	}
+	
+	# --------- BEGIN of diagnostic plots section
+	
+	
+	if ($iter < $ITERPS || $DOPLOT==0 ) {next}
+	
+	
+	if ($DEBUG) {print "making plots.....\n"}
+	
+	
+	my @ps=split (/\//,  $lrcats[$nc]);
+	my $psname=$datadir.'/'.$ps[-1];
+	my @s=split(/\./, $psname);
+	$s[$#s]='ps';
+	$psname = join '.', @s;
+	
+	
+#	my $plot=dev ("$psname/VPS", 2,3);
+  my $plot = PDL::Graphics::PGPLOT::Window->new( {Device => "$psname/VPS", nx=>2, ny=>3});
+
+	
+	#my $panel=0;
+	
+	#=========  Compute the grid
+	
+	my $ngrid=10;
+	my $xig=$txir->min + float(0..$ngrid-1)*($txir->max-$txir->min)/($ngrid-1);
+	my $etag=$tetar->min + float(0..$ngrid-1)*($tetar->max-$tetar->min)/($ngrid-1);
+	
+	my $nxig=zeroes(float,$ngrid,$ngrid);
+	my $netag=zeroes(float,$ngrid,$ngrid);
+	
+	for (my $k=0;$k<$ngrid;$k++) {
+	  my $tmp;
+	  $tmp=$nxig->slice(":,$k");
+	  my $n=0;
+	  for (my $i=0;$i<=$tdistord;$i++) {
+	    for (my $j=$i;$j>=0;$j--) {
+	      $tmp += ($pv1->at($n) * $xig**$j * ($etag->at($k))**($i-$j));
+	      $n++;
+	    }
+	  }
+	}
+	
+	for (my $k=0;$k<$ngrid;$k++) {
+	  my $tmp;
+	  $tmp=$netag->slice(":,$k");
+	  my $n=0;
+	  for (my $i=0;$i<=$tdistord;$i++) {
+	    for (my $j=$i;$j>=0;$j--) {
+	      $tmp += ($pv2->at($n) * ($etag->at($k))**$j * $xig**($i-$j));
+	      $n++;
+	    }
+	  }
+	}
+	
+	$nxig*=3600;
+	$netag*=3600;
+	
+	#define some variables...
+	
+	my $nref=$num_astcat-1;	#index for the reference catalog
+	
+	
+	# ==== now make two separate plots for reference catalog and overlapping points
+	
+	
+	for my $j (1..2) {
+	
+	  #the REFERENCE points
+	
+	  next if ( ($j==1 && $num_astcat<=0) || ($j==2 && $olframes==0));
+	
+	  #$plot->panel($panel++);
+	  $plot->env(3600*min($sfxpr),  3600*max($sfxpr),3600*min($sfypr),3600*max($sfypr),
+	      {CharSize=>1.6});
+	
+	  #env 3600*min($sfxpr),  3600*max($sfxpr),3600*min($sfypr),3600*max($sfypr);
+	
+	  if ($nref>0) {
+	    if ($j==1) {
+	
+	      $plot->label_axes('\gD RA (arcsec)','\gD DEC (arcsec)',"$lrcats[$nc]: Catalog",
+			 {CharSize=>1.4});
+	
+	      #pglabel '\gD RA (arcsec)','\gD DEC (arcsec)',"$lrcats[$nc]: Catalog";
+	      my $tpxc=3600*$txir->slice("0:$nref");
+	      my $tpyc=3600*$tetar->slice("0:$nref");
+	      $plot->points ($tpxc, $tpyc , {SYMBOL => 'SQUARE', CHARSIZE=>1.3});
+	      my $ipxc=3600*$xif->slice("0:$nref");
+	      my $ipyc=3600*$etaf->slice("0:$nref");
+	      $plot->points ($ipxc, $ipyc , {SYMBOL => 'CROSS', CHARSIZE=>1.3});
+	    } else {
+	      $plot->label_axes('\gD RA (arcsec)','\gD DEC (arcsec)',"$lrcats[$nc]: Overlap",
+			 {CharSize=>1.4});
+	      #pglabel '\gD RA (arcsec)','\gD DEC (arcsec)',"$lrcats[$nc]: Overlap";
+	      my $tpxo=3600*$txir->slice("$num_astcat:-1");
+	      my $tpyo=3600*$tetar->slice("$num_astcat:-1");
+	      $plot->points ($tpxo, $tpyo , {SYMBOL => 'CIRCLE', CHARSIZE=>1.3});
+	      my $ipxo=3600*$xif->slice("$num_astcat:-1");
+	      my $ipyo=3600*$etaf->slice("$num_astcat:-1");
+	      $plot->points ($ipxo, $ipyo , {SYMBOL => 'CROSS', CHARSIZE=>1.3});
+	    }
+	
+	  } else {
+	    $plot->points (3600*$txir, 3600*$tetar , {SYMBOL => 'CIRCLE', CHARSIZE=>1.3});
+	  }
+	
+	
+	
+	  # =========== plot the grid
+	
+	  for (my $k=0;$k<$ngrid;$k++) {
+	    my $x=$nxig->slice(":,$k");
+	    my $y=$netag->slice(":,$k");
+	
+	    $plot->line ($x, $y, {LINESTYLE=>'dashed', LINEWIDTH => 3});
+	
+	    $x=$nxig->slice("$k,:");
+	    $y=$netag->slice("$k,:");
+	    $plot->line ($x, $y, {LINESTYLE=>'dashed', LINEWIDTH => 3});
+	  }
+	  release;		#next panel
+	}			#end for
+	
+	
+	# ----- Now plot residuals: the same page contains:
+	#
+	
+	my $idx=which($mrej==1);
+	my $title;
+	
+	my ($atxres, $atyres, $atrej, $otxres, $otyres, $otrej);
+	
+	
+	if ($num_astcat >=0) {
+	  #$plot->panel($panel++);
+	  $plot->env(-1, 1, -1,1, {CharSize=>1.6});
+	  $atxres=$xdev->slice("0:$nref");
+	  $atyres=$ydev->slice("0:$nref");
+	  $atrej=$idx->where($idx<$num_astcat);
+	
+	  $title=sprintf "rms:  \\ga = %.3f  \\gd = %.3f  [N: %d]", $xrms_ast, $yrms_ast, $nf_ast;
+	  #pglabel '\gD RA (arcsec)','\gD DEC (arcsec)',"$title";
+	  $plot->label_axes('\gD RA (arcsec)','\gD DEC (arcsec)',"$title", {CharSize=>1.4});
+	
+	  $plot->points ($atxres, $atyres, {CHARSIZE=>0.9});
+	  $plot->points ($atxres->index($atrej), $atyres->index($atrej), {SYMBOL => 'CROSS'});
+	
+	  release;
+	}
+	
+	if ($olframes >0) {
+	  #$plot->panel($panel++);
+	  $plot->env(-1, 1, -1,1, {CharSize=>1.6});
+	  #env -1, 1, -1,1;
+	  $otxres=$xdev->slice("$num_astcat:-1");
+	  $otyres=$ydev->slice("$num_astcat:-1");
+	  $otrej=$idx->where($idx>=$num_astcat)->copy; #we shall use $idx later, so make a PHYSICAL copy
+	  $otrej-=$num_astcat;
+	
+	  $title=sprintf "rms: \\ga = %.3f  \\gd =  %.3f  [N: %d]", $xrms_ol, $yrms_ol, $nf_ol;
+	  #pglabel '\gD RA (arcsec)','\gD DEC (arcsec)',"$title";
+	  $plot->label_axes('\gD RA (arcsec)','\gD DEC (arcsec)',"$title", {CharSize=>1.4});
+	  $plot->points ($otxres, $otyres, {CHARSIZE=>0.9});
+	  $plot->points ($otxres->index($otrej), $otyres->index($otrej), {SYMBOL => 'CROSS'});
+	  release;
+	}
+	
+	#--------- residuals vs. ra, dec
+	
+	my ($pra, $pdec)= Mylib::Astrom::celrev($txir, $tetar, $rcrval1, $rcrval2);
+	my ($apr, $opr, $apd, $opd);
+	
+	$pra/=15.;
+	
+	#env minmax($pra), minmax($xdev);
+	#$plot->panel($panel++);
+	$plot->env (minmax($pra), -1, 1, {CharSize=>1.6});
+	
+	
+
+	if ($num_astcat>0){
+	  $apr=$pra->slice("0:$nref");
+	  $apd=$pdec->slice("0:$nref");
+	}
+	
+	if ($olframes >0) {
+	  $opr=$pra->slice("$num_astcat:-1");
+	  $opd=$pdec->slice("$num_astcat:-1");
+	}
+	
+	$plot->label_axes("RA (hours)", '\gD RA (arcsec)',"", {CharSize=>1.4});
+	#pglabel "RA (hours)", '\gD RA (arcsec)',"";
+	$plot->points ($apr, $atxres, {CHARSIZE=>0.7, SYMBOL=>'SQUARE'}) if ($num_astcat>0);
+	$plot->points ($opr, $otxres, {CHARSIZE=>0.7}) if ($olframes >0);
+	$plot->points ($pra->index($idx), $xdev->index($idx), {SYMBOL => 'CROSS'});
+	release;
+	
+	#env minmax($pdec), minmax($ydev);
+	$plot->env (minmax($pdec),-1,1, {CharSize=>1.6});
+	$plot->label_axes("DEC (deg)", '\gD DEC (arcsec)',"", {CharSize=>1.4});
+	#pglabel "DEC (deg)", '\gD DEC (arcsec)',"";
+	$plot->points ($apd, $atyres, {CHARSIZE=>0.7, SYMBOL=>'SQUARE'}) if ($num_astcat>0);
+	$plot->points ($opd, $otyres, {CHARSIZE=>0.7}) if ($olframes >0);
+	$plot->points ($pdec->index($idx), $ydev->index($idx), {SYMBOL => 'CROSS'});
+        release;
+
+#print "$opd\n $otyres\n";
+
+        $plot->close();
+
+       	
+	system ("$gzip -f $psname") if (-e $psname);
+	#$plot->close();
+	
+	# --------- END of diagnostic plots section
+	
+	if ($DEBUG) {print "next ref chip.....\n"}
+	
+	
+      }				#end loop on 'reference' chips
+    }				#end loop on 'reference' set
+
+
+    my $cpu1=(times)[0];
+    my $wclock1 = time;
+    my $plog=sprintf "#### Iteration %d completed in %.2fs (user), %.2fs (CPU)",
+    $iter, $wclock1-$wclock0,$cpu1-$cpu0;
+    plog ("I", $STEP, $plog);
+
+
+  }				#end loop on iter
+
+
+#Ok, now I make the "final" plot....
+
+
+#my $nxccd=6; my $nyccd=2;	#this should be read in the conf. file
+#my $plot = PDL::Graphics::PGPLOT::Window->new({Device=>"$psname/CPS",
+#NXPanel=>$nxccd, NYPanel => $nyccd});
+
+#my $plot=dev ("$psname/PS", $nxccd, $nyccd, {Aspect=>1, WindowWidth=>0});
+
+my $xp=pdl[1..$num_steps+1];
+
+my $pmin=min(float(min($axrms),min($ayrms),min($oxrms),min($oyrms)));
+my $pmax=max(float(max($axrms),max($ayrms),max($oxrms),max($oyrms)));
+
+$pmin/=1.2; $pmax*=1.2;
+
+my $psname=$DIAGDIR.'/astro_sum.ps';
+my $plot=dev ("$psname/PS");
+
+for (my $nc=0; $nc<$nccd; $nc++) {
+  #my $psname=sprintf " %s/%s
+  #my $psname=$datadir.'/'.sprintf "astrom_ccd%02d.ps", $nc;
+  # my $psname=sprintf "astrom_ccd%02d.ps", $nc;
+  #warn "should (....) make a plot $psname";
+  my $title=sprintf "residuals, ccd %02d", $nc;
+
+  env(0,$num_steps+2,$pmin,$pmax,
+      {AxisColour=>'BLACK', XTitle=>'Set', YTitle=>'RMS', Title=>$title, CharSize=>1.1});
+
+  my $tmp;
+  $tmp=$axrms->slice("($nc),:");
+  line ($xp, $tmp, {LINESTYLE=>'DASHED'});
+
+  $tmp=$ayrms->slice("($nc),:");
+  line ($xp, $tmp,  {LINESTYLE=>'DASHED'});
+
+  $tmp=$oxrms->slice("($nc),:");
+  line $xp, $tmp;
+
+  $tmp=$oyrms->slice("($nc),:");
+  line $xp, $tmp;
+
+
+  #release;
+}
+
+close_window($plot);
+
+system ("$gzip -f $psname") if (-e $psname);
+
+#-------  done
+
+
+#if (-e "rcat.asc") {mk_gaiacat("rcat.asc")}; # converts the reference catalog into GAIA format (:????)
+
+
+print "GLOBAL ASTROMETRY - END";
+}
+
+
+#===========     end of main module !!!!
+
+
+
+
+sub rhead_coo
+  {
+    # The procedure returns Ra and DEC in decimal notation!
+    # A previous version returned it in sexagesimal notation!
+    # It was changed because some astrometric catalogues (e.g. 2MASS)
+    # must be queries with decimal indtead of seagesimal notation.
+    # If conversions from decimal to sexagesimal notation are
+    # necessary they are done in the 'read_CDS' subroutine now.
+
+    my $file=shift;
+
+    my %fh;
+    my @s=split(/\./, $file);
+
+    if ($s[-1] eq 'head') {
+      %fh=rheadasc($file);
+    } else {
+      %fh=rhead($file);
+    }
+
+    my $crval1=$fh{CRVAL1};
+    my $crval2=$fh{CRVAL2};
+    my $equinox=2000;
+    if (! exists $fh{EQUINOX}) {plog ("W", $STEP, 'EQUINOX not found in header, setting to 2000')}
+    else {$equinox=$fh{EQUINOX}};
+
+    ($crval1, $crval2)=precess($crval1 / 15.,$crval2, $equinox,2000.) if ($equinox != 2000.);
+
+    return ($crval1, $crval2);
+
+  }				#end sub read_hdr
+
+
+
+
+
+sub read_asc
+  {
+
+    my ($ascfile, $itype)=@_;
+
+    my $domag=0;
+
+    open (FILE, $ascfile);
+
+    if ($itype eq 'ast') {
+      #format: positions in first 2 columns, no magnitudes
+
+      $domag=0;
+      my (@ta, @td);
+
+      while (<FILE>) {
+	my @val = split(' ',$_,2);
+	push (@ta, $val[0] );
+	push (@td, $val[1] );
+      }
+      close (FILE);
+      return (float(@ta), float(@td));
+    }
+
+    else {
+
+      my (@ta, @td, @tm);
+
+
+      while (<FILE>) {
+	my @val = split(' ',$_,3);
+	my $ta=$val[0];
+	my $td=$val[1];
+
+
+	
+	$td =~ tr/[A-Z]//d;
+	
+	my @sx=split(':',$ta,3);
+	$ta=($sx[0] + $sx[1]/60. + $sx[2]/3600.)*15;
+	my @sy=split(':',$td,3);
+	my $sig=1;
+	if ($sy[0]=~/-/) {$sig=-1};
+	$td=$sig * (abs($sy[0]) + $sy[1]/60. + $sy[2]/3600.);
+	
+	
+	push (@ta, $ta);
+	push (@td, $td);
+	if ($#val >=2) {push (@tm, $val[2] ); $domag=1} else {$domag=0};
+	
+      }
+      #    if ($#ta <5) {print "$obscoor vs $refcoor: LESS THAN 5 POINTS FOUND !!!!!\n";close (FILE); die}
+
+      close (FILE);
+      return ( float(@ta), float(@td), float(@tm));
+    }
+  }
+
+
+
+sub magmatch
+  {
+
+    my ($a, $b)=@_;
+
+
+
+    #match the magnitudes in the observed and reference catalogs
+    my $maga = $a->slice(':,(2)');
+    my $magb = $b->slice(':,(2)');
+    my $mmaga=median($maga);
+    my $mmagb=median($magb);
+
+    if ($mmagb <0 )  {
+      #magnitudes in the reference catalog are NOT positive (counts....)	
+      # so add an offset....
+      my $minb=-min($magb)+10;
+      $magb += $minb;
+      $mmagb += $minb;
+      print ">>>>> $mmagb\n";
+      #	       $domag=-1;
+    }
+    #	 }  else {
+    my $dmag=$mmagb-$mmaga;
+    $maga += $dmag;
+    #   	}
+
+  }
+
+
+
+sub astlog
+  {
+
+    my ($iter,$name, $ccd, $xast, $yast, $nast,$xol,$yol, $nol, $ord)=@_;
+
+    format ALOG =
+@<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< CCD @||| Ord @||| Iter @>>>
+$name,     $ccd, $ord, $iter
+Ref. Catalog  x_rms  @<<<<<   y_rms  @<<<<<   N  @|||||
+   $xast,   $yast,   $nast
+Overlapping   x_rms  @<<<<<   y_rms  @<<<<<   N  @|||||
+   $xol,    $yol,    $nol,
+.
+
+
+    open (ALOG, ">> $alogfile");
+    write ALOG;
+    close (ALOG);
+
+  }
+
+
+
+
+
+sub plog_asc
+  {
+    my @what=@_;
+
+    format LOG =
+ @<<<<<<<<<<<<<<<<<<<<<<<                     @>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+       $what[1],                  $what[0]
+    @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	   $what[2]
+    @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+           $what[3]
+.
+
+    open (LOG, ">> $logfile");
+    write LOG;
+    print "$what[1] ($what[0]): $what[2] $what[3]\n" if ($VERBOSE || uc($what[0]) eq 'E');
+    close (LOG);
+
+  }
+
+
+sub plog
+  {
+
+my ($level, $step, $nhead, $msg)=@_;
+
+my $log = "<$step> ";
+$log .= $level if ($level ne '');
+if ($step eq 'DATE') {$log .= $nhead} else {
+   $log .= " <MSG> $nhead $msg </MSG> " if ($nhead ne '');
+ }
+$log .= " </$step>\n";
+
+    open (LOG, ">> $logfile");
+
+     print LOG $log;
+     print $log if ($VERBOSE || uc($level) eq 'E');
+
+    close (LOG);
+
+  }
+
+
+
+sub mkdate {
+  #gives as output the date and time
+
+  my @lt=localtime;
+
+  my $today=sprintf("%d-%02d-%02dT%.02d:%.02d:%0.2d",
+		    $lt[5]+1900, $lt[4]+1,$lt[3],  $lt[2], $lt[1], $lt[0]);
+
+
+  return $today;
+}				#end sub mkdate
+
+
+#=============== ANALYZE TOOLS
+
+sub mkgroups
+  {
+    my ($sfiles, $fdir, $ins)=@_;
+
+    my @sfiles=@$sfiles;
+
+    my @xlist=@sfiles;
+    my @stack=();
+    my @crval1=();
+    my @crval2=();
+
+    my $dx=0;
+    my $dy=0;
+    my $nccd=0;
+# ===== We need to know how many CCDs there are per row and column
+
+    $ins=lc($ins);
+    if (! eval "require Instr::$ins") {
+      print "The instrument $ins is not supported !!\nERROR\n";
+      die "\n";
+    }
+
+    my $ICLASS=$ins->new();
+    $ICLASS->init_props();
+    my $NCCDX=$ICLASS->getProps('NCCDX');
+    my $NCCDY=$ICLASS->getProps('NCCDY');
+
+    my $group=0;
+
+    while (@xlist) {
+      my @s=split(/\//, $xlist[0]);
+      $_=$s[-1];
+      my $root='';
+      my $rexp=$AstCVals{EXPNAME};
+       if (/$rexp/) {$root=$1}
+	else {print "$_: could not decode while making list!!"; return}
+      #my @string=/(.*\D)(\d+)(\D+)$/;
+
+      if (!-e $xlist[0]) {print cwd, " could not read header of $xlist[0]\n!"}
+
+      my %fh=rhead($xlist[0]);
+
+      my $t=grep(/\Q$root\E/, @xlist);
+      if ($t>$nccd) {$nccd=$t}
+
+      push (@stack, $root);
+
+      push (@crval1, $fh{CRVAL1});
+      push (@crval2, $fh{CRVAL2});
+
+      if ($dx==0) {
+	$dx=$fh{CDELT1}*$fh{NAXIS1}*$NCCDX/2;
+      }
+
+      if ($dy==0) {
+	$dy=$fh{CDELT2}*$fh{NAXIS2}*$NCCDY/2;
+      }
+
+      @xlist=grep(!/\Q$root\E/, @xlist);
+    }
+
+    my $crval1=float(@crval1);
+    my $crval2=float(@crval2);
+
+    my $flag=zeroes(short, $#stack+1);
+
+    my $nxf=$flag->nelem;
+
+    my $minx=0.5;
+    my $miny=0.5;
+
+    my $it=0;
+
+    while ($nxf>0 && $minx<1 && $miny<1) {
+
+      foreach my $ns (0..$#stack) {
+	
+	next if ($flag->at($ns)!=0);
+	
+	my $ox=abs( ($crval1->at($ns) - $crval1)/$dx );
+	my $oy=abs( ($crval2->at($ns) - $crval2)/$dy );
+	
+	my $sidx;
+	
+	if ($it==0) {
+	  $sidx=which ($ox<$minx & $oy<$miny & $flag ==0);
+	} else { $sidx=which ($ox<$minx & $oy<$miny) }
+	
+	next if ($sidx->nelem==1);
+	
+	my $tflag=$flag->index($sidx);
+	
+	#First iteration: flag all elements belonging to the same group
+	# other iterations: assign to the current element the group of the first in the list
+	if ($it==0) {
+          $tflag.=$group;
+          $group++;
+	} else {$flag->at($ns)=$tflag->at(0)}
+	
+      }
+
+
+      my $xflag=which($flag==0);
+      $nxf=$xflag->nelem;
+      $it=1;
+
+      $minx*=1.2;
+      $miny*=1.2;
+
+    }
+
+    # Ok, now write the lists !
+
+    foreach my $g (0..$group) {
+
+      my $idx=which($flag == $g);
+      next if $idx->isempty;
+
+      my $nlist;
+
+      if ($g==0) {
+	$nlist="failed.lst";
+	warn "mkgroups: the match failed for some images, see file $nlist !\n";
+      }
+      else {$nlist=sprintf "group%02d.lst", $g;}
+
+      open (OLIST, ">$nlist");
+
+      foreach my $i (0..$idx->nelem-1) {
+	#print sprintf "%d ---- %.3f/%.3f  %.3f/%.3f  %d %s\n",
+#  $group, $ox->at($idx), $minx, $oy->at($idx), $miny, $idx, $stack[$idx];
+
+        my @xs=grep(/\Q$stack[$idx->at($i)]\E/, @sfiles);
+        foreach my $xs (@xs) {
+	  if ($fdir) {
+	     $xs=~s/$fdir// ;
+	     $xs=~s/^\///;
+	   }
+             print OLIST "$xs\n";
+        }
+       }
+
+close (OLIST);
+ } #end loop on groups
+
+} #end of sub
+
+
+sub xheadreg {
+
+  my ($fdir, $sfiles, $hdrs, $ANALYZE, $list)=@_;
+  my @sfiles=@$sfiles;
+  my @hdrs=@$hdrs;
+  my $olist=$list.'.x';
+
+  my @xh=split(/#/,$ANALYZE);
+#print "---> $ANALYZE\n"; die;
+  $_=$xh[1];
+
+my @ra=();
+my @dec=();
+
+
+
+ if (/(\d.*),(.+),(.+),(.*\d)/) {
+
+
+   foreach my $v ($1,$2) {
+
+        my $ra=$v;
+        my @sx=split(/:/,$v);
+        if ($#sx>0) {	
+	   my $i=1;
+	   $ra=0;
+           foreach my $sx (@sx) {
+            $ra+=($sx/$i);
+	    $i*=60;
+	  }	
+	 }
+     push @ra, $ra*15;
+      }
+
+   foreach my $v ($3,$4) {
+        my $dec=$v;
+        my @sy=split(/:/,$v);
+        if ($#sy>0) {	
+	   my $i=1;
+	   $dec=0;
+	   my $sig=1;
+	   if ($sy[0]=~/-/) {$sig=-1; $sy[0]*=-1};
+           foreach my $sy (@sy) {
+            $dec+=($sy/$i);
+	    $i*=60;
+	  }
+	   $dec*=$sig;
+	 }
+     push @dec, $dec;
+      }
+
+	}
+ else {print "Something is wrong in coordinates !\nERROR\n"; die "\n";}
+
+
+  my $head=0;
+  if ($#xh==2 && $xh[2] =~ /^h/i) {
+     $head=1;
+     my @s=split(/=/, $xh[2]);
+     if ($#s==1) {
+         my $hdir=$s[1];
+	 foreach my $ih (0..$#hdrs) {
+	    @s=split(/\//, $hdrs[$ih]);
+	    my $rh=$hdrs[$ih];;
+	    $rh=$s[-1] if ($#s >-1);
+	    $hdrs[$ih]=$hdir.'/'.$rh;
+	 }
+     }
+  }
+
+   my $found=0;
+   open (OUT, ">$olist");
+
+    foreach my $i (0..$#sfiles) {
+      #print ".... $sfiles[$i]\n";
+
+      my $ffile=$fdir.'/'.$sfiles[$i];
+      if (! -e $ffile) {
+	   print "File $ffile NOT FOUND !! \n";	
+	   next;
+      }
+      my %fh;
+
+      %fh=rhead($ffile);
+      my $nx=$fh{NAXIS1};
+      my $ny=$fh{NAXIS2};
+
+      if ($head==1) {
+      	if (! -e $hdrs[$i]) {
+	        print "Header $hdrs[$i]  NOT FOUND !! \n";
+		next
+	}
+	%fh=rheadasc($hdrs[$i]);
+      }
+
+
+
+my $ra=$ra[0]; my $dec=$dec[0];
+      my ($x1c, $y1c)=Mylib::Astrom::celfwd($ra[0], $dec[0],
+					    $fh{CRVAL1}, $fh{CRVAL2});
+      my ($x2c, $y2c)= Mylib::Astrom::celfwd($ra[1], $dec[1],
+					     $fh{CRVAL1}, $fh{CRVAL2});
+
+      my $x1p=-$fh{CRPIX1}; my $x2p=$nx-$fh{CRPIX1};
+      my $y1p=-$fh{CRPIX2}; my $y2p=$ny-$fh{CRPIX2};
+
+      my $x1i = $fh{CD1_1}*$x1p + $fh{CD1_2}*$y1p;
+      my $x2i = $fh{CD1_1}*$x2p + $fh{CD1_2}*$y2p;
+
+      my $y1i = $fh{CD2_1}*$x1p + $fh{CD2_2}*$y1p;
+      my $y2i = $fh{CD2_1}*$x2p + $fh{CD2_2}*$y2p;
+
+if ($x1i>$x2i) {my $t=$x2i; $x2i=$x1i; $x1i=$t}
+if ($y1i>$y2i) {my $t=$y2i; $y2i=$y1i; $y1i=$t}
+
+      if ($x1c>=$x2i || $x2c<=$x1i || $y1c>=$y2i || $y2c<=$y1i) {
+	next;
+      } else {
+   $found++;
+#print "$sfiles[$i] \n  $x1c $x2c $y1c $y2c <-> $x1i $x2i $y1i $y2i\n";
+        print OUT "$sfiles[$i]\n";
+      }
+    }
+
+  close (OUT);
+  if ($found>0) {print "$olist - found $found entries\n"}
+  else {unlink $olist}
+
+}
+
+sub CalcPSol
+  {
+
+      #========= iteratively fit to find a plate solution
+      # INPUT:
+      #      $txir, $tetar, $tsig: reference coordinates & uncertainties (astrometric cat. + overlapping)
+      #      $sfxpr, $sfypr: coordinates in the image
+      #      $num_astref: number of points from the astrometric catalog
+      #
+      # OUTPUT:
+      #       $nf_ast, $nf_ol (number of not rejected points for astrometric and overlapping sources)
+      #       $xrms_ast, $yrms_ast; $xrms_ol, $yrms_ol: RMS
+      #        $xdev, $ydev: residuals in arcsec
+      #        $xif, $etaf:  transformed coordinates
+      #       $mrej: array of flags (0 => ok, 1=> rejected)
+
+
+      my ($rhead, $sfxpr, $sfypr, $txir, $tetar,  $tsig, $sigma,
+              $num_astcat, $olframes, $distord, $niter, $DEBUG)=@_;
+   #           $ixpsol, $iypsol, $ixdev, $iydev, $ixif, $ietaf)=@_;
+
+     my $STEP='CPSOL';
+
+     my $tn=$num_astcat-1;
+     my $nf_ol=0; my $nf_ast=0;
+     my $xrms_ast=0; my $yrms_ast=0;
+     my $xrms_ol=0;  my $yrms_ol=0;
+
+     my ($xpsol, $ypsol, $xdev, $ydev, $xif, $etaf);
+
+      my $mrej=zeroes(short, $txir->nelem);
+
+     my $tdistord=$distord;
+
+
+
+      for (my $it=0; $it <=$niter; $it++) {
+	if ($DEBUG) {warn "fit: iteration $it for $rhead [$tn]"}
+	my $idx=which($mrej==0);
+        my $nidx=$idx->nelem;
+	
+	#print "---- $nidx\n" if ($iter==1 && $it==0);
+	
+	my $f_sfxpr=$sfxpr->index($idx);
+	my $f_sfypr=$sfypr->index($idx);
+	my $f_txir=$txir->index($idx);
+	my $f_tetar=$tetar->index($idx);
+	my $f_tsig=$tsig->index($idx);
+	
+	if ($tdistord>2 && $nidx<50) {
+	  my $plog=sprintf "Order = %d but only %d points found: order changed to 2!", $tdistord, $nidx;
+	  plog("W", $STEP, $rhead, $plog);
+	  $tdistord=2
+	}	
+	
+	$xpsol=Mylib::Pfit::pfitxy($f_sfxpr, $f_sfypr, $f_txir, $f_tsig, $tdistord);
+	$ypsol=Mylib::Pfit::pfitxy($f_sfypr, $f_sfxpr, $f_tetar, $f_tsig, $tdistord);
+	
+	
+	#Evaluate the residuals for ALL points
+	
+	$xif= Mylib::Pfit::polyevalxy($sfxpr, $sfypr, $xpsol, $tdistord);
+	$etaf =Mylib::Pfit::polyevalxy($sfypr, $sfxpr, $ypsol, $tdistord);
+	
+	$xdev=3600*($xif-$txir);
+	$ydev=3600*($etaf-$tetar);
+	
+	
+	
+	# Now extract only the residuals for those  points which
+	# were not already rejected ...
+	#         my $f_xdev=$xdev->index($idx);
+	#         my $f_ydev=$ydev->index($idx);
+	
+	#ok, now we want to reject separately points from the astrometric catalog and overlapping sources
+	
+	# first we compute the deviations for all points
+	#          $xrms = sqrt(sum($f_xdev*$f_xdev)/($f_xdev->nelem));
+	#          $yrms = sqrt(sum($f_ydev*$f_ydev)/($f_ydev->nelem));
+	
+	# now we separate them and compute rms
+	my ($txdev, $tydev, $tidx);
+	
+	
+	#===== compute rms for the astrometric sources.....
+	my ($xdev_ast, $ydev_ast);
+	
+	if ($num_astcat>0) {
+	  if ($DEBUG) {print "===== compute rms for the astrometric sources.....\n"}
+	
+	  $xdev_ast=$xdev->slice("0:$tn");
+	  $ydev_ast=$ydev->slice("0:$tn");
+	
+	  $tidx=$idx->where($idx<$num_astcat);  $nf_ast=$tidx->nelem;
+	  $txdev=$xdev_ast->index($tidx);
+	  $tydev=$ydev_ast->index($tidx);
+	
+	  $xrms_ast=sqrt(sum($txdev*$txdev)/($txdev->nelem));
+	  $yrms_ast=sqrt(sum($tydev*$tydev)/($tydev->nelem));
+	}
+	
+	#===== compute rms for the overlapping sources.....
+	
+	my ($xdev_ol, $ydev_ol);
+	
+	if ($olframes >0) {
+	  if ($DEBUG) {print "===== compute rms for the overlapping sources.....\n"}	
+	
+	  $xdev_ol=$xdev->slice("$num_astcat:-1");
+	  $ydev_ol=$ydev->slice("$num_astcat:-1");
+	
+	  $tidx=$idx->where($idx>=$num_astcat)->copy; $nf_ol = $tidx->nelem;
+	  $tidx-=$num_astcat;
+	
+	  $txdev=$xdev_ol->index($tidx);
+	  $tydev=$ydev_ol->index($tidx);
+	
+	  $xrms_ol=sqrt(sum($txdev*$txdev)/($txdev->nelem));
+	  $yrms_ol=sqrt(sum($tydev*$tydev)/($tydev->nelem));
+	}
+	
+	# Reject points if it is not the last iteraction
+	if ($it==$niter) {last}
+	else {
+	  my $fpts;
+	  my $tmrej;
+	
+	  # ===> astrometric points......
+	  if ($num_astcat>0) {
+	    $tmrej = $mrej->slice("0:$tn");
+	    $idx=which($tmrej==0 & (abs($xdev_ast) > $sigma*$xrms_ast | abs($ydev_ast) > $sigma*$yrms_ast));
+	    $fpts=$idx->nelem;
+	
+	    if ($DEBUG) {warn "astref - iter. $it: $num_astcat points, of which $fpts would be rejected"}
+	    #reject points only if more than 10 points would be left
+	    if ( (($nf_ast-$fpts) >10) && ($fpts!=0) && $it <2) {
+	      my $tm=$mrej->index($idx);  	
+	      $tm.=1;
+	    }
+	  }			#end...
+	  if ($olframes >0) {
+	    # ===> overlapping points......
+	    $tmrej = $mrej->slice("$num_astcat:-1");
+	    $idx=which($tmrej==0 & (abs($xdev_ol) > $sigma*$xrms_ol | abs($ydev_ol) > $sigma*$yrms_ol));
+	    $idx+=$num_astcat;
+	    $fpts=$idx->nelem;
+	    if ($DEBUG) {warn "overlap - iter. $it:  $nf_ol points, of which $fpts would be rejected "}
+	    if ( (($nf_ol-$fpts) <=10) || ($fpts==0) ) {last}
+	    else {
+	      my $tm=$mrej->index($idx);  	
+	      $tm.=1;
+	    }
+	  }			#end.... 	
+	}			#end if not last iter
+	
+      }				#end loop on sigma clip iter
+
+
+   return  ($xpsol, $ypsol, $xdev, $ydev, $xif, $etaf, $mrej,
+         $tdistord, $xrms_ast, $yrms_ast,  $xrms_ol, $yrms_ol,
+          $nf_ast, $nf_ol);
+
+  }
+
+sub UpdatePV {
+
+my ($xpsol, $ypsol, $distord, $hd)=@_;
+
+my $ncoeffs=&Mylib::Astrom::calcNcoeffs($distord);
+
+	foreach my $key (keys %{$hd}) {
+	  if ($key =~ /PV/) { delete $$hd{$key}};
+	}
+	
+	my $pv1=zeroes(double,$ncoeffs );
+	for (my $sidx=0;$sidx<$xpsol->nelem;$sidx++) {
+	  my $nidx=&Mylib::Astrom::cvpol($sidx, $distord);
+	  set $pv1, $nidx ,$xpsol->at($sidx);
+	}
+	
+	for (my $i=0;$i<$ncoeffs;$i++) {
+	  my $value= $pv1->at($i);
+	  next if ($value == 0);
+	  my $idx='PV1_'.$i;
+	  $$hd{$idx} = $value;
+	}
+	
+		
+	my $pv2=zeroes(double,$ncoeffs );
+	for (my $sidx=0;$sidx<$ypsol->nelem;$sidx++) {
+	  my $nidx=&Mylib::Astrom::cvpol($sidx, $distord);
+	  set $pv2, $nidx ,$ypsol->at($sidx);
+	}
+	
+	
+	for (my $i=0;$i<$ncoeffs;$i++) {
+	  my $value= $pv2->at($i);
+	  next if ($value == 0);
+	  my $idx='PV2_'.$  i;
+	  $$hd{$idx} = $value;
+	}
+
+return ($pv1, $pv2);
+
+}
+
+
+
+
+sub CopyXPsol
+# Read a table with a predefined plate solution
+  {
+    my ($ffit, $hd)=@_;
+
+	foreach my $key (keys %{$hd}) {
+	  if ($key =~ /PV/) { delete $$hd{$key}};
+	}
+
+       $$hd{XPSOL}=$ffit;
+	
+      open (INTAB, "<$ffit");
+      my $ncoeffs=0;
+      my $order=0;
+      my ($tpv1, $tpv2);
+      my $ccd=-1;
+
+      while (<INTAB>) {
+        chomp;
+        s/\s+//;
+	my @t=split(/=/);
+
+	my $lv=uc($t[0]);
+	$ccd=$t[1] if ($lv eq 'IMAGEID');
+
+	next if ($ccd != $$hd{IMAGEID});
+         if ($lv =~ /ORD/) {
+	   $$hd{PSORD}=$t[1];
+	 }
+	elsif ($lv =~ /PV/) {$$hd{$lv}=$t[1]}
+
+      }
+      close (INTAB);
+
+ }

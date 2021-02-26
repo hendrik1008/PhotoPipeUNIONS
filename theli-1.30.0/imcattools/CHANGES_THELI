@@ -1,0 +1,62 @@
+This file describes important functional changes in the 'imcat'
+routines integrated in the THELI pipeline. They originate from
+the source package src_04_19_03.tar.gz and were originally
+developed by Nick Kaiser (kaiser@ifa.hawaii.edu).
+
+Besides the use of several original 'imcat' utilities we based
+the programs 'imcombflat' (stacking of FITS images) and 'imstats'
+(statistics overview for serveral FITS files) on the provided
+program libraries.
+
+In the following we only list modifications that are directly visible
+to users, who are familiar with the original codes. Changes in the
+internal program structures are not reported here but documented in
+the source files.
+
+- The provided codes only represent a small subset of the complete
+  'imcat' package. We started from the source files:
+
+  album.c, args.(c,h), arrays.(c,h), convertarray.(c,h),
+  decimaltodms.c, decimaltohms.c, dmstodecimal.c, error.(c,h),
+  fastmap.c, fits.(c,h), getop.(c,h), hmstodecimal.c, ic.c, ic.h,
+  imhead.c, iostream.c, iostream.h, makesubimage.c, map.(c,h),
+  map_private.h, nan.h, radecio.(c,h), scrunch.(c,h),
+  scrunch_stuff.(c,h), stats.c, stats_stuff.(c.h), transformimage.c
+
+  and rearranged them to fit in the THELI distribution structure.
+
+- If the output of a program is a new FITS file, the image contains
+  history information on the program call in form of HISTORY FITS
+  keywords.
+
+- If HISTORY or COMMENT FITS keywords are written, no '=' at the
+  9th line column is written (This was the case in the original
+  'imcat' routines).
+
+- The data sections of FITS images are padded with zeros, not with
+  tabs (FITS standard).
+
+- Result FITS images are always written in the big-endian byte order
+  (The use of the 'imcat' utility 'changesex' is not necessary within
+   THELI).
+
+- The programs decimaltohms and decimaltodms always print two
+  digits for hours, degrees, minutes and seconds (This was not
+  the case in the original implementation if the leading digit
+  is a '0').
+
+- The program 'album' now allows a binning of input images. This
+  gives us the possibility to create small 'quick look' mosaics from
+  large format CCD cameras. The BITPIX for the output image can
+  be chosen between 16 (unsigned integer) and -32 (float). The original
+  '-b' command line option was redefined.
+
+- The program 'makesubimage' allows to extract a subimage w.r.t. image
+  coordinates given in CRPIX1, CRPIX2 header keywords. Moreover, those
+  header keys are updated whenever a subimage is created.
+
+- The image calculator 'ic' now supports the boolean two-argument
+  operators 'and' and 'or'.
+
+- The imcat utilities now have Large File Support integrated. They can
+  handle files larger than 2GB on 32-bit systems.

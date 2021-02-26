@@ -1,0 +1,15 @@
+setenv PIPESOFT
+setenv EXT
+
+setenv PIPEBIN ${PIPESOFT}/bin
+setenv PIPELIB ${PIPESOFT}/lib
+setenv OBJSUB obj_${EXT}
+setenv PIPECONF ${PIPESOFT}/conf
+setenv PIPEDATA ${PIPESOFT}/data
+set path=($path $PIPEBIN/${EXT} $PIPESOFT/scripts)
+
+if ($?PERL5LIB) then
+    setenv PERL5LIB ${PERL5LIB}:${PIPESOFT}/scripts/astrometrix
+else
+    setenv PERL5LIB ${PIPESOFT}/scripts/astrometrix
+endif

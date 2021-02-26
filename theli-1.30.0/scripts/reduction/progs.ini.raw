@@ -1,0 +1,137 @@
+# If we include this script in bash verbose and trace mode we do not want
+# all the (verbose) output from this script:
+USE_X=0
+if  [[ ${-/x} != $- ]] ; then
+  USE_X=1
+  set +xv
+fi
+
+# the following language setting ensures that we do not have to deal
+# with country specific settings influencing programs like gawk
+# (giving a ',' instead of '.' for the decimal point in numbers within
+# a german environment).
+
+export LANG=C
+
+#
+# how many processors do we have
+NPARA=1
+
+# used directories
+PIPESOFT=
+BIN=${PIPESOFT}/bin/
+CONF=${PIPESOFT}/conf/reduction; export CONF
+SCRIPTS=${PIPESOFT}/scripts
+UTILSCRIPTS=${PIPESOFT}/scripts/utilities
+SMMACROS=${PIPESOFT}/scripts/sm_macros
+export TEMPDIR=`pwd`
+
+# for compatibility I need the following
+DATACONF=${CONF}; export DATACONF
+
+#
+# define here the location of script interpreters:
+P_PERL=
+P_PYTHON3=
+
+#
+# here are the used programs listed
+
+#
+# LDAC and IMCAT programs
+#
+P_ALBUM=${BIN}/album
+P_ANALYSELDAC=${BIN}/analyseldac
+P_ANISOTROPY=${BIN}/anisotropy
+P_ASCTOLDAC=${BIN}/asctoldac_theli
+P_ASSOCIATE=${BIN}/associate
+P_DECIMALTOHMS=${BIN}/decimaltohms
+P_DECIMALTODMS=${BIN}/decimaltodms
+P_DMSTODECIMAL=${BIN}/dmstodecimal
+P_HMSTODECIMAL=${BIN}/hmstodecimal
+P_IC=${BIN}/ic
+P_IMCOMBFLAT_IMCAT=${BIN}/imcombflat
+P_IMSTATS=${BIN}/imstats
+P_LDACDESC=${BIN}/ldacdesc_theli
+P_LDACADDMASK=${BIN}/ldacaddmask_theli
+P_LDACCONV=${BIN}/ldacconv_theli
+P_LDACPASTE=${BIN}/ldacpaste_theli
+P_LDACCALC=${BIN}/ldaccalc_theli
+P_LDACADDKEY=${BIN}/ldacaddkey_theli
+P_LDACDELKEY=${BIN}/ldacdelkey_theli
+P_LDACRENKEY=${BIN}/ldacrenkey_theli
+P_LDACADDTAB=${BIN}/ldacaddtab_theli
+P_LDACDELTAB=${BIN}/ldacdeltab_theli
+P_LDACRENTAB=${BIN}/ldacrentab_theli
+P_LDACFILTER=${BIN}/ldacfilter_theli
+P_LDACTESTEXIST=${BIN}/ldactestexist_theli
+P_LDACTOASC=${BIN}/ldactoasc_theli
+P_LDACTOSKYCAT=${BIN}/ldactoskycat_theli
+P_LDACJOINKEY=${BIN}/ldacjoinkey_theli
+P_LDACSPLIT=${BIN}/ldacsplit_theli
+P_MAKEJOIN=${BIN}/make_join_theli
+P_MAKESSC=${BIN}/make_ssc
+P_MAKESUBIMAGE=${BIN}/makesubimage
+P_PREANISOTROPY=${BIN}/preanisotropy
+P_SELECTOVERLAPS=${BIN}/select_overlaps
+P_STATS=${BIN}/stats
+P_TRANSFORMIMAGE=${BIN}/transformimage
+
+#
+# Terapix programs
+#
+P_SEX=${BIN}/sex_theli
+P_WW=${BIN}/ww_theli
+P_SWARP=${BIN}/swarp_theli
+#
+# programs from the eclipse package
+#
+P_DFITS=${BIN}/dfits_theli
+P_FITSORT=${BIN}/fitsort_theli
+P_HIERARCH=${BIN}/hierarch28_theli
+P_REPLACEKEY=${BIN}/replacekey_theli
+P_IOFITS=${BIN}/iofits_theli
+#
+# own programs developed with
+# eclipse and qfits
+#
+P_FITSSPLIT_ECL=${BIN}/mefsplit
+P_FIXCR_ECL=${BIN}/fixcr
+P_IMRED_ECL=${BIN}/preprocess
+P_FITSCOLLAPSE=${BIN}/fitscollapse
+#
+# For THELI modified versions of the ASTROMETRIX and
+# PHOTOMETRIX scripts:
+#
+S_ASTROMETRIX=
+S_PHOTOMETRIX=
+#
+# GNU parallel
+#
+S_PARALLEL=${UTILSCRIPTS}/parallel.pl
+#
+# other utility programs and scripts
+#
+P_READLINK=${BIN}/readlink
+P_AIRMASS=${BIN}/airmass
+P_LST=${BIN}/lst
+P_NIGHTID=${BIN}/nightid
+P_CALDATE=${BIN}/caldate
+S_SCAMPCAT=${UTILSCRIPTS}/scampcat.py
+S_PHOTOABS=${UTILSCRIPTS}/photo_abs.py
+S_APLASTROMSCAMP=${UTILSCRIPTS}/aplastrom_scamp.py
+S_SUPERFLATEXCLUSION=${UTILSCRIPTS}/superflatexclusion.py
+#
+# Programs and scripts not included in the pipeline distribution
+#
+P_ACLIENT=
+P_FIND=
+P_GAWK=
+P_SCAMP=
+P_SM=
+P_SORT=
+
+# restore verbose and xtrace bash flags if necessary:
+if  [ ${USE_X} -eq 1 ]; then
+  set -xv
+fi

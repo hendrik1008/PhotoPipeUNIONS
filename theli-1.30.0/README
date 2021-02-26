@@ -1,0 +1,96 @@
+This is version 1.30.0 of THELI
+==============================
+
+THELI is an image processing system for the reduction of astronomical
+CCD data. Its software modules cover all necessary tasks from raw
+images of single- and multi-chip CCD cameras up to astrometrically and
+photometrically calibrated co-added images. The main focus is on
+observations in optical wavelengths.
+
+THELI IMPLEMENTATIONS
+=====================
+
+THELI exists in two flavours. There is a 'command line' based
+version in which the user interacts with the system via 'shell
+script' commands on the UNIX prompt.
+
+Mischa Schirmer extended THELI with a Graphical User Interface (GUI)
+which allows a complete menu-driven work with THELI.  Moreover, he
+developed additional codes to process Near-Infrared observations.
+This GUI and the Near Infrared modules are NOT included in this
+package but are distributed and documented separately.
+Necessary source codes for Mischas THELI implementation can be found
+at 'http://www.astro.uni-bonn.de/theli'
+
+Beginners in the fields of data processing and imaging pipelines are
+strongly advised to start with Mischas GUI version.  Users that wish
+to process only a small data set, or who intend to use THELI only
+occasionally, are also encouraged to use that version. The 'command
+line' interface better suits the needs for massive data production of
+complete surveys. It is also the method of choice if remote processing
+is necessary.  It requires deeper knowledge of THELI internals, and
+has higher demands on the users computing knowledge, e.g. bash shell
+scripting.
+
+THELI INSTALLATION
+==================
+
+Within the THELI source tree go to the subdirectory 'pipesetup'.  Call
+the script 'install.sh' which prints installation instructions.  Note
+that THELI requires several external programs, and probably additional
+installations of third-party software. The installation process tries
+to guide you through the complete process. In case of problems with
+third-party software, please consult first your local sysadministrator
+before writing e-mail to us.
+
+THELI DOCUMENTAION
+==================
+
+A scientific justification for the algorithms used in THELI and a
+quantification of accuracies obtained when processing optical data
+from the multi-chip camera WFI@MPG/ESO2.2m is given in the articles
+Erben et al. 2005 (AN 326, 432) for the command-line version of THELI
+and in Schirmer 2013 (ApJS 209, 16) for the GUI complement. The
+subdirectory 'doc' within the THELI source tree contains scripts and
+tutorials for example processings of data sets from WFI@ESO2.2m and
+MEGAPRIME@CFHT.
+
+THELI AUTHORSHIP, LICENSE AND ACKNOWLEDGEMENT
+=============================================
+
+For conditions of use and redistribution of THELI see the
+accompanying 'AUTHORS' and 'LICENSE' files.
+
+If you use THELI for your own research, please acknowledge
+it by citing the articles Erben et al. 2005 (AN 326, 432) and
+Schirmer 2013 (ApJS 209, 16).
+
+QUESTIONS, COMMENTS ON THELI
+============================
+
+Please do not hesitate to contact us if you have problems, questions
+or suggestions related to the software.
+
+Questions/Comments related to the source codes of the
+'command line' version of THELI (this package):
+
+     Thomas Erben (terben@astro.uni-bonn.de)
+
+Questions/Comments related to the sources of the GUI
+version of THELI (distributed separately; NOT part of
+this package):
+
+     Mischa Schirmer (mschirme@gemini.edu)
+
+Questions/Comments related to pipeline usage;
+General Questions/Comments related to optical data processing:
+
+     Thomas Erben        (terben@astro.uni-bonn.de)
+     Hendrik Hildebrandt (hendrik@astro.uni-bonn.de)
+     Joerg Dietrich      (dietrich@usm.lmu.de)
+     Mischa Schirmer     (mschirme@gemini.edu)
+
+General Questions/Comments related to Near Infrared data
+processing:
+
+     Mischa Schirmer     (mschirme@gemini.edu)

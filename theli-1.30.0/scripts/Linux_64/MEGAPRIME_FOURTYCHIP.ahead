@@ -1,0 +1,280 @@
+CRPIX1  =   9.503029088176E+03 / Reference pixel on this axis                  
+CRPIX2  =   9.651823853704E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.115783745055E-05 / Linear projection matrix                      
+CD1_2   =   1.876861403298E-07 / Linear projection matrix                      
+CD2_1   =  -4.893509458449E-07 / Linear projection matrix                      
+CD2_2   =   5.125169879021E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   7.345026987845E+03 / Reference pixel on this axis                  
+CRPIX2  =   9.631180762095E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.139880796468E-05 / Linear projection matrix                      
+CD1_2   =   1.298565545532E-07 / Linear projection matrix                      
+CD2_1   =  -4.189244442366E-07 / Linear projection matrix                      
+CD2_2   =   5.131062243913E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   5.190464094400E+03 / Reference pixel on this axis                  
+CRPIX2  =   9.610555404725E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.161941775281E-05 / Linear projection matrix                      
+CD1_2   =   2.725269304365E-08 / Linear projection matrix                      
+CD2_1   =  -3.315307644573E-07 / Linear projection matrix                      
+CD2_2   =   5.139059979280E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   3.052726084361E+03 / Reference pixel on this axis                  
+CRPIX2  =   9.608754357512E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.173303459984E-05 / Linear projection matrix                      
+CD1_2   =  -7.839755120011E-08 / Linear projection matrix                      
+CD2_1   =  -2.865825220238E-07 / Linear projection matrix                      
+CD2_2   =   5.140843268937E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   9.209254249552E+02 / Reference pixel on this axis                  
+CRPIX2  =   9.603291123420E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.179302483621E-05 / Linear projection matrix                      
+CD1_2   =  -1.777869828117E-07 / Linear projection matrix                      
+CD2_1   =  -1.572445087816E-07 / Linear projection matrix                      
+CD2_2   =   5.141755795779E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -1.209537076924E+03 / Reference pixel on this axis                  
+CRPIX2  =   9.608077233259E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.174900188687E-05 / Linear projection matrix                      
+CD1_2   =  -2.724159700790E-07 / Linear projection matrix                      
+CD2_1   =  -6.064289104768E-08 / Linear projection matrix                      
+CD2_2   =   5.141439675388E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -3.348346382322E+03 / Reference pixel on this axis                  
+CRPIX2  =   9.612743843815E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.161749131520E-05 / Linear projection matrix                      
+CD1_2   =  -3.699553129898E-07 / Linear projection matrix                      
+CD2_1   =  -1.890504436030E-08 / Linear projection matrix                      
+CD2_2   =   5.137473366299E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -5.498527901492E+03 / Reference pixel on this axis                  
+CRPIX2  =   9.634502559807E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.142425794672E-05 / Linear projection matrix                      
+CD1_2   =  -4.434025745865E-07 / Linear projection matrix                      
+CD2_1   =   1.182738935072E-07 / Linear projection matrix                      
+CD2_2   =   5.130418914058E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -7.662851659325E+03 / Reference pixel on this axis                  
+CRPIX2  =   9.657174098945E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.114991137386E-05 / Linear projection matrix                      
+CD1_2   =  -4.943266874399E-07 / Linear projection matrix                      
+CD2_1   =   2.030082838075E-07 / Linear projection matrix                      
+CD2_2   =   5.123934233012E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   1.166201174993E+04 / Reference pixel on this axis                  
+CRPIX2  =   4.555697449725E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.085818119844E-05 / Linear projection matrix                      
+CD1_2   =   3.057786193440E-08 / Linear projection matrix                      
+CD2_1   =  -3.232488586592E-07 / Linear projection matrix                      
+CD2_2   =   5.153353750495E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   9.469640542073E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.546872096043E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.125740341937E-05 / Linear projection matrix                      
+CD1_2   =  -2.705842958222E-08 / Linear projection matrix                      
+CD2_1   =  -3.037631168486E-07 / Linear projection matrix                      
+CD2_2   =   5.166028814068E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   7.307205467817E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.535512091622E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.156005514032E-05 / Linear projection matrix                      
+CD1_2   =  -8.479737221853E-08 / Linear projection matrix                      
+CD2_1   =  -2.813960229931E-07 / Linear projection matrix                      
+CD2_2   =   5.176753818127E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   5.168593921219E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.526709245118E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.176862904118E-05 / Linear projection matrix                      
+CD1_2   =  -1.067961731861E-07 / Linear projection matrix                      
+CD2_1   =  -2.236190389414E-07 / Linear projection matrix                      
+CD2_2   =   5.184231846549E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   3.041356499898E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.523103930809E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.189282649727E-05 / Linear projection matrix                      
+CD1_2   =  -1.169903540121E-07 / Linear projection matrix                      
+CD2_1   =  -1.857947108805E-07 / Linear projection matrix                      
+CD2_2   =   5.188602317657E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   9.235753943874E+02 / Reference pixel on this axis                  
+CRPIX2  =   4.522235245656E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.192906719329E-05 / Linear projection matrix                      
+CD1_2   =  -1.666944100497E-07 / Linear projection matrix                      
+CD2_1   =  -1.808003321335E-07 / Linear projection matrix                      
+CD2_2   =   5.190157738577E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -1.199831681565E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.521222925076E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.190027496501E-05 / Linear projection matrix                      
+CD1_2   =  -2.403701561591E-07 / Linear projection matrix                      
+CD2_1   =  -1.657182510622E-07 / Linear projection matrix                      
+CD2_2   =   5.187309205729E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -3.323002698477E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.525531222410E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.176402100416E-05 / Linear projection matrix                      
+CD1_2   =  -2.292797163639E-07 / Linear projection matrix                      
+CD2_1   =  -1.052204214048E-07 / Linear projection matrix                      
+CD2_2   =   5.184225419150E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -5.464465400719E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.528805497881E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.155665232134E-05 / Linear projection matrix                      
+CD1_2   =  -2.943749627157E-07 / Linear projection matrix                      
+CD2_1   =  -9.538200472420E-08 / Linear projection matrix                      
+CD2_2   =   5.176247026231E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -7.626144161699E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.543325765877E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.124274213647E-05 / Linear projection matrix                      
+CD1_2   =  -2.866920491077E-07 / Linear projection matrix                      
+CD2_1   =  -3.112537091024E-08 / Linear projection matrix                      
+CD2_2   =   5.164987749056E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -9.807994049768E+03 / Reference pixel on this axis                  
+CRPIX2  =   4.550328441542E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.089577807566E-05 / Linear projection matrix                      
+CD1_2   =  -3.127961443892E-07 / Linear projection matrix                      
+CD2_1   =  -1.211977307592E-08 / Linear projection matrix                      
+CD2_2   =   5.154838804790E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   1.165659001289E+04 / Reference pixel on this axis                  
+CRPIX2  =  -1.794869802366E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.087334980018E-05 / Linear projection matrix                      
+CD1_2   =  -3.018818809918E-07 / Linear projection matrix                      
+CD2_1   =   2.144877127248E-08 / Linear projection matrix                      
+CD2_2   =   5.154586175262E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   9.466168854205E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.600593545668E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.126126467244E-05 / Linear projection matrix                      
+CD1_2   =  -2.726371908488E-07 / Linear projection matrix                      
+CD2_1   =  -3.850618914684E-08 / Linear projection matrix                      
+CD2_2   =   5.167932989253E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   7.301284539929E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.531056992520E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.157835501861E-05 / Linear projection matrix                      
+CD1_2   =  -2.383800524272E-07 / Linear projection matrix                      
+CD2_1   =  -4.676906339950E-08 / Linear projection matrix                      
+CD2_2   =   5.178142394736E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   5.166225769250E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.420053405214E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.176918208278E-05 / Linear projection matrix                      
+CD1_2   =  -2.257228458913E-07 / Linear projection matrix                      
+CD2_1   =  -1.118229342743E-07 / Linear projection matrix                      
+CD2_2   =   5.185383667549E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   3.038498807970E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.414358583961E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.191756713958E-05 / Linear projection matrix                      
+CD1_2   =  -1.891539341969E-07 / Linear projection matrix                      
+CD2_1   =  -1.304188148519E-07 / Linear projection matrix                      
+CD2_2   =   5.189465266835E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   9.209386670330E+02 / Reference pixel on this axis                  
+CRPIX2  =  -1.409603382661E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.194082908066E-05 / Linear projection matrix                      
+CD1_2   =  -1.755097100263E-07 / Linear projection matrix                      
+CD2_1   =  -1.694761193481E-07 / Linear projection matrix                      
+CD2_2   =   5.190380082708E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -1.198386033317E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.391158363047E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.190721825827E-05 / Linear projection matrix                      
+CD1_2   =  -1.315567618157E-07 / Linear projection matrix                      
+CD2_1   =  -1.736096819651E-07 / Linear projection matrix                      
+CD2_2   =   5.188640447483E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -3.325674009988E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.438655148233E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.176178074417E-05 / Linear projection matrix                      
+CD1_2   =  -1.107256136867E-07 / Linear projection matrix                      
+CD2_1   =  -2.033390110915E-07 / Linear projection matrix                      
+CD2_2   =   5.185639028798E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -5.465929976838E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.518113104683E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.155689638854E-05 / Linear projection matrix                      
+CD1_2   =  -6.409254107942E-08 / Linear projection matrix                      
+CD2_1   =  -2.354465816982E-07 / Linear projection matrix                      
+CD2_2   =   5.178042183963E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -7.627386596313E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.495671937837E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.127622455542E-05 / Linear projection matrix                      
+CD1_2   =   1.201699912517E-08 / Linear projection matrix                      
+CD2_1   =  -2.178836548760E-07 / Linear projection matrix                      
+CD2_2   =   5.168352330383E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -9.818298508801E+03 / Reference pixel on this axis                  
+CRPIX2  =  -1.658052380570E+02 / Reference pixel on this axis                  
+CD1_1   =  -5.087517208998E-05 / Linear projection matrix                      
+CD1_2   =  -3.068736036630E-08 / Linear projection matrix                      
+CD2_1   =  -2.754070634911E-07 / Linear projection matrix                      
+CD2_2   =   5.155359830177E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   9.512416530140E+03 / Reference pixel on this axis                  
+CRPIX2  =  -5.270153654205E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.114523882968E-05 / Linear projection matrix                      
+CD1_2   =  -5.428099167170E-07 / Linear projection matrix                      
+CD2_1   =   1.511444984602E-07 / Linear projection matrix                      
+CD2_2   =   5.125453529287E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   7.340788076396E+03 / Reference pixel on this axis                  
+CRPIX2  =  -5.246980953966E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.143016519502E-05 / Linear projection matrix                      
+CD1_2   =  -4.438425154477E-07 / Linear projection matrix                      
+CD2_1   =   1.003348009440E-07 / Linear projection matrix                      
+CD2_2   =   5.136532925503E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   5.190079835475E+03 / Reference pixel on this axis                  
+CRPIX2  =  -5.237005313274E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.162588243054E-05 / Linear projection matrix                      
+CD1_2   =  -3.494668545158E-07 / Linear projection matrix                      
+CD2_1   =   4.602926475149E-08 / Linear projection matrix                      
+CD2_2   =   5.140508779892E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   3.051586342315E+03 / Reference pixel on this axis                  
+CRPIX2  =  -5.223633053566E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.175052538381E-05 / Linear projection matrix                      
+CD1_2   =  -2.544176966018E-07 / Linear projection matrix                      
+CD2_1   =  -1.118213655088E-07 / Linear projection matrix                      
+CD2_2   =   5.144406164979E-05 / Linear projection matrix                      
+END     
+CRPIX1  =   9.183894631736E+02 / Reference pixel on this axis                  
+CRPIX2  =  -5.221182200802E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.178493369535E-05 / Linear projection matrix                      
+CD1_2   =  -1.455777781817E-07 / Linear projection matrix                      
+CD2_1   =  -1.459607018222E-07 / Linear projection matrix                      
+CD2_2   =   5.145455593869E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -1.208142480940E+03 / Reference pixel on this axis                  
+CRPIX2  =  -5.224976589739E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.174563164913E-05 / Linear projection matrix                      
+CD1_2   =  -8.103238159406E-08 / Linear projection matrix                      
+CD2_1   =  -2.591020865725E-07 / Linear projection matrix                      
+CD2_2   =   5.143420196228E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -3.353655914582E+03 / Reference pixel on this axis                  
+CRPIX2  =  -5.238398293439E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.161587913844E-05 / Linear projection matrix                      
+CD1_2   =   4.985401111585E-08 / Linear projection matrix                      
+CD2_1   =  -3.430873801424E-07 / Linear projection matrix                      
+CD2_2   =   5.138188568773E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -5.501622911006E+03 / Reference pixel on this axis                  
+CRPIX2  =  -5.251508820896E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.141796734526E-05 / Linear projection matrix                      
+CD1_2   =   1.251141295200E-07 / Linear projection matrix                      
+CD2_1   =  -4.402011497889E-07 / Linear projection matrix                      
+CD2_2   =   5.135170679696E-05 / Linear projection matrix                      
+END     
+CRPIX1  =  -7.672283369190E+03 / Reference pixel on this axis                  
+CRPIX2  =  -5.264433402444E+03 / Reference pixel on this axis                  
+CD1_1   =  -5.115106216337E-05 / Linear projection matrix                      
+CD1_2   =   2.184735650040E-07 / Linear projection matrix                      
+CD2_1   =  -4.614335178497E-07 / Linear projection matrix                      
+CD2_2   =   5.129859325495E-05 / Linear projection matrix                      
+END     

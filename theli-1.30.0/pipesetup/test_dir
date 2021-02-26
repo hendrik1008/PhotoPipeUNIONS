@@ -1,0 +1,16 @@
+#!/bin/sh -f
+if [ "$2" = "RETAIN" ]; then
+   if [ ! -d $1 ]; then
+      mkdir $1
+   fi
+   exit
+fi
+if [ "$2" = "OVERWRITE" ]; then
+   if [ "A$1" = "A/" ]; then
+      exit
+   fi
+   if [ -d $1 ]; then
+      rm -rf $1
+   fi
+   mkdir $1
+fi

@@ -1,0 +1,20 @@
+shearfield 2    data $1
+		read {x1 1 y1 2 e11 3 e21 4}
+		set e1=e11
+		set x=x1 
+		set y=y1 
+		set e2=e21
+
+                set ang=0.5*atan2(e2,e1)
+                set eps=sqrt(e1*e1+e2*e2)
+                set epsx=eps*cos(ang)
+                set epsy=eps*sin(ang)
+                define n (dimen(x))
+                do i=0,$n-1 {
+                    define xp (x[$i]-0.5*epsx[$i]*$2)
+                    define yp (y[$i]-0.5*epsy[$i]*$2)
+                    relocate $xp $yp
+                    define xp ($xp+epsx[$i]*$2)
+                    define yp ($yp+epsy[$i]*$2)
+                    draw $xp $yp }
+

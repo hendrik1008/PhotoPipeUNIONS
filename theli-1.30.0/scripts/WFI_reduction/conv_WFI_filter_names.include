@@ -1,0 +1,105 @@
+# alias definition to 'convert' WFI@MPG/ESO2.2m filter names. At the
+# beginning of its operation filter names of that instrument were
+# often not in the 'standard notation' and outdated names need to be
+# translated. We also substitute the characters '#' and '/' in the
+# filternames with underscores to avoid special shell characters.
+#
+# The file can for instance be sourced by scripts that need to do WFI
+# filter name homogenisation.
+
+# necessary that the following alias definition is expanded within shell
+# scripts:
+shopt -s expand_aliases
+
+# The following alias contains a long chain of sed commands
+# transforming WFI filter names. The definition as an alias
+# allows us to use this 'function' within pipelines but
+# also with input and output files.
+alias conv_WFI_filter_names="
+  sed -e 's/\sBB#I_EIS/ BB_I_203_ESO879/g'        \
+      -e 's!\sU_360/50! BB_U_50_ESO877!g'         \
+      -e 's!\sU_350/60! BB_U_50_ESO877!g'         \
+      -e 's!\sU/38! BB_U_38_ESO841!g'             \
+      -e 's/\sBB#B_NEW/ BB_B_123_ESO878/g'        \
+      -e 's!\sBB#Z+/61_ESO46! BB_Z_61_ESO846!g'   \
+      -e 's!\sV/89! BB_V_89_ESO843!g'             \
+      -e 's!\sB/99! BB_B_99_ESO842!g'             \
+      -e 's!\sRc/162! BB_Rc_162_ESO844!g'         \
+      -e 's!\sIc/lwp! BB_Ic_Iwp_ESO845!g'         \
+      -e 's!\sZ+/61! BB_Z_61_ESO846!g'            \
+      -e 's!\sZ+/60! BB_Z_61_ESO846!g'            \
+      -e 's/\sB / BB_B_99_ESO842 /g'              \
+      -e 's/\sV / BB_V_89_ESO843 /g'              \
+      -e 's/\sR / BB_Rc_162_ESO844 /g'            \
+      -e 's/\sI / BB_Ic_Iwp_ESO845 /g'            \
+      -e 's!\sU ! BB_U_38_ESO841!g'               \
+      -e 's/\sU_(Capodimonte) / U_Capodimonte /g' \
+      -e 's!\s461/13! MB_461_13_ESO874!g'         \
+      -e 's!\s665/12! NB_665_12_ESO858!g'         \
+      -e 's!\s665/12! NB_665_12_ESO858!g'         \
+      -e 's!\s914/27! MB_914_27_ESO854!g'         \
+      -e 's!\s913m_(30)! MB_914_27_ESO854!g'      \
+      -e 's!\s679/19! MB_679_19_ESO868!g'         \
+      -e 's!\s816m_(21)! MB_815_20_ESO851!g'      \
+      -e 's!\s815/20! MB_815_20_ESO851!g'         \
+      -e 's!\s815/27! MB_815_20_ESO851!g'         \
+      -e 's!\s790/25! MB_790_25_ESO850!g'         \
+      -e 's!\s791m_(24)! MB_790_25_ESO850!g'      \
+      -e 's!\s837/20! MB_837_20_ESO852!g'         \
+      -e 's!\s837m_(21)! MB_837_20_ESO852!g'      \
+      -e 's!\s770/19! MB_770_19_ESO849!g'         \
+      -e 's!\s770m_(20)! MB_770_19_ESO849!g'      \
+      -e 's!\sOIII/8! NB_OIII_8_ESO859!g'         \
+      -e 's!\sOIII_503/8! NB_OIII_8_ESO859!g'     \
+      -e 's!\s503n_(8)! NB_OIII_8_ESO859!g'       \
+      -e 's!\s516/16! MB_516_16_ESO871!g'         \
+      -e 's!\s915/28! MB_914_27_ESO854!g'         \
+      -e 's!\s513/15! MB_513_15!g'                \
+      -e 's!\s504/10! NB_504_10_ESO861!g'         \
+      -e 's!\s620/17! MB_620_17_ESO866!g'         \
+      -e 's!\s856/14! MB_856_14_ESO853!g'         \
+      -e 's!\s855/20! MB_856_14_ESO853!g'         \
+      -e 's!\s884/39! MB_884_39_ESO870!g'         \
+      -e 's!\s838/25! MB_837_20_ESO852!g'         \
+      -e 's!\s721/25! MB_721_25_ESO847!g'         \
+      -e 's!\s721/28! MB_721_25_ESO847!g'         \
+      -e 's!\s753/18! MB_753_18_ESO848!g'         \
+      -e 's!\s518/16! MB_518_16_ESO862!g'         \
+      -e 's!\s646/27! MB_646_27_ESO867!g'         \
+      -e 's!\s676n_(5)! NB_SIIr_8_ESO857!g'       \
+      -e 's!\sSII/7! NB_SIIr_8_ESO857!g'          \
+      -e 's!\sSIIr/5! NB_SIIr_8_ESO857!g'         \
+      -e 's!\sSIIr/8! NB_SIIr_8_ESO857!g'         \
+      -e 's!\s696/20! MB_696_20_ESO869!g'         \
+      -e 's!\s485/31! MB_485_31_ESO860!g'         \
+      -e 's!\s416/19! MB_416_29_ESO872!g'         \
+      -e 's!\s416/29! MB_416_29_ESO872!g'         \
+      -e 's!\s445/18! MB_445_18_ESO873!g'         \
+      -e 's!\s531/17! MB_531_17_ESO875!g'         \
+      -e 's!\s604/21! MB_604_21_ESO864!g'         \
+      -e 's!\s605/18! MB_604_21_ESO864!g'         \
+      -e 's!\s531/17! MB_531_17_ESO875!g'         \
+      -e 's!\s915/28! MB_914_27_ESO854!g'         \
+      -e 's/\s856m_(14)/ MB_856_14_ESO853/'       \
+      -e 's/\s665m_(12)/ NB_665_12_ESO858/'       \
+      -e 's/\s665n_(12)/ NB_665_12_ESO858/'       \
+      -e 's/\s753m_(15)/ MB_753_18_ESO848/'       \
+      -e 's!\sOIII/2! NB_OIII_Capadimonte!g'      \
+      -e 's!\sNB#OIII/2! NB_OIII_Capadimonte!g'   \
+      -e 's!\sOIII_(Capodimonte)! NB_OIII_Capadimonte!g'   \
+      -e 's!\s396/12! NB_396_12_ESO865!g'         \
+      -e 's!\sHalpha/7 ! NB_Halpha_7_ESO856 !g'     \
+      -e 's!\sHalpha/7_658/6! NB_Halpha_7_ESO856!g' \
+      -e 's!\s658n_(7)! NB_Halpha_7_ESO856!g' \
+      -e 's!\sGieren_501.2/2.7! MB_Gieren_501_2_2.7!g' \
+      -e 's!\sWashington_M! MB_Washington_M!g'  \
+      -e 's!\sWhite ! Misc__White !g'           \
+      -e 's!\sBlack ! Misc__Black_Paper !g' \
+      -e 's!\sblack ! Misc__Black_Paper !g' \
+      -e 's!\sBlack_paper ! Misc__Black_Paper !g' \
+      -e 's!\sBlack_Paper ! Misc__Black_Paper !g' \
+      -e 's!\sBlack_(Tr:_D=2.6) ! Misc__Black_Paper !g' \
+      -e 's!\sBtLght-WFI(1) ! Misc__BtLght_WFI !g' \
+      -e 's!\sB-light ! Misc__BtLght_WFI !g' \
+      -e 's!\sB_light ! Misc__BtLght_WFI !g' \
+      -e 's/#/_/' -e 's!/!_!g' -e 's/+//'"

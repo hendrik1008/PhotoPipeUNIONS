@@ -89,7 +89,8 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY AWSURVEYNAME FILESUFFIX USER \
   WORKINGDIR RAWDIR CONFIGPATH SCRIPTPATH VIKINGROOT VIKINGTYPE DRYRUN \
   POINTINGLIST POINTINGLIMITSFILE ASTROWISEPATH THELIFILTER THELIVERSION \
   REFERENCE UBANDCORRECTIONSFILE THELIPATH THELIDATAPATH NTHREAD \
-  CATALOGUEKEYSFILE REFRESHRATE LOGFILE TWODFLENSCATALOGUE"
+  CATALOGUEKEYSFILE REFRESHRATE LOGFILE TWODFLENSCATALOGUE THELIPACKVERS \
+  MACHINE THELIPACKSUFFIX"
 #}}}
 
 #Read any command line options  {{{
@@ -196,9 +197,12 @@ EOF
   echo -en "   >\033[0;34m Installing Python modules \033[0m" 
   ${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy pyfits > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
   echo -e "\033[0;31m - Done! \033[0m" 
-  echo -en "   >\033[0;34m Installing cfitsio, pgplot, source-extractor, gfortran, libxcb, tcsh \033[0m" 
-  ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot astromatic-source-extractor gfortran_linux-64 \
-    libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+  #echo -en "   >\033[0;34m Installing cfitsio, pgplot, source-extractor, gfortran, libxcb, tcsh, swarp \033[0m" 
+  #${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot astromatic-source-extractor gfortran_linux-64 \
+  #  libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+  echo -en "   >\033[0;34m Installing cfitsio, pgplot, gfortran, libxcb, tcsh \033[0m" 
+  ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64 \
+    libxcb >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing gfortran \033[0m" 
   #${RUNROOT}/INSTALL/anaconda2/bin/conda install  >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
@@ -217,16 +221,35 @@ EOF
   ##}}}
   #Install THELI LDAC tools {{{
   echo -en "   >\033[0;34m Installing THELI LDAC tools\033[0m" 
-  if [ -f ${RUNROOT}/../INSTALL/theli-1.6.1.tgz ]
+  if [ ! -d ${PACKROOT}/theli-1.30.0 ]
   then 
-    ln -s ${RUNROOT}/../INSTALL/theli-1.6.1.tgz .
+    if [ -f ${RUNROOT}/../INSTALL/theli-1.6.1.tgz ]
+    then 
+      ln -s ${RUNROOT}/../INSTALL/theli-1.6.1.tgz .
+    else 
+      wget https://marvinweb.astro.uni-bonn.de/data_products/theli/theli-1.6.1.tgz > ${RUNROOT}/INSTALL/THELI_wget.log 2>&1
+    fi 
+    tar -xf theli-1.6.1.tgz >> THELI_install.log 2>&1
+    rm -f theli-1.6.1.tgz  >> THELI_install.log 2>&1
+    cd theli-1.6.1/pipesetup
+    THELIPACKVERS=1.6.1
+    THELIPACKSUFFIX=   
   else 
-    wget https://marvinweb.astro.uni-bonn.de/data_products/theli/theli-1.6.1.tgz > ${RUNROOT}/INSTALL/THELI_wget.log 2>&1
+    cd ${RUNROOT}/INSTALL
+    cp -r ${PACKROOT}/theli-1.30.0 .
+    cd theli-1.30.0/pipesetup
+    THELIPACKVERS=1.30.0
+    THELIPACKSUFFIX="_theli"
   fi 
-  tar -xf theli-1.6.1.tgz >> THELI_install.log 2>&1
-  rm -f theli-1.6.1.tgz  >> THELI_install.log 2>&1
-  cd theli-1.6.1/pipesetup
   bash install.sh -m ALL >> THELI_install.log 2>&1
+  if [ "${THELIPACKSUFFIX}" != "" ]
+  then 
+    cd ${RUNROOT}/INSTALL/theli-${THELIPACKVERS}/bin/${MACHINE}/
+    for file in `ls *${THELIPACKSUFFIX}`
+    do
+      ln -s ${file} ${file//${THELIPACKSUFFIX}/}
+    done
+  fi
   cd ${RUNROOT}/INSTALL
   echo -e "\033[0;31m - Done! \033[0m" 
   #}}}
