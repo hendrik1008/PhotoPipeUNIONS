@@ -244,7 +244,7 @@ EOF
   bash install.sh -m ALL >> THELI_install.log 2>&1
   if [ "${THELIPACKSUFFIX}" != "" ]
   then 
-    cd ${RUNROOT}/INSTALL/theli-1.30.0/${MACHINE}/
+    cd ${RUNROOT}/INSTALL/theli-${THELIPACKVERS}/bin/${MACHINE}/
     for file in `ls *${THELIPACKSUFFIX}`
     do
       ln -s ${file} ${file//${THELIPACKSUFFIX}/}
