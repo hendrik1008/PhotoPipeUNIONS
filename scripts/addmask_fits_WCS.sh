@@ -23,7 +23,7 @@ ldactoasc -b -i $incat -t OBJECTS -k ALPHA_J2000 DELTA_J2000 > $tmpdir/pos_$$
 
 echo
 
-python ./addmask_fits_WCS.py $tmpdir/pos_$$ $maskfits > $tmpdir/mask_$$
+python @RUNROOT@/@SCRIPTPATH@/addmask_fits_WCS.py $tmpdir/pos_$$ $maskfits > $tmpdir/mask_$$
 
 {
 echo 'COL_NAME = '$maskkey
