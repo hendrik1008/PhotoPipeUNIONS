@@ -1,0 +1,11 @@
+#!/bin/sh
+if [ "A$PIPESOFT" = "A" ]; then
+  echo "Please set the PIPESOFT variable in your shell"
+  exit 1
+fi
+#echo "PIPESOFT="$PIPESOFT" is this ok [Y/n]: "
+#read answer
+#case $answer in
+# "n" | "N")
+#    exit 1
+#esac

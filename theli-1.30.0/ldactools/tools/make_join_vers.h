@@ -1,0 +1,5 @@
+#define		NAME	"Make a Join between two tables"
+#define		PROGRAM	"make_join"
+#define		VERS    "1.0"
+#define		DATE	"23-01-2006"
+#define		AUTHOR	"E.R. Deul & Thomas Erben"

@@ -1,0 +1,16 @@
+#
+# macro definitions for the gcc ANSI-C Compiler on PC-LINUX systems
+#
+# E.BERTIN 1999
+#
+#
+# 'linuxpc' has the same configuration as MAC Darwin_INTEL:
+# (OPEN QUESTION: Large File Support under Darwin ??)
+SEXMACHINE= linuxpc
+# The C-compiler
+CC    = gcc
+# C compiler options:
+COPTS = -DPC_LINUX -DHAVE_GETENV -DHAVE_SYS_MMAN_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG_INT -DHAVE_UNSIGNED_LONG_LONG_INT -O3 -funroll-loops 
+CD    = cd
+CP    = cp
+RM    = rm -f

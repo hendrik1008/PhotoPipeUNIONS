@@ -1,0 +1,94 @@
+The THELI pipeline was originally developed by:
+
+- Thomas Erben (terben@astro.uni-bonn.de)
+- Mischa Schirmer (mschirme@gemini.edu)
+
+Significant parts or complete modules were also contributed by:
+- Joerg Dietrich (dietrich@usm.lmu.de) (photometric pipeline)
+- Patrick Hudelot (hudelot@iap.fr)     (satellite track detection -
+                                        external module)
+
+Many users contributed to THELI with feedback, bug reports and
+bug fixes - too many to list them here.
+
+In addition, our work is heavily based on publicly available codes
+from different sources. In the following we give a list of authors and
+supplementary information on original code packages.
+
+Please note that we modified and repackaged most of the original
+sources. All our changes are documented in the corresponding sources
+and in files called 'CHANGES_THELI'.
+
+Problems/Bug reports for the codes provided in this package should be
+adressed directly to me (Thomas Erben; terben@astro.uni-bonn.de). Due
+to our (partly substantial) modifications to program functionalities
+and the addition of derived work we would like to avoid that the
+original authors have to deal with problems they are not responsible
+for.
+
+The codes from a particular source are mostly grouped in own
+THELI subdiretories.
+
+bertintools:
+============
+original author:               Emmanuel Bertin (bertin@iap.fr)
+download location:             ftp://ftp.iap.fr:/pub/from_users/bertin
+original source packages:      sextractor-2.5.0.tar.gz
+                               swarp-2.19.1.tar.gz
+                               weightwatcher-1.12.tar.gz
+
+imcattools:
+===========
+original author:               Nick Kaiser (kaiser@ifa.hawaii.edu)
+download location:             http://ifa.hawaii.edu/~kaiser/imcat
+original source package:       src_04_19_03.tar.gz
+
+eclipsetools:
+=============
+original author:               Eclipse Team (ESO; eclipse-team@eso.org)
+download location:             http://www.eso.org/eclipse
+original source packages:      eclipse-main-4.6.3.tar.gz
+                               eclipse-wfi-4.6.3.tar.gz
+
+comment:   the subdirectory eclipsetools/tools contains mostly derived work
+           which is not part of the original eclipse and qfits libraries.
+
+ldactools:
+==========
+original author:               Erik Deul (deul@strw.leidenuniv.nl)
+download location:             ftp://ftp.strw.leidenunliv.nl/pub/ldac/software
+original source package:       ldac.trz (from 04.01.2000)
+
+scripts/astrometrix:
+====================
+original author:               Mario Radovich (radovich@na.astro.it)
+download location:             http://www.na.astro.it/~radovich/wifix.htm
+original source package:       WIFIX_Distrib_1.2.tar.gz
+
+comment:   The directory only contains several Perl files that are used
+           within THELI instead of the original ones provided in the WIFIX
+           package. WIFIX has to be installed independently of the THELI
+           archive.
+
+smalltools (dfits.c; replacekey.c; fitsort.c; hierarch28.c):
+===========
+original author:               ESO
+download location:             http://archive.eso.org/saft/
+original source package:       the individual files listed above
+
+smalltools (readlink.c):
+==========
+original author:               Kenneth Stailey
+download location:             http://wuarchive.wustl.edu/pub/OpenBSD/patches/2.2/common/readlink.c
+original source package:       N/A
+
+psftools
+========
+original authors:              Nick Kaiser, Henk Hoekstra, Yannick Mellier, ..
+download location:             N/A
+original source package:       N/A
+
+comment:   The directory is an inhomogeneous collection of own developments
+           and derived work from various sources. Most parts originate from an
+           early, unpublished version of Nick Kaisers 'imcat' package.
+

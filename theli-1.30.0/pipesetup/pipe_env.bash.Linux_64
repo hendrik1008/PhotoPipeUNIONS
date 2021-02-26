@@ -1,0 +1,15 @@
+export PIPESOFT=/users/hendrik/src/theli-1.30.0
+export EXT=Linux_64
+
+export PIPEBIN=${PIPESOFT}/bin
+export PIPELIB=${PIPESOFT}/lib
+export OBJSUB=obj_${EXT}
+export PIPECONF=${PIPESOFT}/conf
+export PIPEDATA=${PIPESOFT}/data
+export PATH=${PATH}:$PIPEBIN/${EXT}:$PIPESOFT/scripts
+
+if [ ! -z ${PERL5LIB+x} ]; then
+  export PERL5LIB=${PERL5LIB}:/${PIPESOFT}/scripts/astrometrix
+else
+  export PERL5LIB=/${PIPESOFT}/scripts/astrometrix
+fi

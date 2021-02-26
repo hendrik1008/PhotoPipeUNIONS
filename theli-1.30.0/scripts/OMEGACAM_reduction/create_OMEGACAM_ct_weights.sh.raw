@@ -1,0 +1,99 @@
+#!/bin/bash -u
+
+# this script is specific for OMEGACAM@VST. It masks out pixels (sets
+# corresponding weights to zero) affected by crosstalk. Pixels that
+# are saturated in a chip that crosstalks with another one cannot be
+# 'repaired' (at leat we have no procedure at this stage) in the
+# affected chip. Hence we mask these pixels completely out.
+
+# HISTORY COMMENTS:
+# =================
+#
+# 11.02.2013:
+# script started
+#
+# 14.03.2013:
+# I generalised the script from the hardcoded two chips 25 and 26
+# to an arbitrary number of 'affected causing' chip pairs.
+#
+# 21.11.2013:
+# I made the sourcing of initialisation files more robust by forcing
+# inclusion from the pwd.
+#
+# 23.08.2015:
+# Bug fix: fitsort was not called via its variable (but directly)
+# in one place - fixed!
+
+# $1: main dir.
+# $2: science dir.
+# $3: image ending
+# $4: weight dir.
+# $5 - $#: pairs of 'affected causing' numbers. Pixels
+#          in the weights of affected will be mask if
+#          the corresponding pixel is saturated in the
+#          'causing' chip.
+
+# File inclusions:
+. ./${INSTRUMENT:?}.ini
+. ./bash_functions.include
+theli_start "$*"
+
+MD=$1
+SD=$2
+ENDING=$3
+WD=$4
+
+# main script task starts here. We go through all
+# affected chip pairs one after the other:
+i=5
+while [ $i -le $# ]
+do
+  CHIPPAIR="${!i}"
+  AFFECTED=`echo ${CHIPPAIR} | ${P_GAWK} '{print $1}'`
+  CAUSING=`echo ${CHIPPAIR} | ${P_GAWK} '{print $2}'`
+
+  if [ -z ${AFFECTED} ] || [ -z ${CAUSING} ]; then
+    theli_error "Something is wrong with Chip Pair argument $i".
+    exit 1;
+  fi
+
+  FILES=`${P_FIND} ${MD}/${SD}/ -name \*_${CAUSING}${ENDING}.fits`
+
+  for FILE in ${FILES}
+  do
+    SATLEV=`${P_DFITS} ${FILE} | ${P_FITSORT} -d SATLEVEL | cut -f 2`
+
+    if [ "${SATLEV}" = "KEY_N/A" ]; then
+      theli_error "Image ${FILE} has no SATLEVEL keyword! Exiting!"
+      exit 1;
+    fi
+
+    BASE=`basename ${FILE} _${CAUSING}${ENDING}.fits`
+    if [ -f ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.weight.fits ]; then
+      ${P_IC} -p -32 '%2 0 %1 '${SATLEV}' < ?' \
+         ${FILE} ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.weight.fits > \
+         ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.weight.fits_tmp
+
+      mv ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.weight.fits_tmp \
+         ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.weight.fits
+    else
+      theli_error "No weight ${BASE}_${AFFECTED}${ENDING}.weight.fits! Exiting!"
+      exit 1;
+    fi
+
+    if [ -f ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.flag.fits ]; then
+      ${P_IC} -p 8 '%2 1 %1 '${SATLEV}' < ?' \
+         ${FILE} ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.flag.fits > \
+         ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.flag.fits_tmp
+
+      mv ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.flag.fits_tmp \
+         ${MD}/${WD}/${BASE}_${AFFECTED}${ENDING}.flag.fits
+    fi
+
+  done
+  i=$(( $i + 1 ))
+done
+
+# clean up and bye:
+theli_end
+exit 0;

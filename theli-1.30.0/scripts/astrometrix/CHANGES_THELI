@@ -1,0 +1,49 @@
+This file describes important functional changes in the ASTROMETRIX
+and PHOTOMETRIX programs. They are part of the WIFIX package which was
+developed by M. Radovich (radovich@na.astro.it).
+We only list modifications that are directly visible to users, who are
+familiar with the original codes. Changes in the internal program
+structures are not reported here but documented in the source files.
+
+In the THELI package we include only several Perl source files
+but NOT the complete WIFIX package. Version 1.2 of this software has
+to be installed separately from the THELI package. The modified perl
+scripts in the THELI are then called instead of the original WIFIX sources.
+
+In the following we use 'astrom_theli' and 'photom_theli' for modified
+codes of the original programs 'astrom' and 'photom' in WIFIX 1.2.
+
+astrom_theli:
+=============
+
+- The output headers from 'astrom_theli' contain THELI version number and
+  program execution information
+
+- If chips contain the header keyword 'BADCCD' they are not treated
+  by 'astrom_theli'. This is the general way in THELI to tell processing
+  tasks that an image should not be processed.
+
+- We included the possibility to use USNOB1 and SDSS3 as reference catalogues.
+
+photom_theli:
+=============
+
+- The output headers from 'photom_theli' contain THELI version number and
+  program execution information
+
+- The program has two new configuration parameters:
+
+  * MAG: This parameter gives the SExtractor magnitude quantity
+         that has to be used for relative photometry. The default
+         is now MAG_AUTO!!! It is MAG_APER in the original 'photom'
+         program.
+
+  * K_FLXSCALE: This parameter gives the FITS header keywords to be
+                written for relative magnitude zeropoints. The default
+                is now 'FLXSCALE'. It is 'FLSCALE' in the original
+                'photom' program.
+
+- If chips contain the header keyword 'BADCCD' they are not treated
+  by 'photom_theli'. This is the general way in THELI to tell processing
+  tasks that an image should not be processed.
+

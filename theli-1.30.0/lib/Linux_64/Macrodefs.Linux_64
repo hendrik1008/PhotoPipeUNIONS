@@ -1,0 +1,13 @@
+#
+# macro definitions for the DEC-Alpha ANSI-C Compiler
+#
+# E.BERTIN 1997
+#
+SEXMACHINE= alpha
+# The C compiler
+CC    = gcc
+# options for C compiler
+COPTS = $(OPTFLAGS) -O3 -funroll-loops -DDEC_ALPHA -DHAVE_GETENV -DHAVE_SYS_MMAN_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG_INT -DHAVE_UNSIGNED_LONG_LONG_INT
+CD    = cd
+CP    = cp
+RM    = rm -f
