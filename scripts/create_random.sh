@@ -27,11 +27,12 @@ xy2sky -d $mask @$md/${field}_rand_tmp.pos_$$ | \
 echo
 asctoldac -a $md/${field}_rand_tmp2.pos_$$ \
 	  -o $md/${field}_rand_tmp.cat_$$ \
-	  -t OBJECTS -c asctoldac_rand.conf
+	  -t OBJECTS -c @RUNROOT@/@CONFIGPATH@/asctoldac_rand.conf
 
-./addmask_fits.sh $md/${field}_rand_tmp.cat_$$ \
-		  $md/${field}_rand.cat $mask \
-		  MASK "" SHORT OBJECTS
+bash @RUNROOT@/@SCRIPTPATH@/addmask_fits.sh \
+     $md/${field}_rand_tmp.cat_$$ \
+     $md/${field}_rand.cat $mask \
+     MASK "" SHORT OBJECTS
 
 rm $md/*tmp*_$$
 
