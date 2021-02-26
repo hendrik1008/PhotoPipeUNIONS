@@ -22,7 +22,7 @@ NOCONFIG=0
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
 RUNROOT=/net/home/fohlen13/hendrik/PhotoPipe/RUNDIR_CLEAN/
-RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN/
+#RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
@@ -49,7 +49,7 @@ VIKINGTYPE=native_bsub
 #Path to THELI data 
 THELIDATAPATH=/path/to/THELI/Data/
 THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/
-THELIDATAPATH=/net/fohlen13/home/awright/KiDS/DR5/THELI/
+#THELIDATAPATH=/net/fohlen13/home/awright/KiDS/DR5/THELI/
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
