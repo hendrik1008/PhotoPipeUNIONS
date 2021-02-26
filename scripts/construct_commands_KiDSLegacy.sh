@@ -859,28 +859,28 @@ do
   if [ "${mode}" = "MASK4" ]; then
     for filter in u g r i
     do
-      if [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits ]
-      then
-        echo -n gzip -c ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
-          \> ${cats_dir}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
-      elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
-      then
+      #if [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits ]
+      #then
+      #  echo -n gzip -c ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
+      #    \> ${cats_dir}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
+      #elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
+      #then
         echo -n ln -sf ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz \
-          ${cats_dir}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
-      fi
+          ${mdfield}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
+      #fi
     done
 
     if [ -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz ] && \
-      [ ! -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits ]
-  then
-    echo -n gunzip -c ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz \
-      \> ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits \;\ 
-  fi
+       [ ! -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits ]
+    then
+	echo -n gunzip -c ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz \
+	     \> ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits \;\ 
+    fi
 
   ### create the combined flag file
   echo python @RUNROOT@/@SCRIPTPATH@/make_KIDS_bitmask.py \
     ${field_name} @THELIVERSION@ \"r_SDSS u_SDSS g_SDSS i_SDSS\" \
-    ${mdfield} ${THELIDATAPATH} ${cats_dir} @RUNROOT@ ${mask}
+    ${mdfield} ${THELIDATAPATH} ${mdfield} @POINTINGLIMITSFILE@ ${mask}
 fi
 done
 
@@ -888,10 +888,10 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "MASK" ]; then
-    RAmin=`grep  ${field_name} @RUNROOT@/@CONFIGPATH@/KIDS_ra_dec_cuts.txt | awk '{print $2}'`
-    RAmax=`grep  ${field_name} @RUNROOT@/@CONFIGPATH@/KIDS_ra_dec_cuts.txt | awk '{print $3}'`
-    Decmin=`grep ${field_name} @RUNROOT@/@CONFIGPATH@/KIDS_ra_dec_cuts.txt | awk '{print $4}'`
-    Decmax=`grep ${field_name} @RUNROOT@/@CONFIGPATH@/KIDS_ra_dec_cuts.txt | awk '{print $5}'`
+    RAmin=`grep  ${field_name} @POINTINGLIMITSFILE@ | awk '{print $2}'`
+    RAmax=`grep  ${field_name} @POINTINGLIMITSFILE@ | awk '{print $3}'`
+    Decmin=`grep ${field_name} @POINTINGLIMITSFILE@ | awk '{print $4}'`
+    Decmax=`grep ${field_name} @POINTINGLIMITSFILE@ | awk '{print $5}'`
     if [ ! -f ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits ]
     then
       for band in Z Y J H Ks
