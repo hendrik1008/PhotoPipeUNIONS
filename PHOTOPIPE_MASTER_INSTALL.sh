@@ -249,6 +249,7 @@ EOF
     do
       ln -s ${file} ${file//${THELIPACKSUFFIX}/}
     done
+  fi
   cd ${RUNROOT}/INSTALL
   echo -e "\033[0;31m - Done! \033[0m" 
   #}}}
