@@ -263,7 +263,7 @@ do
            -fi ${field} \
            -fn ${field} \
         	 -lg @RUNROOT@/@WORKINGDIR@/@LOGFILE@ \
-        	 -ma @RUNROOT@/@WORKINGDIR@/${field}_AW_THELI.flags.fits \
+        	 -ma @RUNROOT@/@WORKINGDIR@/${field}/${field}_AW_THELI.flags.fits \
   	       -th @THELIDATAPATH@/ \
            -m $MODE \
            >> ${MODE}_commandlist.sh 2>> ${MODE}_commandlist.log
