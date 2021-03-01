@@ -292,6 +292,13 @@ EOF
   make all > ${RUNROOT}/INSTALL/wcstools_make.log 2>&1
   echo -e "\033[0;31m - Done! \033[0m"
   #}}}
+  #Install BPZ {{{
+  echo -en "   >\033[0;34m Installing BPZ \033[0m" 
+  cd ${RUNROOT}/INSTALL/
+  cp -f ${PACKROOT}/bpz-1.99.3_expanded.tar.gz . 
+  tar -xf bpz-1.99.3_expanded.tar.gz
+  echo -e "\033[0;31m - Done! \033[0m"
+  #}}}
   #}}}
   echo -e "\033[0;31m   ##Script Installations all done!##\033[0m" 
 fi 

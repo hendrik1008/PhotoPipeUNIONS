@@ -1,6 +1,7 @@
 RUNDIR
 INSTALL
 all_scripts
+bpz-1.99.3_expanded
 *.o 
 *~
 gapphot_TE/kk/cat2sh

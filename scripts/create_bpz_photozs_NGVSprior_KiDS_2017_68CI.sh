@@ -42,7 +42,7 @@
 INSTRUMENT=KiDSVIKING
 
 #Set up the PATH {{{
-export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/:@RUNROOT@/INSTALL/bpz-1.99.3_expanded/
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
 export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
@@ -51,7 +51,7 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
 set -e 
 #}}}
 
-export BPZPATH=~/src/bpz-1.99.3
+export BPZPATH=@RUNROOT@/INSTALL/bpz-1.99.3_expanded/
 
 recalib=""
 
