@@ -42,6 +42,7 @@ for aperture in ('0p7', '1p0'):
         if band == "u":
             SLR_Gaia_offset -= u_offset
             
+        flag = ldac_table['FLAG_GAAP_'+aperture+'_'+band]
         flux = ldac_table['FLUX_GAAP_'+aperture+'_'+band]
         fluxerr = ldac_table['FLUXERR_GAAP_'+aperture+'_'+band]
         
@@ -55,25 +56,33 @@ for aperture in ('0p7', '1p0'):
         mag[np.logical_and(flux < fluxerr, fluxerr>0.)] = 99.0
         
         # check for failures
+        flag[flux==0.] = 1
         magerr[flux==0.] = -99.0
         mag[flux==0.] = -99.0
         
+        flag[fluxerr<0.] = 1
         mag[fluxerr<0.] = -99.0
         magerr[fluxerr<0.] = -99.0
 
+        flag[np.isinf(magerr)] = 1
         mag[np.isinf(magerr)] = -99.0
         magerr[np.isinf(magerr)] = -99.0
         
+        flag[np.isinf(mag)] = 1
         magerr[np.isinf(mag)] = -99.0
         mag[np.isinf(mag)] = -99.0
 
+        flag[np.isnan(mag)] = 1
         magerr[np.isnan(mag)] = -99.0
         mag[np.isnan(mag)] = -99.0
 
+        flag[np.isnan(magerr)] = 1
         mag[np.isnan(magerr)] = -99.0
         magerr[np.isnan(magerr)] = -99.0
 
         # store the mag and magerr in the LDAC table
+        ldac_table['FLAG_GAAP_'+aperture+'_'+band] = flag
+        ldac_table.set_comment('FLAG_GAAP_'+aperture+'_'+band, band+'-band GAaP flag min_aper='+aperture2+'arcsec')
         ldac_table['MAG_GAAP_'+aperture+'_'+band] = mag
         ldac_table.set_comment('MAG_GAAP_'+aperture+'_'+band, band+'-band GAaP magnitude min_aper='+aperture2+'arcsec')
         ldac_table.set_unit('MAG_GAAP_'+aperture+'_'+band, 'mag')
