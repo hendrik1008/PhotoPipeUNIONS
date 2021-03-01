@@ -47,7 +47,7 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
 
 #Check for the MODE specification {{{
 ALLMODES=`echo CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINEPAW COMBINETILE 2MASSPREP SDSSPREP COMPPAW \
-               COMPTILE MERGE COMPTILEVST STACK BPZ COMPTILEZ COMPTILE2DF MASK4 MASK RAND COPY `
+               COMPTILE MERGE COMPTILEVST STACK BPZ COMPTILEZ COMPTILEZ2DF MASK4 MASK RAND COPY `
 MODELIST=""
 while [ $# -gt 0 ]
 do 
@@ -58,7 +58,7 @@ do
       echo -e "Using\033[0;31m Mode Set\033[0;34m ALL\033[0m"
       MODELIST=`echo ${MODELIST} \
         CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINEPAW COMBINETILE 2MASSPREP SDSSPREP COMPPAW \
-        COMPTILE MERGE COMPTILEVST STACK BPZ COMPTILEZ COMPTILE2DF MASK4 MASK RAND COPY `
+        COMPTILE MERGE COMPTILEVST STACK BPZ COMPTILEZ COMPTILEZ2DF MASK4 MASK RAND COPY `
     elif [ "$MODE" == "REQUIRED" ]
     then 
       echo -e "Using\033[0;31m Mode Set\033[0;34m REQUIRED\033[0m"
@@ -78,7 +78,7 @@ do
     then 
       echo -e "Using\033[0;31m Mode Set\033[0;34m QC\033[0m"
       MODELIST=`echo ${MODELIST} \
-      2MASSPREP SDSSPREP COMPTILE COMPTILEVST STACK COMPTILEZ COMPTILE2DF `
+      2MASSPREP SDSSPREP COMPTILE COMPTILEVST STACK COMPTILEZ COMPTILEZ2DF `
     else 
       found=0
       for mode in ${ALLMODES}
@@ -158,7 +158,7 @@ else
   echo -e "\033[0;31m   14.\033[0;34m STACK:\033[0m Create a stack and sum image of all chips that went into the photometry."
   echo -e "\033[0;31m   15.\033[0;34m BPZ:\033[0m Run BPZ."
   echo -e "\033[0;31m   16.\033[0;34m COMPTILEZ:\033[0m Comparison to SDSS redshifts. Full tile."
-  echo -e "\033[0;31m   17.\033[0;34m COMPTILE2DF:\033[0m Comparison to 2dFLenS redshifts. Full tile."
+  echo -e "\033[0;31m   17.\033[0;34m COMPTILEZ2DF:\033[0m Comparison to 2dFLenS redshifts. Full tile."
   echo -e "\033[0;31m   18.\033[0;34m MASK4:\033[0m Create the 4-band MASK."
   echo -e "\033[0;31m   19.\033[0;34m MASK:\033[0m Create the 9-band MASK."
   echo -e "\033[0;31m   20.\033[0;34m RAND:\033[0m Create a new random catalogue. (OPTIONAL)"

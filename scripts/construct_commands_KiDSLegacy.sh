@@ -824,6 +824,8 @@ do
         ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
         ${field_name} \;\ 
       echo
+    else
+      echo Southern field. No need to run COMPTILEZ.
     fi
   fi
 done
@@ -849,6 +851,8 @@ do
         ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
         ${field_name} \;\ 
       echo
+    else
+      echo Northern field. No need to run COMPTILEZ2DF.
     fi
   fi
 done
