@@ -37,22 +37,33 @@ p=np.ones(NAXIS1*NAXIS2,dtype=np.int16)*NAXIS1
 x=np.mod(n,p)
 y=np.divide(n,p)
 # delete n and p here
+del n
+del p
 sky = wcs_header.all_pix2world(x,y,0)
 # delete x and y here
+del x
+del y
 ra = sky[0]
 dec = sky[1]
 # delete sky here
+del sky
 deccut1 = np.greater(dec, declow)
 deccut2 = np.less_equal(dec, dechigh)
 # delete dec here
+del dec
 racut1 = np.greater(ra, ralow)
 racut2 = np.less_equal(ra, rahigh)
 # delete ra here
+del ra
 if ralow < rahigh:
     wcscut = racut1 * racut2 * deccut1 * deccut2
 else:
     wcscut = np.logical_or(racut1, racut2) * deccut1 * deccut2
 # delete racut1/2 and deccut1/2 here
+del racut1
+del racut2
+del deccut1
+del deccut2
 
 wcscut = np.reshape(wcscut, (NAXIS2, NAXIS1))
 
