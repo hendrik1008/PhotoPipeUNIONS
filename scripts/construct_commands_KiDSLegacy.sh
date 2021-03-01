@@ -689,6 +689,8 @@ do
           ${band} \
           16.5 19
       done
+    else
+      echo Southern field. No need to run COMPTILEVST.
     fi
   fi
 done
