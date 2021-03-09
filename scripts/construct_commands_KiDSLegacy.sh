@@ -256,7 +256,7 @@ do
         echo > ${wdband}/pawprint_list.txt
       fi 
     done
-    echo "echo PREPARE has no parallel section. Folder's were set up correctly"
+    echo "echo PREPARE has no parallel section. Folders were set up correctly"
   fi
 done
 
