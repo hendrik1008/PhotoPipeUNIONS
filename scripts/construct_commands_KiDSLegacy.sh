@@ -224,7 +224,8 @@ do
       test ! -d ${wdband} && mkdir ${wdband}
 
       ### Create a list of all chips.
-      ls $image_dir/${KiDS_field}/${band}/ | grep "_r.fits$" > ${wdband}/file_list.txt
+      ls $image_dir/${KiDS_field}/${band}/ | grep "_r.fits$" > ${wdband}/file_list.txt || \
+        >&2 echo "There are no VISTA chips in $image_dir/${KiDS_field}/${band}/"
       nimage=`cat ${wdband}/file_list.txt | wc -l `
 
       if [ "${nimage}" != "0" ]
