@@ -224,31 +224,37 @@ do
       test ! -d ${wdband} && mkdir ${wdband}
 
       ### Create a list of all chips.
-      ls $image_dir/${KiDS_field}/${band}/*_r.fits > ${wdband}/file_list.txt
+      ls $image_dir/${KiDS_field}/${band}/ | grep "_r.fits$" > ${wdband}/file_list.txt
+      nimage=`cat ${wdband}/file_list.txt | wc -l `
 
-      ### Create a list of all pawprints.
-      {
-        while read file
+      if [ "${nimage}" != "0" ]
+      then
+        ### Create a list of all pawprints.
+        {
+          while read file
+          do
+            basename $file
+          done < ${wdband}/file_list.txt
+        } | cut -d "_" -f 1-2 |sort | uniq > ${wdband}/pawprint_list.txt
+
+        ### Loop over all pawprints.
+        for pawname in `cat ${wdband}/pawprint_list.txt`
         do
-          basename $file
-        done < ${wdband}/file_list.txt
-      } | cut -d "_" -f 1-2 |sort | uniq > ${wdband}/pawprint_list.txt
+          ### Create a pawprint directory.
+          wdpaw=${wdband}/${pawname}
+          test ! -d ${wdpaw} && mkdir ${wdpaw}
 
-      ### Loop over all pawprints.
-      for pawname in `cat ${wdband}/pawprint_list.txt`
-      do
-        ### Create a pawprint directory.
-        wdpaw=${wdband}/${pawname}
-        test ! -d ${wdpaw} && mkdir ${wdpaw}
-
-        ### Loop over all chips in this pawprint.
-        for image in $image_dir/${KiDS_field}/${band}/${pawname}_*_r.fits
-        do
-          base=`basename $image _r.fits`
-          wd=${wdpaw}/$base
-          test ! -d $wd && mkdir $wd
+          ### Loop over all chips in this pawprint.
+          for image in $image_dir/${KiDS_field}/${band}/${pawname}_*_r.fits
+          do
+            base=`basename $image _r.fits`
+            wd=${wdpaw}/$base
+            test ! -d $wd && mkdir $wd
+          done
         done
-      done
+      else 
+        echo > ${wdband}/pawprint_list.txt
+      fi 
     done
     echo "echo PREPARE has no parallel section. Folder's were set up correctly"
   fi
