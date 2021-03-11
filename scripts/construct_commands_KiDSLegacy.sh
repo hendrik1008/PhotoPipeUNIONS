@@ -354,14 +354,20 @@ do
         done
       done
     done
-    missingFraction=`echo $missingCounter $allCounter | awk '{printf "%.2f", $1/$2*100}'`
-    errorMissing=`echo $missingCounter $allCounter | awk '{ if ($1/$2 > 0.1) { print "BREAK" } }'`
-    if [ "$errorMissing" == "BREAK" ]
+    if [ "$allCounter" != "0" ]
     then 
-       >&2 echo "ERROR: Too many Gaussianised images do not exist: ${missingFraction}% > 10%"
-       exit 1
+      missingFraction=`echo $missingCounter $allCounter | awk '{printf "%.2f", $1/$2*100}'`
+      errorMissing=`echo $missingCounter $allCounter | awk '{ if ($1/$2 > 0.1) { print "BREAK" } }'`
+      if [ "$errorMissing" == "BREAK" ]
+      then 
+         >&2 echo "ERROR: Too many Gaussianised images do not exist: ${missingFraction}% > 10%"
+         exit 1
+      elif [ "$missingCounter" != "0" ]
+      then 
+         >&2 echo "NB: ${missingFraction}% of the Gaussianised images do not exist in pointing ${KiDS_field}!"
+      fi 
     else 
-       >&2 echo "NB: ${missingFraction}% of the Gaussianised images do not exist!"
+      >&2 echo "WARNING: There are no VISTA data in pointing ${KiDS_field}!"
     fi 
   fi
 done
