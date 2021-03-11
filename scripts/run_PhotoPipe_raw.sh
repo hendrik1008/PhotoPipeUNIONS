@@ -268,12 +268,12 @@ do
            -m $MODE \
            >> ${MODE}_commandlist.sh 2>> ${MODE}_commandlist.log
        #}}}
-       #Remove any duplicated commands {{{ 
-       cat ${MODE}_commandlist.sh | sort | uniq > tmp_${MODE}_commandlist.sh 
-       mv tmp_${MODE}_commandlist.sh ${MODE}_commandlist.sh 
-       #}}}
     fi
   done < ${POINTINGLIST}
+  #Remove any duplicated commands {{{ 
+  cat ${MODE}_commandlist.sh | sort | uniq > tmp_${MODE}_commandlist.sh 
+  mv tmp_${MODE}_commandlist.sh ${MODE}_commandlist.sh 
+  #}}}
   #}}}
   #Launch the commands {{{
   if [ "$DRYRUN" == "0" ]
