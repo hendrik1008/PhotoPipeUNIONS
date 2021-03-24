@@ -38,17 +38,20 @@ then
 fi
 
 case $band in
-    Z) ABcorr=0.521; CT=1.025;  band_col1=J; band_col2=H; const=0.0;; # v1.3
-    Y) ABcorr=0.618; CT=0.610;  band_col1=J; band_col2=H; const=0.0;; # v1.3
-    J) ABcorr=0.92;  CT=-0.077; band_col1=J; band_col2=H; const=0.0;; # v1.3
-    H) ABcorr=1.38;  CT=0.032;  band_col1=J; band_col2=H; const=0.0;; # v1.3
-    Ks) ABcorr=1.84; CT=0.010;  band_col1=J; band_col2=K; const=0.0;; # v1.3
+  EBcorr=c(0.37,0.14,0.01,0.015,0.005)
+    Z)  EBcorr=0.370; ABcorr=0.521; CT=1.025;  band_col1=J; band_col2=H; const=0.0;; # v1.3
+    Y)  EBcorr=0.140; ABcorr=0.618; CT=0.610;  band_col1=J; band_col2=H; const=0.0;; # v1.3
+    J)  EBcorr=0.010; ABcorr=0.92;  CT=-0.077; band_col1=J; band_col2=H; const=0.0;; # v1.3
+    H)  EBcorr=0.015; ABcorr=1.38;  CT=0.032;  band_col1=J; band_col2=H; const=0.0;; # v1.3
+    Ks) EBcorr=0.005; ABcorr=1.84;  CT=0.010;  band_col1=J; band_col2=K; const=0.0;; # v1.3
     #Z)  ABcorr=0.521; CT=-0.077;  band_col1=J; band_col2=K; const=0.859;;  # v1.4
     #Y)  ABcorr=0.618; CT=-0.019;  band_col1=J; band_col2=K; const=0.457;;  # v1.4
     #J)  ABcorr=0.92;  CT=0.006;   band_col1=J; band_col2=K; const=-0.031;; # v1.4
     #H)  ABcorr=1.38;  CT=-0.005;  band_col1=J; band_col2=K; const=0.015;;  # v1.4
     #Ks) ABcorr=1.84;  CT=-0.007;  band_col1=J; band_col2=K; const=-0.006;; # v1.4
 esac
+#Average Schelgal dust value in KiDS
+Schlegal=0.1
 
 associate -i $cat ${TWOMASS_cat} \
           -o $wd/tmp1.cat_$$ $wd/tmp2.cat_$$ \
@@ -91,7 +94,7 @@ ldactoasc -i $wd/${base}_2MASS.cat -t OBJECTS -s -b -k \
     ${band_col1}mag_2MASS \
     ${band_col2}mag_2MASS \
     | gawk \
-	  '{if ($3>0 && $3<99 && $4<0.5 && $6<=3 && $7>1 && $7<=4 && $8==2 && $9==1 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+'$const')}' \
+    '{if ($3>0 && $3<99 && $4<0.5 && $6<=3 && $7>1 && $7<=4 && $8==2 && $9==1 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+('$EBcorr'*'$Schlegal')+'$const')}' \
     > $wd/${base}_2MASS_$band.asc
 
 python @RUNROOT@/@SCRIPTPATH@/phot_offset.py $wd/${base}_2MASS_$band.asc $mag_min $mag_max \
