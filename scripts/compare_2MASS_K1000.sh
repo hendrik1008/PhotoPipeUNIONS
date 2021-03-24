@@ -93,8 +93,9 @@ ldactoasc -i $wd/${base}_2MASS.cat -t OBJECTS -s -b -k \
     ${band_col1}mag_2MASS \
     ${band_col2}mag_2MASS \
     | gawk \
-    '{if ($3>0 && $3<99 && $4<0.5 && $6<=3 && $7>1 && $7<=4 && $8==2 && $9==1 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+('$EBcorr'*'$Schlegal')+'$const')}' \
+    '{if ($3>0 && $3<90 && $6<=3 && $7>0 && $7<=3 && $8==1 && $9==0 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+('$EBcorr'*'$Schlegal')+'$const')}' \
     > $wd/${base}_2MASS_$band.asc
+    #'{if ($3>0 && $3<99 && $4<0.5 && $6<=3 && $7>1 && $7<=4 && $8==2 && $9==1 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+('$EBcorr'*'$Schlegal')+'$const')}' \
 
 python @RUNROOT@/@SCRIPTPATH@/phot_offset.py $wd/${base}_2MASS_$band.asc $mag_min $mag_max \
        > $wd/${base}_2MASS_${band}_offset.asc
