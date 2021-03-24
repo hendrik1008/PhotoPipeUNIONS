@@ -38,7 +38,6 @@ then
 fi
 
 case $band in
-  EBcorr=c(0.37,0.14,0.01,0.015,0.005)
     Z)  EBcorr=0.370; ABcorr=0.521; CT=1.025;  band_col1=J; band_col2=H; const=0.0;; # v1.3
     Y)  EBcorr=0.140; ABcorr=0.618; CT=0.610;  band_col1=J; band_col2=H; const=0.0;; # v1.3
     J)  EBcorr=0.010; ABcorr=0.92;  CT=-0.077; band_col1=J; band_col2=H; const=0.0;; # v1.3
