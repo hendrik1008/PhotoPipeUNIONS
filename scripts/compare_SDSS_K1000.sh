@@ -55,8 +55,8 @@ ldacrentab -i $wd/merg_SDSS_comp.cat_$$ -o $wd/${base}_SDSS.cat \
 rm $wd/*_$$
 
 ldactoasc -i $wd/${base}_SDSS.cat -t OBJECTS -s -b -k \
-    RA \
-    DEC \
+    RAJ2000 \
+    DECJ2000 \
     MAG_GAAP_$band \
     MAGERR_GAAP_$band \
     ${band2}_SDSS \
