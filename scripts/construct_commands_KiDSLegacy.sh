@@ -876,7 +876,7 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "MASK4" ]; then
-    for filter in u g r i
+    for filter in u g r i i2
     do
       #if [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits ]
       #then
