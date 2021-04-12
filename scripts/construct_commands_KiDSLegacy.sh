@@ -407,7 +407,7 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COMBINETILE" ]; then
     ### Loop over all VISTA bands.
-    for ending in _minaper1p0 ""
+    for ending in "" _minaper1p0 _stars _stars0p7
     do
       home=`pwd`
       for band in Z Y J H Ks
@@ -527,7 +527,7 @@ do
   if [ "${mode}" = "COMPTILE" ]; then
     SDSS_cat=${mdfield}/SDSS/${KiDS_field}_sdssdr8_stars.cat
     ### Loop over all VISTA bands.
-    for ending in _minaper1p0 ""
+    for ending in "" _minaper1p0 _stars _stars0p7
     do
       for band in Z Y J H Ks
       do
