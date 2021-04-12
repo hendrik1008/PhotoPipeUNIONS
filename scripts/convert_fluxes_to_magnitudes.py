@@ -30,14 +30,32 @@ for aperture in ('0p7', '1p0'):
             if band_cap == "I":
                 band_num = band.capitalize()[1]
                 SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i"+band_num]
-            else: 
-                SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+"_07_i1"]+ldac_cat.header['DMAG_'+band_cap+"_07_i2"])/2.0
+                if SLR_Gaia_offset < -98.:
+                    SLR_Gaia_offset = 0.
+            else:
+                if ldac_cat.header['DMAG_'+band_cap+"_07_i1"] > -99. and ldac_cat.header['DMAG_'+band_cap+"_07_i2"] > -99.:
+                    SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+"_07_i1"]+ldac_cat.header['DMAG_'+band_cap+"_07_i2"])/2.0
+                elif ldac_cat.header['DMAG_'+band_cap+"_07_i1"] > -99.:
+                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i1"]
+                elif ldac_cat.header['DMAG_'+band_cap+"_07_i2"] > -99.:
+                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i2"]
+                else:
+                    SLR_Gaia_offset = 0.                
         if aperture == '1p0':
             if band_cap == "I":
                 band_num = band.capitalize()[1]
                 SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+'_10_i'+band_num]
+                if SLR_Gaia_offset < -98.:
+                    SLR_Gaia_offset = 0.
             else: 
-                SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+'_10_i1']+ldac_cat.header['DMAG_'+band_cap+"_10_i2"])/2.0
+                if ldac_cat.header['DMAG_'+band_cap+"_10_i1"] > -99. and ldac_cat.header['DMAG_'+band_cap+"_10_i2"] > -99.:
+                    SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+'_10_i1']+ldac_cat.header['DMAG_'+band_cap+"_10_i2"])/2.0
+                elif ldac_cat.header['DMAG_'+band_cap+"_10_i1"] > -99.:
+                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_10_i1"]
+                elif ldac_cat.header['DMAG_'+band_cap+"_10_i2"] > -99.:
+                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_10_i2"]
+                else:
+                    SLR_Gaia_offset = 0.                
 
         if band == "u":
             SLR_Gaia_offset -= u_offset
