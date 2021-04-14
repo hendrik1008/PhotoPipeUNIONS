@@ -660,7 +660,11 @@ do
 
     if [ -f @UBANDCORRECTIONSFILE@ ]
     then 
-      u_offset=`grep $AW_name_new @UBANDCORRECTIONSFILE@ | awk '{print $2}'`
+	u_offset=`grep $AW_name @UBANDCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $5}'`
+	if [ ${field_name} = KIDS_27p6_m34p1 ] || [ ${field_name} = KIDS_28p5_m33p1 ]
+	then
+	    u_offset=`grep $AW_name @UBANDCORRECTIONSFILEAP40@ | awk 'BEGIN{FS=","}{print $5}'`
+	fi
     else 
       u_offset='0.0'
     fi 
