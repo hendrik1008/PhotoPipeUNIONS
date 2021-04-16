@@ -185,7 +185,7 @@ mkdir -p ${TEMPDIR}
                 }
                 if ( $2 != 99 )
                 {
-                  extcol = 3 + (3 + '${FLAGKEY}' ) * '${NFILT}'
+                  extcol = 5 + (3 + '${FLAGKEY}' ) * '${NFILT}'
                   $2 = $2 - $extcol
                 }
               }
