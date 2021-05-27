@@ -97,24 +97,41 @@ aw_mask_exists = True
 # flag bit info (information to be included in the final flagfile FITS header)
 #
 final_BITPIX = 16
-flagbit_dict = {'F_TH_MAN_CON' : (0x0001,'Theli flag (det.band): manual mask, conservative'),
-                'F_TH_STAR_CON': (0x0002,'Theli flag (det.band): starhalo mask, conservative'),
-                'F_TH_STAR'    : (0x0004,'Theli flag (det.band): stellar and starhalo mask'),
-                'F_TH_MANUAL'  : (0x0008,'Theli flag (det.band): manual mask'),
-                'F_TH_VOID'    : (0x0010,'Theli flag (det.band): void and weight==0 mask'),
-                'F_RESERVED_1' : (0x0020,'Reserved, unused'),
-                'F_AW_U_MAN1'  : (0x0040,'AW manual masks (u)'),
-                'F_AW_G_MAN1'  : (0x0080,'AW manual masks (g)'),
-                'F_AW_R_MAN1'  : (0x0100,'AW manual masks (r)'),
-                'F_AW_I_MAN1'  : (0x0200,'AW manual masks (i)'),
-                'F_AW_U_AUTO'  : (0x0400,'AW flag (u): auto masks'),
-                'F_AW_G_AUTO'  : (0x0800,'AW flag (g): auto masks'),
-                'F_AW_R_AUTO'  : (0x1000,'AW flag (r): auto masks'),
-                'F_AW_I_AUTO'  : (0x2000,'AW flag (i): auto masks'),
+#flagbit_dict = {'F_TH_MAN_CON' : (0x0001,'Theli flag (det.band): manual mask, conservative'),
+#                'F_TH_STAR_CON': (0x0002,'Theli flag (det.band): starhalo mask, conservative'),
+#                'F_TH_STAR'    : (0x0004,'Theli flag (det.band): stellar and starhalo mask'),
+#                'F_TH_MANUAL'  : (0x0008,'Theli flag (det.band): manual mask'),
+#                'F_TH_VOID'    : (0x0010,'Theli flag (det.band): void and weight==0 mask'),
+#                'F_RESERVED_1' : (0x0020,'Reserved, unused'),
+#                'F_AW_U_MAN1'  : (0x0040,'AW manual masks (u)'),
+#                'F_AW_G_MAN1'  : (0x0080,'AW manual masks (g)'),
+#                'F_AW_R_MAN1'  : (0x0100,'AW manual masks (r)'),
+#                'F_AW_I_MAN1'  : (0x0200,'AW manual masks (i)'),
+#                'F_AW_U_AUTO'  : (0x0400,'AW flag (u): auto masks'),
+#                'F_AW_G_AUTO'  : (0x0800,'AW flag (g): auto masks'),
+#                'F_AW_R_AUTO'  : (0x1000,'AW flag (r): auto masks'),
+#                'F_AW_I_AUTO'  : (0x2000,'AW flag (i): auto masks'),
+#                'F_KIDS_WCS'   : (0x4000,'KIDS WCS tiling cuts'),
+#                'F_RESERVED_2' : (0x8000,'Reserved, unused'),
+#                }
+
+flagbit_dict = {'F_TH_STAR_CON': (0x0001,'Theli flag (det.band): starhalo mask, conservative'),
+                'F_TH_STAR'    : (0x0002,'Theli flag (det.band): stellar and starhalo mask'),
+                'F_TH_MANUAL'  : (0x0004,'Theli flag (det.band): manual mask'),
+                'F_TH_VOID'    : (0x0008,'Theli flag (det.band): void and weight==0 mask'),
+                'F_AW_U_AUTO'  : (0x0010,'AW flag (u): auto masks'),
+                'F_AW_G_AUTO'  : (0x0020,'AW flag (g): auto masks'),
+                'F_AW_R_AUTO'  : (0x0040,'AW flag (r): auto masks'),
+                'F_AW_I_AUTO'  : (0x0080,'AW flag (i): auto masks'),
+                'F_AW_I2_AUTO' : (0x0100,'AW flag (i2): auto masks'),
+                'F_VISTA_Z'    : (0x0200,'VISTA footprint mask (Z)'),
+                'F_VISTA_Y'    : (0x0400,'VISTA footprint mask (Y)'),
+                'F_VISTA_J'    : (0x0800,'VISTA footprint mask (J)'),
+                'F_VISTA_H'    : (0x1000,'VISTA footprint mask (H)'),
+                'F_VISTA_Ks'   : (0x2000,'VISTA footprint mask (Ks)'),
                 'F_KIDS_WCS'   : (0x4000,'KIDS WCS tiling cuts'),
                 'F_RESERVED_2' : (0x8000,'Reserved, unused'),
                 }
-
 
 #
 # main code
@@ -169,7 +186,7 @@ try:
     theli_long_filter_list = filters
     theli_filter_list = [filt[0] for filt in theli_long_filter_list]  # i.e., ['r', 'i',]
 
-    aw_filter_list = ['u','g','r','i']  # from AstroWise.  Filter order = bitmask orders for each filter
+    aw_filter_list = ['u','g','r','i', 'i2']  # from AstroWise.  Filter order = bitmask orders for each filter
 
     ## various version numbers to keep track of
     # TODO: update AW mask versions (w/ spell correction), then update masking script
@@ -250,18 +267,20 @@ try:
     aw_outflag_list = ''   # store the SWARPed AW flag maps for future use
     aw_outflag_vals = ''   # store the bit value for future use
     mmask_bit = []
-    aw_shift_bit = flagbit_dict['F_AW_U_MAN1'][0]
+    aw_shift_bit = flagbit_dict['F_AW_U_AUTO'][0]
     aw_man1_outflag_dict = {
-        'u':flagbit_dict['F_AW_U_MAN1'][0]/aw_shift_bit,  # bits to be assigned per filter,
-        'g':flagbit_dict['F_AW_G_MAN1'][0]/aw_shift_bit,  # shifted by aw_shift_bit (0x40)
-        'r':flagbit_dict['F_AW_R_MAN1'][0]/aw_shift_bit,
-        'i':flagbit_dict['F_AW_I_MAN1'][0]/aw_shift_bit,
+        'u':flagbit_dict['F_AW_U_AUTO'][0]/aw_shift_bit,  # bits to be assigned per filter,
+        'g':flagbit_dict['F_AW_G_AUTO'][0]/aw_shift_bit,  # shifted by aw_shift_bit (0x40)
+        'r':flagbit_dict['F_AW_R_AUTO'][0]/aw_shift_bit,
+        'i':flagbit_dict['F_AW_I_AUTO'][0]/aw_shift_bit,
+        'i2':flagbit_dict['F_AW_I2_AUTO'][0]/aw_shift_bit,
         }
     aw_auto_outflag_dict = {
         'u':flagbit_dict['F_AW_U_AUTO'][0]/aw_shift_bit,
         'g':flagbit_dict['F_AW_G_AUTO'][0]/aw_shift_bit,
         'r':flagbit_dict['F_AW_R_AUTO'][0]/aw_shift_bit,
         'i':flagbit_dict['F_AW_I_AUTO'][0]/aw_shift_bit,
+        'i2':flagbit_dict['F_AW_I2_AUTO'][0]/aw_shift_bit,
         }
     aw_flag_orig_file_list = []
     for i_filt, filt in enumerate(aw_filter_list):
@@ -417,10 +436,10 @@ try:
         shcommand =  '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ww_theli '
         shcommand += ' -c @RUNROOT@/@CONFIGPATH@/MAKEFLAGMASK.default.ww'  # TODO: fix ww, remove config file
         shcommand += ' -WEIGHT_NAMES    ' + aw_outflag_list
-        shcommand += ' -WEIGHT_MIN      -1,-1,-1,-1,-1,-1,-1,-1' # pixel value below -1 is masked
-        shcommand += ' -WEIGHT_MAX      0.5,%d,0.5,%d,0.5,%d,0.5,%d' %  \
+        shcommand += ' -WEIGHT_MIN      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1' # pixel value below -1 is masked
+        shcommand += ' -WEIGHT_MAX      0.5,%d,0.5,%d,0.5,%d,0.5,%d,0.5,%d' %  \
             (mmask_bit[0]-0.5, mmask_bit[1]-0.5,
-             mmask_bit[2]-0.5, mmask_bit[3]-0.5)  # value above this masked
+             mmask_bit[2]-0.5, mmask_bit[3]-0.5, mmask_bit[4]-0.5)  # value above this masked
         shcommand += ' -WEIGHT_OUTFLAGS ' + aw_outflag_vals # set pixelmask flags to these values
         shcommand += ' -FLAG_NAMES      ""'
         shcommand += ' -POLY_NAMES      ""'
@@ -700,7 +719,7 @@ try:
         flag_commands = ''
         file_counter = 0
         ## the THELI_combo flags (shift bits if necessary)
-        shift_flag = flagbit_dict['F_TH_MAN_CON'][0]  # the smallest Theli r-band mask bit
+        shift_flag = flagbit_dict['F_TH_STAR_CON'][0]  # the smallest Theli r-band mask bit
         file_counter += 1
         flag_commands += ' %%%d' % (file_counter,)
         flag_commands += ' %d mult' % (shift_flag)
