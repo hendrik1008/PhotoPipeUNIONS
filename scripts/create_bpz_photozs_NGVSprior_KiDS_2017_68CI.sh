@@ -42,12 +42,14 @@
 INSTRUMENT=KiDSVIKING
 
 #Set up the PATH {{{
-export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/:@RUNROOT@/INSTALL/bpz-1.99.3_expanded/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
+export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
 export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
 export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/:@RUNROOT@/INSTALL/anaconda2/lib/
 set -e 
 #}}}
 
