@@ -22,7 +22,7 @@ NOCONFIG=0
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
 RUNROOT=/net/home/fohlen13/hendrik/PhotoPipe/RUNDIR_CLEAN/
-#RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN/
+#RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN_AGAIN/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
@@ -194,6 +194,8 @@ EOF
   echo -en "   >\033[0;34m Setting Anaconda configuration \033[0m" 
   ##${RUNROOT}/INSTALL/anaconda2/bin/conda config --set channel_priority strict
   ${RUNROOT}/INSTALL/anaconda2/bin/conda update conda  > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+  ${RUNROOT}/INSTALL/anaconda2/bin/conda create -p ${RUNROOT}/INSTALL/anaconda2/photopipe_env > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+  source activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Installing Python modules \033[0m" 
   ${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy pyfits > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
@@ -262,8 +264,8 @@ EOF
   cd ${RUNROOT}/INSTALL/gapphot_TE/kk
   make clean  > ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-  sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
-  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
+  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
   make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   #compile the bigim directory 
   cd ${RUNROOT}/INSTALL/gapphot_TE/kk/bigim/
@@ -271,8 +273,8 @@ EOF
   #This binary isn't removed in the clean
   rm -f kermapm2rot 
   make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-  sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
-  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
+  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
   sed -i "s@^all: @all: set gapphot fitkermaptwk imxshmapwithtweak kermapm2rot pix2g8 pixpsfxshcpts8 psfcat2gauskerwithtweak psfcat2gauskerwithtweak_no_recentre showdxdy showpsfmaptwk kermapm2rot @" makefile 
   echo "" >> makefile 
   echo "psfcat2gauskerwithtweak_no_recentre: psfcat2gauskerwithtweak_no_recentre.o libshape.a libutil.a" >> makefile 
