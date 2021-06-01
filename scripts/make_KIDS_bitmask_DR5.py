@@ -784,7 +784,8 @@ try:
                 os.remove(aw_ww_outflag_fname)
             os.remove(theli_ww_theli_combo_fname)
             os.remove(ver_file)
-            os.remove(wcscut_mask_fname)
+            if run_make_wcs_mask:
+                os.remove(wcscut_mask_fname)
 
 except KeyboardInterrupt:
 
