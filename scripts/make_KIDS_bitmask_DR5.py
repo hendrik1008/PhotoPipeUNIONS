@@ -88,7 +88,7 @@ Procedure:
 remove_temp_files = True     # remove intermediate files?
 run_aw_swarp = True          # run SWARP (to match AW to THELI coordinates)
 run_aw_ww = True             # run weight watcher (to combine AW masks) (B)
-run_make_wcs_mask = True     # generate wcs mask
+run_make_wcs_mask = False    # generate wcs mask
 run_theli_combo_ww = True    # run weight watcher (to combine THELI weight and reg files) (A)
 run_ic = True                # run ic (to combine existing bitmasks) and apply WCS cut
 aw_mask_exists = True
@@ -732,10 +732,11 @@ try:
             flag_images += ' ' + aw_ww_outflag_fname
 
         ## the WCS cut mask
-        file_counter += 1
-        flag_commands += ' %%%d -1 mult 1 +' % (file_counter,)   # invert the mask
-        flag_commands += ' %d mult +' % (flagbit_dict['F_KIDS_WCS'][0],)
-        flag_images += ' ' + wcscut_mask_fname
+        if run_make_wcs_mask:
+            file_counter += 1
+            flag_commands += ' %%%d -1 mult 1 +' % (file_counter,)   # invert the mask
+            flag_commands += ' %d mult +' % (flagbit_dict['F_KIDS_WCS'][0],)
+            flag_images += ' ' + wcscut_mask_fname
 
         ## run ic
         shcommand =  '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic'
