@@ -124,11 +124,8 @@ test ! -d ${mdfield} && mkdir ${mdfield}
 
 ### Read RA and Dec from KiDS field name.
 detect_image=${THELIDATAPATH}/${field_name}/@THELIFILTER@/coadd_@THELIVERSION@/${KiDS_field}_@THELIFILTER@.@THELIVERSION@.swarp.cut.fits
-if [ -f ${mask} ]
-then
-  RA=`dfits  ${detect_image}|fitsort -d CRVAL1|awk '{print $2}'`
-  Dec=`dfits ${detect_image}|fitsort -d CRVAL2|awk '{print $2}'`
-fi 
+RA=`dfits  ${detect_image}|fitsort -d CRVAL1|awk '{print $2}'`
+Dec=`dfits ${detect_image}|fitsort -d CRVAL2|awk '{print $2}'`
 
 ### Paths to the photometric, lensfit, and star catalogues.
 
@@ -757,7 +754,7 @@ do
           echo -n cd $md/${KiDS_field}/$filter/ \;\ 
           if [ "$RA" == "" ]
           then 
-              >&2 echo "WARNING: Central RA/Dec not defined."
+              >&2 echo "ERROR: Central RA/Dec not defined."
 	      exit 1
           fi 
           ### THIS NEEDS TO BE TESTED WITH swarp_theli!!! ###
