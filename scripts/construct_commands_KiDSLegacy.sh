@@ -123,11 +123,11 @@ mdfield=$md/${field_name}
 test ! -d ${mdfield} && mkdir ${mdfield}
 
 ### Read RA and Dec from KiDS field name.
-
+detect_image=${THELIDATAPATH}/${field_name}/@THELIFILTER@/coadd_@THELIVERSION@/${KiDS_field}_@THELIFILTER@.@THELIVERSION@.swarp.cut.fits
 if [ -f ${mask} ]
 then
-  RA=`dfits ${mask}|fitsort -d CRVAL1|awk '{print $2}'`
-  Dec=`dfits ${mask}|fitsort -d CRVAL2|awk '{print $2}'`
+  RA=`dfits  ${detect_image}|fitsort -d CRVAL1|awk '{print $2}'`
+  Dec=`dfits ${detect_image}|fitsort -d CRVAL2|awk '{print $2}'`
 fi 
 
 ### Paths to the photometric, lensfit, and star catalogues.
@@ -757,9 +757,8 @@ do
           echo -n cd $md/${KiDS_field}/$filter/ \;\ 
           if [ "$RA" == "" ]
           then 
-            >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
-            RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
-            Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+              >&2 echo "WARNING: Central RA/Dec not defined."
+	      exit 1
           fi 
           ### THIS NEEDS TO BE TESTED WITH swarp_theli!!! ###
           echo -n swarp $input_files01 \
@@ -934,13 +933,13 @@ do
         ${field_name} \
         ${mask} \
         $RA $Dec \;\ 
-      for band in Z Y J H Ks
-      do
-        if [ -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits ]
-        then
-          echo -n gzip $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits \;\ 
-        fi
-      done
+      #for band in Z Y J H Ks
+      #do
+      #  if [ -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits ]
+      #  then
+      #    echo -n gzip $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits \;\ 
+      #  fi
+      #done
       echo -n bash @RUNROOT@/@SCRIPTPATH@/addmask_fits_WCS.sh \
         ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
         ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
@@ -949,8 +948,8 @@ do
         \"9-band mask information\" \
         LONG \
         ${mdfield}/ \;\ 
-      echo gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
-        \> ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz
+      #echo gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+      #  \> ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz
       echo
     fi
   fi
