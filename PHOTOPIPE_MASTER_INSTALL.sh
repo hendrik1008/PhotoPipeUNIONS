@@ -196,6 +196,7 @@ EOF
   ${RUNROOT}/INSTALL/anaconda2/bin/conda update conda  > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   ${RUNROOT}/INSTALL/anaconda2/bin/conda create -p ${RUNROOT}/INSTALL/anaconda2/photopipe_env > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   source activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env
+  #${RUNROOT}/INSTALL/anaconda2/bin/conda env create -f photopipe_env.yml
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Installing Python modules \033[0m" 
   #${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy pyfits==3.4 > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
@@ -205,7 +206,7 @@ EOF
   #${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot astromatic-source-extractor gfortran_linux-64 \
   #  libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -en "   >\033[0;34m Installing cfitsio, pgplot, gfortran, libxcb, tcsh \033[0m" 
-  ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64 \
+  ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64=9.3.0 \
     libxcb >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing gfortran \033[0m" 
