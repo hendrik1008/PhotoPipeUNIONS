@@ -21,12 +21,12 @@ NOCONFIG=0
 #Package directory (default: `pwd`)
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
-RUNROOT=/net/home/fohlen13/hendrik/PhotoPipe/RUNDIR_CLEAN/
+RUNROOT=/net/home/fohlen13/hendrik/KiDS/KiDS-DR5
 #RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN_AGAIN/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
-SURVEY=KiDS-Legacy 
+SURVEY=KiDS-DR5
 #Survey ID in AstroWISE
 AWSURVEYNAME=KiDS-1347 
 #Patch catalogue suffix 
@@ -34,7 +34,7 @@ FILESUFFIX=_v2_good
 #Username (default: `whoami`) 
 USER=`whoami`
 #Directory for work
-WORKINGDIR=work_clean_${SURVEY}
+WORKINGDIR=work_${SURVEY}
 #Directory for Raw Images 
 RAWDIR=raw_chips
 #Path to configuration files
@@ -198,7 +198,8 @@ EOF
   source activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Installing Python modules \033[0m" 
-  ${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy pyfits > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
+  #${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy pyfits==3.4 > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
+  ${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing cfitsio, pgplot, source-extractor, gfortran, libxcb, tcsh, swarp \033[0m" 
   #${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot astromatic-source-extractor gfortran_linux-64 \
