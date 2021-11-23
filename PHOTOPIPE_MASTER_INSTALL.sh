@@ -22,6 +22,7 @@ NOCONFIG=0
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
 RUNROOT=/net/home/fohlen13/hendrik/KiDS/KiDS-DR5
+#RUNROOT=/net/home/fohlen13/awright/KiDS/KiDS-DR5
 #RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN_AGAIN/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
@@ -189,41 +190,58 @@ EOF
   bash Anaconda2-4.3.0-Linux-x86_64.sh -b -p ./anaconda2/ > Anaconda_install.log 2>&1
   export PYTHONPATH=${RUNROOT}/INSTALL/anaconda2/bin/python2:${RUNROOT}/INSTALL/anaconda2/lib/
   export PATH=${RUNROOT}/INSTALL/anaconda2/bin/:${PATH}
-  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${RUNROOT}/INSTALL/anaconda2/lib/
+  export LD_LIBRARY_PATH=${RUNROOT}/INSTALL/anaconda2/lib/:${LD_LIBRARY_PATH}
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Setting Anaconda configuration \033[0m" 
-  ##${RUNROOT}/INSTALL/anaconda2/bin/conda config --set channel_priority strict
-  ${RUNROOT}/INSTALL/anaconda2/bin/conda update conda  > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
-  ${RUNROOT}/INSTALL/anaconda2/bin/conda create -p ${RUNROOT}/INSTALL/anaconda2/photopipe_env > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
-  source activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env
-  #${RUNROOT}/INSTALL/anaconda2/bin/conda env create -f photopipe_env.yml
+  #${RUNROOT}/INSTALL/anaconda2/condabin/conda config --set channel_priority strict
+  echo step1 > python_packages.log
+  conda create -p ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+  conda init bash >> python_packages.log 2>&1 
+  echo step2 >> python_packages.log
+  curdir=`pwd`
+  source ~/.bashrc >> python_packages.log 2>&1
+  cd $curdir
+  #${RUNROOT}/INSTALL/anaconda2/condabin/conda init bash --reverse >> python_packages.log 2>&1 
+  echo step3 >> python_packages.log
+  conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 || echo "ERROR: activate failed. Do the following:\nClose/Reopen the shell\n'conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env'\n and rerun the PHOTOPIPE_MASTER_INSTALL.sh."
+else 
+  cd ${RUNROOT}/INSTALL
+  export PYTHONPATH=${RUNROOT}/INSTALL/anaconda2/bin/python2:${RUNROOT}/INSTALL/anaconda2/lib/
+  export PATH=${RUNROOT}/INSTALL/anaconda2/bin/:${PATH}
+  export LD_LIBRARY_PATH=${RUNROOT}/INSTALL/anaconda2/lib/:${LD_LIBRARY_PATH}
+fi 
+if [ ! -d ${RUNROOT}/bpz-1.99.3_expanded ] 
+then 
+  echo -en "   >\033[0;34m Setting Anaconda configuration \033[0m" 
+  echo step4 >> python_packages.log
+  #conda update conda  >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Installing Python modules \033[0m" 
-  #${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy pyfits==3.4 > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
-  ${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy > python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
+  #${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy pyfits==3.4 >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
+  ${RUNROOT}/INSTALL/anaconda2/bin/python -m pip install tdqm numpy astroquery==0.4.0 astropy >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing cfitsio, pgplot, source-extractor, gfortran, libxcb, tcsh, swarp \033[0m" 
-  #${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot astromatic-source-extractor gfortran_linux-64 \
+  #${RUNROOT}/INSTALL/anaconda2/condabin/conda install -c conda-forge tcsh screen cfitsio pgplot astromatic-source-extractor gfortran_linux-64=9.3.0 \
   #  libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -en "   >\033[0;34m Installing cfitsio, pgplot, gfortran, libxcb, tcsh \033[0m" 
-  ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64=9.3.0 \
+  conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64=9.3.0 \
     libxcb >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing gfortran \033[0m" 
-  #${RUNROOT}/INSTALL/anaconda2/bin/conda install  >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+  #${RUNROOT}/INSTALL/anaconda2/condabin/conda install  >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   #echo -e "\033[0;31m - Done! \033[0m" 
   ##echo -en "   >\033[0;34m Installing additional conda-forge tools \033[0m" 
-  ##${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge cfitsio pgplot astromatic-source-extractor openmp >> python_packages.log 2>&1 <<EOF
+  ##${RUNROOT}/INSTALL/anaconda2/condabin/conda install -c conda-forge cfitsio pgplot astromatic-source-extractor openmp >> python_packages.log 2>&1 <<EOF
   #echo -en "   >\033[0;34m Installing cfitsio \033[0m" 
-  #timeout 120s ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge cfitsio >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt || echo -en "- timeout"
+  #timeout 120s ${RUNROOT}/INSTALL/anaconda2/condabin/conda install -c conda-forge cfitsio >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt || echo -en "- timeout"
   #echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing pgplot \033[0m" 
-  #timeout 120s ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge pgplot >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt || echo -en "- timeout"
+  #timeout 120s ${RUNROOT}/INSTALL/anaconda2/condabin/conda install -c conda-forge pgplot >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt || echo -en "- timeout"
   #echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing source extractor \033[0m" 
-  #timeout 120s ${RUNROOT}/INSTALL/anaconda2/bin/conda install -c conda-forge astromatic-source-extractor >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt || echo -en "- timeout"
+  #timeout 120s ${RUNROOT}/INSTALL/anaconda2/condabin/conda install -c conda-forge astromatic-source-extractor >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt || echo -en "- timeout"
   #echo -e "\033[0;31m - Done! \033[0m" 
-  ##}}}
+  #}}}
   #Install THELI LDAC tools {{{
   echo -en "   >\033[0;34m Installing THELI LDAC tools\033[0m" 
   if [ ! -d ${PACKROOT}/theli-1.30.0 ]
@@ -252,7 +270,7 @@ EOF
     cd ${RUNROOT}/INSTALL/theli-${THELIPACKVERS}/bin/${MACHINE}/
     for file in `ls *${THELIPACKSUFFIX}`
     do
-      ln -s ${file} ${file//${THELIPACKSUFFIX}/}
+      ln -sf ${file} ${file//${THELIPACKSUFFIX}/}
     done
   fi
   cd ${RUNROOT}/INSTALL
@@ -268,6 +286,7 @@ EOF
   make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
   sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  cp ${PACKROOT}/libgfortran.so.5.0.0 ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/
   make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   #compile the bigim directory 
   cd ${RUNROOT}/INSTALL/gapphot_TE/kk/bigim/
