@@ -203,12 +203,13 @@ EOF
   cd $curdir
   #${RUNROOT}/INSTALL/anaconda2/condabin/conda init bash --reverse >> python_packages.log 2>&1 
   echo step3 >> python_packages.log
-  conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 || echo "ERROR: activate failed. Do the following:\nClose/Reopen the shell\n'conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env'\n and rerun the PHOTOPIPE_MASTER_INSTALL.sh."
+  conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 || echo -e "ERROR: activate failed. Do the following:\nClose/Reopen the shell\n'conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env'\n and rerun the PHOTOPIPE_MASTER_INSTALL.sh."
 else 
   cd ${RUNROOT}/INSTALL
   export PYTHONPATH=${RUNROOT}/INSTALL/anaconda2/bin/python2:${RUNROOT}/INSTALL/anaconda2/lib/
   export PATH=${RUNROOT}/INSTALL/anaconda2/bin/:${PATH}
   export LD_LIBRARY_PATH=${RUNROOT}/INSTALL/anaconda2/lib/:${LD_LIBRARY_PATH}
+  conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 || echo "ERROR: activate STILL failed?!"
 fi 
 if [ ! -d ${RUNROOT}/bpz-1.99.3_expanded ] 
 then 
