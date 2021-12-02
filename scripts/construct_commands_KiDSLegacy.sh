@@ -395,7 +395,7 @@ do
           $phot_cat \
           ${wdpaw}/${pawname}_smart.cat \
           ${band} 30 \
-          RA DEC
+          RAJ2000 DECJ2000
       done
     done
   fi
