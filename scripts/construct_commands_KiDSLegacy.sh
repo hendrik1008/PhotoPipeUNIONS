@@ -982,8 +982,8 @@ do
     echo -n chmod -R g+wX ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/ \;\ 
     echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
       ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@_ugriZYJHKs_photoz.cat \;\ 
-    echo -n cp ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz \
-      ${THELIDATAPATH}/${field_name}/@THELIFILTER@/masks_@THELIVERSION@/ \;\ 
+    echo -n gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+      \> ${THELIDATAPATH}/${field_name}/@THELIFILTER@/masks_@THELIVERSION@/${field_name}_AW_THELI_NIR.mask.fits.gz \;\ 
     echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_*_zz.txt \
       ${THELIDATAPATH}/${field_name}/@THELIFILTER@/postcoadd_@THELIVERSION@/plots/ \;\ 
     echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_*_zz.png \
