@@ -22,12 +22,11 @@ NOCONFIG=0
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
 RUNROOT=/net/home/fohlen13/hendrik/KiDS/KiDS-DR5
-#RUNROOT=/net/home/fohlen13/awright/KiDS/KiDS-DR5
-#RUNROOT=/net/home/fohlen13/awright/PhotoPipe/RUNDIR_CLEAN_AGAIN/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
 SURVEY=KiDS-DR5
+SURVEY=KiDZ
 #Survey ID in AstroWISE
 AWSURVEYNAME=KiDS-1347 
 #Patch catalogue suffix 
@@ -43,32 +42,32 @@ CONFIGPATH=RUNTIME/config/
 #Path to modified script files
 SCRIPTPATH=RUNTIME/scripts/
 #Path to VIKING data 
-VIKINGROOT=/path/to/VIKING/
 VIKINGROOT=/net/fohlen11/home/awright/KiDS_VIKING_1350/
+VIKINGROOT=/net/fohlen11/home/awright/KIDZ_NIR_data/Detectors/results/
 #Name of the chip-type for VIKING data 
 VIKINGTYPE=native_bsub
 #Path to THELI data 
-THELIDATAPATH=/path/to/THELI/Data/
 THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/
-#THELIDATAPATH=/net/fohlen13/home/awright/KiDS/DR5/THELI/
+THELIDATAPATH=/net/fohlen11/home/awright/KIDZ_THELI/THELI_filetree/
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
-POINTINGLIST=/path/to/pointinglist.txt 
-POINTINGLIST=pointing_filelist.dat
 POINTINGLIST=KiDS-Legacy_pointings.txt
+POINTINGLIST=KiDZ_pointings_list.dat
 #Path to AstroWISE catalogues 
-ASTROWISEPATH=/path/to/AstroWISE/catalogues/
 ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/
+ASTROWISEPATH=/net/fohlen11/home/dvornik/KIDZ/
 #The THELI Filter for photometry 
 THELIFILTER=r_SDSS
 #The THELI Version that was used 
 THELIVERSION=V1.3.0A
+THELIVERSION=V1.2.0A
 #The Survey used for Photometric Reference
 REFERENCE=Gaia
 #File containing u-band zero-point corrections
 UBANDCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_u_pipeline.csv
 UBANDCORRECTIONSFILEAP40=${RUNROOT}/${CONFIGPATH}/offsets_u_scat_ap40_pipeline.csv
+UBANDCORRECTIONSFILE=
 #Machine type
 MACHINE=Linux_64 # can be seen using `uname`
 #THELI Path 
@@ -203,15 +202,14 @@ EOF
   cd $curdir
   #${RUNROOT}/INSTALL/anaconda2/condabin/conda init bash --reverse >> python_packages.log 2>&1 
   echo step3 >> python_packages.log
-  conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 || echo -e "ERROR: activate failed. Do the following:\nClose/Reopen the shell\n'conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env'\n and rerun the PHOTOPIPE_MASTER_INSTALL.sh."
+  conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 || echo "ERROR: activate failed. Do the following:\nClose/Reopen the shell\n'conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env'\n and rerun the PHOTOPIPE_MASTER_INSTALL.sh."
 else 
   cd ${RUNROOT}/INSTALL
   export PYTHONPATH=${RUNROOT}/INSTALL/anaconda2/bin/python2:${RUNROOT}/INSTALL/anaconda2/lib/
   export PATH=${RUNROOT}/INSTALL/anaconda2/bin/:${PATH}
   export LD_LIBRARY_PATH=${RUNROOT}/INSTALL/anaconda2/lib/:${LD_LIBRARY_PATH}
-  conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 || echo "ERROR: activate STILL failed?!"
 fi 
-if [ ! -d ${RUNROOT}/bpz-1.99.3_expanded ] 
+if [ ! -d ${RUNROOT}/INSTALL/bpz-1.99.3_expanded ] 
 then 
   echo -en "   >\033[0;34m Setting Anaconda configuration \033[0m" 
   echo step4 >> python_packages.log
@@ -219,7 +217,7 @@ then
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Installing Python modules \033[0m" 
   #${RUNROOT}/INSTALL/anaconda2/bin/pip install tdqm numpy astroquery==0.4.0 astropy pyfits==3.4 >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
-  ${RUNROOT}/INSTALL/anaconda2/bin/python -m pip install tdqm numpy astroquery==0.4.0 astropy >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
+  ${RUNROOT}/INSTALL/anaconda2/bin/python -m pip install tdqm numpy astroquery==0.4.0 astropy requests >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing cfitsio, pgplot, source-extractor, gfortran, libxcb, tcsh, swarp \033[0m" 
   #${RUNROOT}/INSTALL/anaconda2/condabin/conda install -c conda-forge tcsh screen cfitsio pgplot astromatic-source-extractor gfortran_linux-64=9.3.0 \
