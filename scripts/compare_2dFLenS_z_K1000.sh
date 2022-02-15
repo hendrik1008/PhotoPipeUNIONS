@@ -48,7 +48,7 @@ bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
     gawk 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_2dFLenS\n",$0; else print $0}' \
 	>> $wd/make_ssc.conf_$$
 
-makessc -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
+make_ssc -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
              -o ${wd}/merg_2dFLenS_comp.cat_$$ \
              -c $wd/make_ssc.conf_$$
 
