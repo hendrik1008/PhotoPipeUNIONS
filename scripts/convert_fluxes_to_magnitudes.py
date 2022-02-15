@@ -11,7 +11,8 @@ import os
 
 catname = sys.argv[1]
 outcat = sys.argv[2]
-u_offset = float(sys.argv[3])
+u_offset_0p7 = float(sys.argv[3])
+u_offset_1p0 = float(sys.argv[4])
 
 ### read the input catalogue
 
@@ -41,6 +42,8 @@ for aperture in ('0p7', '1p0'):
                     SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i2"]
                 else:
                     SLR_Gaia_offset = 0.                
+            if band == "u":
+                SLR_Gaia_offset -= u_offset_0p7
         if aperture == '1p0':
             if band_cap == "I":
                 band_num = band.capitalize()[1]
@@ -56,9 +59,8 @@ for aperture in ('0p7', '1p0'):
                     SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_10_i2"]
                 else:
                     SLR_Gaia_offset = 0.                
-
-        if band == "u":
-            SLR_Gaia_offset -= u_offset
+            if band == "u":
+                SLR_Gaia_offset -= u_offset_1p0
             
         flag = ldac_table['FLAG_GAAP_'+aperture+'_'+band]
         flux = ldac_table['FLUX_GAAP_'+aperture+'_'+band]

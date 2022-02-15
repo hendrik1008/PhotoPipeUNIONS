@@ -65,8 +65,8 @@ THELIVERSION=V1.2.0A
 #The Survey used for Photometric Reference
 REFERENCE=Gaia
 #File containing u-band zero-point corrections
-UBANDCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_u_pipeline.csv
-UBANDCORRECTIONSFILEAP40=${RUNROOT}/${CONFIGPATH}/offsets_u_scat_ap40_pipeline.csv
+UBANDCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_u_pipeline_0p7_1p0_noDups.csv
+#UBANDCORRECTIONSFILEAP40=${RUNROOT}/${CONFIGPATH}/offsets_u_scat_ap40_pipeline.csv
 UBANDCORRECTIONSFILE=
 #Machine type
 MACHINE=Linux_64 # can be seen using `uname`
