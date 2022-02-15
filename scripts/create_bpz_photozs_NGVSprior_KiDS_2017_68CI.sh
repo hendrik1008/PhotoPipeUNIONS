@@ -263,14 +263,19 @@ mkdir -p ${TEMPDIR}
                 }
               }
 
-              if ( $5!=99 && $5!=-99 && $6!=99 && $6!=-99 ) # r-band to i-band conversion
+              if ( $6!=99 && $6!=-99 ) # i1-band available?
               {
-                $2 = $2 - $5 + $6
+                $2 = $6
               }
-              #else
-              #{
-              #  $2 = -99
-              #}
+              else if ( $7!=99 && $7!=-99 ) # i2-band available?
+              {
+                $2 = $7
+              }
+              else if ( $5!=99 && $5!=-99 ) # r-band available?
+              {
+                $2 = $5
+              }
+	      # otherwise MAG_AUTO (r-band) is used as M_0 in BPZ
 
               print bpzfilters, 
                     nbpzfilters, 
@@ -360,19 +365,19 @@ mkdir -p ${TEMPDIR}
 # disabled test (see above)
 #fi
 
-#test -f $1/${BASE}_photoz.cat.tmp       && rm $1/${BASE}_photoz.cat.tmp
+test -f $1/${BASE}_photoz.cat.tmp       && rm $1/${BASE}_photoz.cat.tmp
 #test -f $1/${BASE}_photoz.cat.tmp2      && rm $1/${BASE}_photoz.cat.tmp2
-#test -f ${TEMPDIR}/tmp_$$.asc           && rm ${TEMPDIR}/tmp_$$.asc
-#test -f ${TEMPDIR}/tmp1_$$.asc          && rm ${TEMPDIR}/tmp1_$$.asc
+test -f ${TEMPDIR}/tmp_$$.asc           && rm ${TEMPDIR}/tmp_$$.asc
+test -f ${TEMPDIR}/tmp1_$$.asc          && rm ${TEMPDIR}/tmp1_$$.asc
 #test -f ${TEMPDIR}/tmp2_$$.asc          && rm ${TEMPDIR}/tmp2_$$.asc
 #test -f ${TEMPDIR}/tmp3_$$.asc          && rm ${TEMPDIR}/tmp3_$$.asc
 #test -f ${TEMPDIR}/tmp4_$$.asc          && rm ${TEMPDIR}/tmp4_$$.asc
 #test -f ${TEMPDIR}/tmp5_$$.asc          && rm ${TEMPDIR}/tmp5_$$.asc
 #test -f ${TEMPDIR}/tmp6_$$.asc          && rm ${TEMPDIR}/tmp6_$$.asc
 #test -f ${TEMPDIR}/tmp6_$$.cat          && rm ${TEMPDIR}/tmp6_$$.cat
-#test -f ${TEMPDIR}/bpz_filters_$$.txt   && rm ${TEMPDIR}/bpz_filters_$$.txt
-#test -f ${TEMPDIR}/asctoldac_bpzfilter.conf &&\
-#     rm ${TEMPDIR}/asctoldac_bpzfilter.conf
+test -f ${TEMPDIR}/bpz_filters_$$.txt   && rm ${TEMPDIR}/bpz_filters_$$.txt
+test -f ${TEMPDIR}/asctoldac_bpzfilter.conf &&\
+     rm ${TEMPDIR}/asctoldac_bpzfilter.conf
 
 cd ${DIR}
 
