@@ -124,8 +124,8 @@ test ! -d ${mdfield} && mkdir ${mdfield}
 
 ### Read RA and Dec from KiDS field name.
 detect_image=${THELIDATAPATH}/${field_name}/@THELIFILTER@/coadd_@THELIVERSION@/${KiDS_field}_@THELIFILTER@.@THELIVERSION@.swarp.cut.fits
-RA=`dfits  ${detect_image}|fitsort -d CRVAL1|awk '{print $2}'`
-Dec=`dfits ${detect_image}|fitsort -d CRVAL2|awk '{print $2}'`
+RA=`dfits  ${detect_image}|fitsort -d CRVAL1|awk '{printf "%1.8f\n", $2}'`
+Dec=`dfits ${detect_image}|fitsort -d CRVAL2|awk '{printf "%1.8f\n", $2}'`
 
 ### Paths to the photometric, lensfit, and star catalogues.
 
@@ -395,7 +395,7 @@ do
           $phot_cat \
           ${wdpaw}/${pawname}_smart.cat \
           ${band} 30 \
-          RAJ2000 DECJ2000
+          RA DEC
       done
     done
   fi
@@ -859,7 +859,7 @@ do
       Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
     fi 
     continue=`echo $Dec | awk '{if ($1<=-10) print 1; else print 0}'`
-    if [ $continue -eq 1 ] && [ -f @2DFLENSCATALOGUE@ ]
+    if [ $continue -eq 1 ] && [ -f @TWODFLENSCATALOGUE@ ]
     then
       #### Comparison to SDSS.
       echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_2dFLenS_z_K1000.sh \
@@ -957,18 +957,18 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "RAND" ]; then
     mask_base=`basename ${mask} .flags.fits`
-    if [ -f ${mdfield}/${mask_base}_NIR.mask.fits.gz ] && [ ! -f ${mdfield}/${mask_base}_NIR.mask.fits ]
-    then
-      echo -n gunzip -c ${mdfield}/${mask_base}_NIR.mask.fits.gz \> ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
-    fi
+    #if [ -f ${mdfield}/${mask_base}_NIR.mask.fits.gz ] && [ ! -f ${mdfield}/${mask_base}_NIR.mask.fits ]
+    #then
+    #  echo -n gunzip -c ${mdfield}/${mask_base}_NIR.mask.fits.gz \> ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
+    #fi
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_random.sh \
       ${mdfield}\
       ${field_name} \
       ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
-    if [ -f ${mdfield}/${mask_base}_NIR.mask.fits.gz ]
-    then
-      echo -n rm ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
-    fi
+    #if [ -f ${mdfield}/${mask_base}_NIR.mask.fits.gz ]
+    #then
+    #  echo -n rm ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
+    #fi
     echo
   fi
 done
@@ -980,7 +980,7 @@ do
     test ! -d ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/ && \
       mkdir ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/
     echo -n chmod -R g+wX ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/ \;\ 
-    echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+    echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
       ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@_ugriZYJHKs_photoz.cat \;\ 
     echo -n gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
       \> ${THELIDATAPATH}/${field_name}/@THELIFILTER@/masks_@THELIVERSION@/${field_name}_AW_THELI_NIR.mask.fits.gz \;\ 
