@@ -13,6 +13,14 @@ catname = sys.argv[1]
 outcat = sys.argv[2]
 u_offset_0p7 = float(sys.argv[3])
 u_offset_1p0 = float(sys.argv[4])
+g_offset_0p7 = float(sys.argv[5])
+g_offset_1p0 = float(sys.argv[6])
+r_offset_0p7 = float(sys.argv[7])
+r_offset_1p0 = float(sys.argv[8])
+i1_offset_0p7 = float(sys.argv[9])
+i1_offset_1p0 = float(sys.argv[10])
+i2_offset_0p7 = float(sys.argv[11])
+i2_offset_1p0 = float(sys.argv[12])
 
 ### read the input catalogue
 
@@ -44,6 +52,14 @@ for aperture in ('0p7', '1p0'):
                     SLR_Gaia_offset = 0.                
             if band == "u":
                 SLR_Gaia_offset -= u_offset_0p7
+            elif band == "g":
+                SLR_Gaia_offset -= g_offset_0p7
+            elif band == "r":
+                SLR_Gaia_offset -= r_offset_0p7
+            elif band == "i1":
+                SLR_Gaia_offset -= i1_offset_0p7
+            elif band == "i2":
+                SLR_Gaia_offset -= i2_offset_0p7
         if aperture == '1p0':
             if band_cap == "I":
                 band_num = band.capitalize()[1]
@@ -61,6 +77,14 @@ for aperture in ('0p7', '1p0'):
                     SLR_Gaia_offset = 0.                
             if band == "u":
                 SLR_Gaia_offset -= u_offset_1p0
+            elif band == "g":
+                SLR_Gaia_offset -= g_offset_1p0
+            elif band == "r":
+                SLR_Gaia_offset -= r_offset_1p0
+            elif band == "i1":
+                SLR_Gaia_offset -= i1_offset_1p0
+            elif band == "i2":
+                SLR_Gaia_offset -= i2_offset_1p0
             
         flag = ldac_table['FLAG_GAAP_'+aperture+'_'+band]
         flux = ldac_table['FLUX_GAAP_'+aperture+'_'+band]

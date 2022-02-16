@@ -66,8 +66,7 @@ THELIVERSION=V1.2.0A
 REFERENCE=Gaia
 #File containing u-band zero-point corrections
 UBANDCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_u_pipeline_0p7_1p0_noDups.csv
-#UBANDCORRECTIONSFILEAP40=${RUNROOT}/${CONFIGPATH}/offsets_u_scat_ap40_pipeline.csv
-UBANDCORRECTIONSFILE=
+G2KCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_g2k_FLAG_asOffset.csv
 #Machine type
 MACHINE=Linux_64 # can be seen using `uname`
 #THELI Path 

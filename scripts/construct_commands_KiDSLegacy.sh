@@ -657,15 +657,57 @@ do
       \;\ 
     echo -n rm ${mdfield}/*_$$ \;\ 
 
-    if [ -f @UBANDCORRECTIONSFILE@ ]
+    u_offset=""
+    g_offset=""
+    r_offset=""
+    i1_offset=""
+    i2_offset=""
+    if [ -f @G2KCORRECTIONSFILE@ ]
     then 
-	    u_offset=`grep $AW_name @UBANDCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $8,$9}'`
-	    #if [ ${field_name} = KIDS_27p6_m34p1 ] || [ ${field_name} = KIDS_28p5_m33p1 ]
-	    #then
-	    #    u_offset=`grep $AW_name @UBANDCORRECTIONSFILEAP40@ | awk 'BEGIN{FS=","}{print $8,$9}'`
-	    #fi
-    else 
-      u_offset='0.0 0.0'
+	    u_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $27,$28}'`
+    fi 
+    if [ "$u_offset" == "" ]
+    then 
+      if [ -f @UBANDCORRECTIONSFILE@ ]
+      then 
+	      u_offset=`grep $AW_name @UBANDCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $8,$9}'`
+      fi 
+      if [ "$u_offset" == "" ]
+      then 
+        u_offset='0.0 0.0'
+      fi 
+    fi 
+    if [ -f @G2KCORRECTIONSFILE@ ]
+    then 
+	    g_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $29,$30}'`
+    fi 
+    if [ "$g_offset" == "" ]
+    then 
+      g_offset='0.0 0.0'
+    fi 
+    if [ -f @G2KCORRECTIONSFILE@ ]
+    then 
+	    r_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $31,$32}'`
+    fi 
+    if [ "$r_offset" == "" ]
+    then 
+      r_offset='0.0 0.0'
+    fi 
+    if [ -f @G2KCORRECTIONSFILE@ ]
+    then 
+	    i1_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $33,$34}'`
+    fi 
+    if [ "$i1_offset" == "" ]
+    then 
+      i1_offset='0.0 0.0'
+    fi 
+    if [ -f @G2KCORRECTIONSFILE@ ]
+    then 
+	    i2_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $35,$36}'`
+    fi 
+    if [ "$i2_offset" == "" ]
+    then 
+      i2_offset='0.0 0.0'
     fi 
 
     echo -n python @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes.py \
