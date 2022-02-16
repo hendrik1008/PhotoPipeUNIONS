@@ -713,7 +713,7 @@ do
     echo -n python @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes.py \
       ${mdfield}/${field_name}_ugriZYJHKs.cat_tmp \
       ${mdfield}/${field_name}_ugriZYJHKs.cat \
-      $u_offset \;\ 
+      $u_offset $g_offset $r_offset $i1_offset $i2_offset \;\ 
 
     echo rm ${mdfield}/${field_name}_ugriZYJHKs.cat_tmp
   fi
