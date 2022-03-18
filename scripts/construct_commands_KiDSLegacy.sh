@@ -916,6 +916,24 @@ do
   fi
 done
 
+### Comparison to Deep Spec redshift compilation.
+### Full tile.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "COMPTILEDEEPZ" ]; then
+    if [ -f @DEEPZCAT@ ]
+    then
+      #### Comparison to SDSS.
+      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_DEEP_z_K1000.sh \
+        ${mdfield} \
+        @DEEPZCAT@ \
+        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+        ${field_name} \;\ 
+      echo
+    fi
+  fi
+done
+
 ### Create the 4-band MASK
 for mode in ${MODE}
 do
