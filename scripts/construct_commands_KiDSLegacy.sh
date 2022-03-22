@@ -113,8 +113,18 @@ done
 #}}}
 
 #Define the pointing name in AstroWISE convention {{{
-AW_name=`echo ${field_name} | sed 's/p/\./g' | sed 's/m/\-/g'`
-AW_name_new=`echo $AW_name | sed 's/KIDS/@SURVEY@/g'`
+if [ "@AWNAME_LOOKUP@" == "1" ]
+then 
+  AW_name=`grep ${field_name} @UBANDCORRECTIONSFILE@ | awk -F, '{print $1}'`
+  if [ "${AW_name}" == "" ]
+  then 
+    >&2 echo "ERROR: The field ${field_name} doesn't exist in @UBANDCORRECTIONSFILE@"
+    >&2 echo "       If this is expected, then set AWNAME_LOOKUP to 0 in the parameter file!"
+    exit 1 
+  fi 
+else 
+  AW_name=`echo ${field_name} | sed 's/p/\./g' | sed 's/m/\-/g'`
+fi 
 #}}}
 
 ### Create a working directory
@@ -923,7 +933,7 @@ do
   if [ "${mode}" = "COMPTILEDEEPZ" ]; then
     if [ -f @DEEPZCAT@ ]
     then
-      #### Comparison to SDSS.
+      #### Comparison to DEEP specz 
       echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_DEEP_z_K1000.sh \
         ${mdfield} \
         @DEEPZCAT@ \
