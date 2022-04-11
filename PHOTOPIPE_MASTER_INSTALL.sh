@@ -25,8 +25,8 @@ RUNROOT=/net/home/fohlen13/hendrik/KiDS/KiDS-DR5
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
-SURVEY=KiDS-DR5
 SURVEY=KiDZ
+SURVEY=KiDS-DR5
 #Survey ID in AstroWISE
 AWSURVEYNAME=KiDS-1347 
 #Patch catalogue suffix 
@@ -42,26 +42,27 @@ CONFIGPATH=RUNTIME/config/
 #Path to modified script files
 SCRIPTPATH=RUNTIME/scripts/
 #Path to VIKING data 
-VIKINGROOT=/net/fohlen11/home/awright/KiDS_VIKING_1350/
 VIKINGROOT=/net/fohlen11/home/awright/KIDZ_NIR_data/Detectors/results/
+VIKINGROOT=/net/fohlen11/home/awright/KiDS_VIKING_1350/
 #Name of the chip-type for VIKING data 
 VIKINGTYPE=native_bsub
 #Path to THELI data 
-THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/
 THELIDATAPATH=/net/fohlen11/home/awright/KIDZ_THELI/THELI_filetree/
+THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
-POINTINGLIST=KiDS-Legacy_pointings.txt
 POINTINGLIST=KiDZ_pointings_list.dat
+POINTINGLIST=KiDS-Legacy_pointings.txt
+POINTINGLIST=KiDS-Legacy_pointings_1.txt
 #Path to AstroWISE catalogues 
-ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/
 ASTROWISEPATH=/net/fohlen11/home/dvornik/KIDZ/
+ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/
 #The THELI Filter for photometry 
 THELIFILTER=r_SDSS
 #The THELI Version that was used 
-THELIVERSION=V1.3.0A
 THELIVERSION=V1.2.0A
+THELIVERSION=V1.3.0A
 #The Survey used for Photometric Reference
 REFERENCE=Gaia
 #File containing u-band zero-point corrections
@@ -90,7 +91,7 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY AWSURVEYNAME FILESUFFIX USER \
   POINTINGLIST POINTINGLIMITSFILE ASTROWISEPATH THELIFILTER THELIVERSION \
   REFERENCE UBANDCORRECTIONSFILE UBANDCORRECTIONSFILEAP40 THELIPATH THELIDATAPATH NTHREAD \
   CATALOGUEKEYSFILE REFRESHRATE LOGFILE TWODFLENSCATALOGUE THELIPACKVERS \
-  MACHINE THELIPACKSUFFIX"
+  MACHINE THELIPACKSUFFIX G2KCORRECTIONSFILE"
 #}}}
 
 #Read any command line options  {{{
