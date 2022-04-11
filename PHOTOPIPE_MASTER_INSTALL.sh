@@ -25,8 +25,8 @@ RUNROOT=/net/home/fohlen13/hendrik/KiDS/KiDS-DR5
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
-SURVEY=KiDZ
-SURVEY=KiDS-DR5
+#SURVEY=KiDZ                                                             #KIDZ
+SURVEY=KiDS-DR5                                                         #KIDS
 #Survey ID in AstroWISE
 AWSURVEYNAME=KiDS-1347 
 #Patch catalogue suffix 
@@ -42,13 +42,13 @@ CONFIGPATH=RUNTIME/config/
 #Path to modified script files
 SCRIPTPATH=RUNTIME/scripts/
 #Path to VIKING data 
-VIKINGROOT=/net/fohlen11/home/awright/KIDZ_NIR_data/Detectors/results/
-VIKINGROOT=/net/fohlen11/home/awright/KiDS_VIKING_1350/
+#VIKINGROOT=/net/fohlen11/home/awright/KIDZ_NIR_data/Detectors/results/ #KIDZ 
+VIKINGROOT=/net/fohlen11/home/awright/KiDS_VIKING_1350/                 #KiDS 
 #Name of the chip-type for VIKING data 
 VIKINGTYPE=native_bsub
 #Path to THELI data 
-THELIDATAPATH=/net/fohlen11/home/awright/KIDZ_THELI/THELI_filetree/
-THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/
+#THELIDATAPATH=/net/fohlen11/home/awright/KIDZ_THELI/THELI_filetree/    #KIDZ
+THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/            #KIDS
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
@@ -56,24 +56,31 @@ POINTINGLIST=KiDZ_pointings_list.dat
 POINTINGLIST=KiDS-Legacy_pointings.txt
 POINTINGLIST=KiDS-Legacy_pointings_1.txt
 #Path to AstroWISE catalogues 
-ASTROWISEPATH=/net/fohlen11/home/dvornik/KIDZ/
-ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/
+#ASTROWISEPATH=/net/fohlen11/home/dvornik/KIDZ/                          #KIDZ
+ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/            #KIDS
 #The THELI Filter for photometry 
 THELIFILTER=r_SDSS
 #The THELI Version that was used 
-THELIVERSION=V1.2.0A
-THELIVERSION=V1.3.0A
+#THELIVERSION=V1.2.0A                                                    #KIDZ
+THELIVERSION=V1.3.0A                                                    #KIDS
 #The Survey used for Photometric Reference
 REFERENCE=Gaia
 #File containing u-band zero-point corrections
 UBANDCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_u_pipeline_0p7_1p0_noDups.csv
 G2KCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_g2k_FLAG_asOffset.csv
+#File containing the MAG_AUTO zero-point corrections 
+MAGAUTOCORRFILE=${RUNROOT}/${CONFIGPATH}/dmags_mauto.csv
+#Look up the AstroWISE name in the above UBUAND corrections file?
+AWNAME_LOOKUP=1
+#File containing Deep Spec-z for photo-z comparison 
+DEEPZCAT=/net/home/fohlen13/awright/KiDS/KiDS_calib.11_02_2021.cat
 #Machine type
 MACHINE=Linux_64 # can be seen using `uname`
 #THELI Path 
 THELIPATH=${RUNROOT}/INSTALL/theli-1.6.1/bin/${MACHINE}/
 #File with pointing WCS limits
-POINTINGLIMITSFILE=${RUNROOT}/${CONFIGPATH}/KIDS_ra_dec_cuts.txt
+#POINTINGLIMITSFILE=${RUNROOT}/${CONFIGPATH}/KIDZ_ra_dec_cuts.txt        #KIDZ
+POINTINGLIMITSFILE=${RUNROOT}/${CONFIGPATH}/KIDS_ra_dec_cuts.txt        #KIDS
 #Number of threads 
 NTHREAD=100
 #File with Catalogue Keywords, units, comments, and order
@@ -91,7 +98,7 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY AWSURVEYNAME FILESUFFIX USER \
   POINTINGLIST POINTINGLIMITSFILE ASTROWISEPATH THELIFILTER THELIVERSION \
   REFERENCE UBANDCORRECTIONSFILE UBANDCORRECTIONSFILEAP40 THELIPATH THELIDATAPATH NTHREAD \
   CATALOGUEKEYSFILE REFRESHRATE LOGFILE TWODFLENSCATALOGUE THELIPACKVERS \
-  MACHINE THELIPACKSUFFIX G2KCORRECTIONSFILE"
+  MACHINE THELIPACKSUFFIX DEEPZCAT AWNAME_LOOKUP G2KCORRECTIONSFILE MAGAUTOCORRFILE"
 #}}}
 
 #Read any command line options  {{{

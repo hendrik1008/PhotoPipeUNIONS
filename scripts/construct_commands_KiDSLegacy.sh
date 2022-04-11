@@ -113,8 +113,18 @@ done
 #}}}
 
 #Define the pointing name in AstroWISE convention {{{
-AW_name=`echo ${field_name} | sed 's/p/\./g' | sed 's/m/\-/g'`
-AW_name_new=`echo $AW_name | sed 's/KIDS/@SURVEY@/g'`
+if [ "@AWNAME_LOOKUP@" == "1" ]
+then 
+  AW_name=`grep ${field_name} @UBANDCORRECTIONSFILE@ | awk -F, '{print $1}'`
+  if [ "${AW_name}" == "" ]
+  then 
+    >&2 echo "ERROR: The field ${field_name} doesn't exist in @UBANDCORRECTIONSFILE@"
+    >&2 echo "       If this is expected, then set AWNAME_LOOKUP to 0 in the parameter file!"
+    exit 1 
+  fi 
+else 
+  AW_name=`echo ${field_name} | sed 's/p/\./g' | sed 's/m/\-/g'`
+fi 
 #}}}
 
 ### Create a working directory
@@ -171,7 +181,7 @@ do
     for filter in Z Y J H Ks
     do
       #Check that the VIKING chip list is present
-      if [ ! -f @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_wcs.txt ]
+      if [ ! -f @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_@SURVEY@_wcs.txt ]
       then 
         #Construct the chip list
         chiplist=`find  @VIKINGROOT@/@VIKINGTYPE@/${filter}/ | grep "_r.fits"`
@@ -181,7 +191,7 @@ do
           then 
             chipRA=`dfits ${chip}|fitsort -d CRVAL1|awk '{print $2}'`
             chipDec=`dfits ${chip}|fitsort -d CRVAL2|awk '{print $2}'`
-            echo `basename ${chip} .fits` ${chipRA} ${chipDec} >> @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_wcs.txt
+            echo `basename ${chip} .fits` ${chipRA} ${chipDec} >> @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_@SURVEY@_wcs.txt
           fi 
         done
         #>&2 echo "ERROR: the VIKING Chip List is not available for Filter ${filter}"
@@ -190,7 +200,7 @@ do
       #Construct the list of chips for this pointing
       test ! -d ${image_dir}/${KiDS_field}/${filter} && mkdir ${image_dir}/${KiDS_field}/${filter}
       echo bash @RUNROOT@/@SCRIPTPATH@/collect_chips.sh \
-        @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_wcs.txt \
+        @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_@SURVEY@_wcs.txt \
         ${WCS_cuts} \
         \> ${image_dir}/${KiDS_field}/${filter}/chips_list.txt
     done
@@ -827,12 +837,25 @@ do
   fi
 done
 
+### Correct the MAG_AUTO values 
+for mode in ${MODE}
+do
+  if [ "${mode}" = "MAGAUTOCORR" ]; then
+	  mag_auto_corr=`grep $AW_name @MAGAUTOCORRFILE@ | awk 'BEGIN{FS=","}{print $2}'`
+    #Run the MAG_AUTO correction for this field, in place 
+    echo python @RUNROOT@/@SCRIPTPATH@/correct_mag_auto.py \
+      ${mdfield}/${field_name}_ugriZYJHKs.cat \
+      ${mdfield}/${field_name}_ugriZYJHKs_mac.cat \
+      ${mag_auto_corr} \;\ 
+  fi 
+done
+
 ### Run BPZ
 for mode in ${MODE}
 do
   if [ "${mode}" = "BPZ" ]; then
     echo -n "set -e ; "
-    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugriZYJHKs.cat \
+    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugriZYJHKs_mac.cat \
       ${mdfield}/${field_name}_ugriZYJHKs_maglim.cat \;\ 
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
       ${mdfield}\
@@ -916,6 +939,24 @@ do
   fi
 done
 
+### Comparison to Deep Spec redshift compilation.
+### Full tile.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "COMPTILEDEEPZ" ]; then
+    if [ -f @DEEPZCAT@ ]
+    then
+      #### Comparison to DEEP specz 
+      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_DEEP_z_K1000.sh \
+        ${mdfield} \
+        @DEEPZCAT@ \
+        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+        ${field_name} \;\ 
+      echo
+    fi
+  fi
+done
+
 ### Create the 4-band MASK
 for mode in ${MODE}
 do
@@ -979,18 +1020,18 @@ do
       #    echo -n gzip $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits \;\ 
       #  fi
       #done
-      echo -n bash @RUNROOT@/@SCRIPTPATH@/addmask_fits_WCS.sh \
-        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
-        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
-        ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
-        MASK \
-        \"9-band mask information\" \
-        LONG \
-        ${mdfield}/ \;\ 
-      #echo gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
-      #  \> ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz
-      echo
-    fi
+    fi 
+    echo -n bash @RUNROOT@/@SCRIPTPATH@/addmask_fits_WCS.sh \
+      ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+      ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
+      ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+      MASK \
+      \"9-band mask information\" \
+      LONG \
+      ${mdfield}/ \;\ 
+    #echo gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+    #  \> ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz
+    echo
   fi
 done
 
