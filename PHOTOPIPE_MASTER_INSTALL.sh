@@ -52,8 +52,9 @@ THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/            #KIDS
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
-POINTINGLIST=KiDS-Legacy_pointings.txt
 POINTINGLIST=KiDZ_pointings_list.dat
+POINTINGLIST=KiDS-Legacy_pointings.txt
+POINTINGLIST=KiDS-Legacy_pointings_1.txt
 #Path to AstroWISE catalogues 
 #ASTROWISEPATH=/net/fohlen11/home/dvornik/KIDZ/                          #KIDZ
 ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/            #KIDS
