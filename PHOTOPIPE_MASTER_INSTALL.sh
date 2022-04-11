@@ -68,7 +68,7 @@ REFERENCE=Gaia
 UBANDCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_u_pipeline_0p7_1p0_noDups.csv
 G2KCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_g2k_FLAG_asOffset.csv
 #File containing the MAG_AUTO zero-point corrections 
-G2KCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/dmag_mauto.csv
+MAGAUTOCORRFILE=${RUNROOT}/${CONFIGPATH}/dmags_mauto.csv
 #Look up the AstroWISE name in the above UBUAND corrections file?
 AWNAME_LOOKUP=1
 #File containing Deep Spec-z for photo-z comparison 
