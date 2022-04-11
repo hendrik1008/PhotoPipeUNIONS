@@ -263,17 +263,20 @@ mkdir -p ${TEMPDIR}
                 }
               }
 
+              #Define the GAAP-to-total aperture correction
+              #MAG_GAAP_r - MAG_AUTO
+              apcorr = $5 - $2
+
+              #BPZ prior is defined for the i-band, so use that if possible!
               if ( $6!=99 && $6!=-99 ) # i1-band available?
               {
-                $2 = $6
+                #Reference magnitude: MAG_GAAP_i1 - (MAG_GAAP_r-MAG_AUTO)
+                $2 = $6 - apcorr
               }
               else if ( $7!=99 && $7!=-99 ) # i2-band available?
               {
-                $2 = $7
-              }
-              else if ( $5!=99 && $5!=-99 ) # r-band available?
-              {
-                $2 = $5
+                #Reference magnitude: MAG_GAAP_i2 - (MAG_GAAP_r-MAG_AUTO)
+                $2 = $7 - apcorr
               }
 	      # otherwise MAG_AUTO (r-band) is used as M_0 in BPZ
 
