@@ -843,10 +843,10 @@ do
   if [ "${mode}" = "MAGAUTOCORR" ]; then
 	  mag_auto_corr=`grep $AW_name @MAGAUTOCORRFILE@ | awk 'BEGIN{FS=","}{print $2}'`
     #Run the MAG_AUTO correction for this field, in place 
-    echo -n python @RUNROOT@/@SCRIPTPATH@/correct_mag_auto.py \
+    echo python @RUNROOT@/@SCRIPTPATH@/correct_mag_auto.py \
       ${mdfield}/${field_name}_ugriZYJHKs.cat \
       ${mdfield}/${field_name}_ugriZYJHKs_mac.cat \
-      ${mag_auto_corr} 
+      ${mag_auto_corr} \;\ 
   fi 
 done
 
