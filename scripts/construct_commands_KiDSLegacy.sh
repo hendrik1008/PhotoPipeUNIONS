@@ -1020,18 +1020,18 @@ do
       #    echo -n gzip $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits \;\ 
       #  fi
       #done
-      echo -n bash @RUNROOT@/@SCRIPTPATH@/addmask_fits_WCS.sh \
-        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
-        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
-        ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
-        MASK \
-        \"9-band mask information\" \
-        LONG \
-        ${mdfield}/ \;\ 
-      #echo gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
-      #  \> ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz
-      echo
-    fi
+    fi 
+    echo -n bash @RUNROOT@/@SCRIPTPATH@/addmask_fits_WCS.sh \
+      ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+      ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
+      ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+      MASK \
+      \"9-band mask information\" \
+      LONG \
+      ${mdfield}/ \;\ 
+    #echo gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+    #  \> ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz
+    echo
   fi
 done
 
