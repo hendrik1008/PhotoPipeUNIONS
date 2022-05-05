@@ -990,7 +990,7 @@ do
   ### create the combined flag file
   echo python @RUNROOT@/@SCRIPTPATH@/make_KIDS_bitmask_DR5.py \
     ${field_name} @THELIVERSION@ \"r_SDSS u_SDSS g_SDSS i_SDSS\" \
-    ${mdfield} ${THELIDATAPATH} ${mdfield} @POINTINGLIMITSFILE@ ${mask} ${mm_dir}
+    ${mdfield} ${THELIDATAPATH} ${mdfield} @POINTINGLIMITSFILE@ ${mask}
 fi
 done
 
