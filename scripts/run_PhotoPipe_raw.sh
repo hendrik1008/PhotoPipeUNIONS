@@ -262,6 +262,7 @@ do
   	  bash @SCRIPTPATH@/construct_commands_KiDSLegacy.sh \
            -md @RUNROOT@/@WORKINGDIR@/ \
            -cd @ASTROWISEPATH@/ \
+	   -mm @MANUALMASKPATH@ \
            -bd @VIKINGROOT@/@VIKINGTYPE@/ \
            -id @RUNROOT@/@WORKINGDIR@/@RAWDIR@/ \
            -fi ${field} \
