@@ -21,7 +21,8 @@ NOCONFIG=0
 #Package directory (default: `pwd`)
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
-RUNROOT=/net/home/fohlen13/hendrik/KiDS/KiDS-DR5
+#RUNROOT=/net/home/fohlen13/awright/KiDS/KiDS-DR5                       #KIDZ
+RUNROOT=/net/home/fohlen13/hendrik/KiDS/KiDS-DR5                       #KIDS
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
@@ -231,7 +232,7 @@ then
   #  libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -en "   >\033[0;34m Installing cfitsio, pgplot, gfortran, libxcb, tcsh \033[0m" 
   conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64=9.3.0 \
-    libxcb >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+    libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing gfortran \033[0m" 
   #${RUNROOT}/INSTALL/anaconda2/condabin/conda install  >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
