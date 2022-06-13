@@ -70,6 +70,10 @@ do
       cats_dir=${2} # Catalogue directory where the KiDS catalogues live.
       shift 2
       ;;
+    -mm)
+      mm_dir=${2} # Directory where the AW manual masks live.
+      shift 2
+      ;;
     -bd)
       bd=${2} # Directory where ALL the background-subtracted
       # VISTA chips live.
@@ -964,24 +968,26 @@ do
   if [ "${mode}" = "MASK4" ]; then
     for filter in u g r i i2
     do
-      #if [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits ]
-      #then
-      #  echo -n gzip -c ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
-      #    \> ${cats_dir}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
-      #elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
-      #then
+      if [ -f ${mm_dir}/$filter/${AW_name}_${filter}.reg ]
+      then
+          echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/include_AW_manual_mask.sh \
+	       ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
+	       ${mm_dir}/${filter}/${AW_name}_${filter}.reg \
+               ${mdfield}/${field_name}_${filter}_mask_AW.fits \;\ 
+      elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
+      then
         echo -n ln -sf ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz \
           ${mdfield}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
-      #fi
+      fi
     done
-
-    if [ -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz ] && \
-       [ ! -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits ]
-    then
-	echo -n gunzip -c ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz \
-	     \> ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits \;\ 
-    fi
-
+  
+    #if [ -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz ] && \
+    #   [ ! -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits ]
+    #then
+    #	echo -n gunzip -c ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz \
+    #	     \> ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits \;\ 
+    #fi
+  
   ### create the combined flag file
   echo python @RUNROOT@/@SCRIPTPATH@/make_KIDS_bitmask_DR5.py \
     ${field_name} @THELIVERSION@ \"r_SDSS u_SDSS g_SDSS i_SDSS\" \
