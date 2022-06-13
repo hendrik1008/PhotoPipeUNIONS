@@ -773,16 +773,17 @@ do
       nr=`wc ${image_dir}/${KiDS_field}/$filter/chips_list.txt | awk '{print $1}'`
 
       ### Science image stack (NOT USED) ###
-      ###if [ ! -f $md/${KiDS_field}/$filter/${KiDS_field}_${filter}_swarp.fits ] && [ $nr -gt 0 ]
-      ###then
-      ###    input_files=${image_dir}/${KiDS_field}/$filter/*_r.fits
-      ###    echo -n cd $md/${KiDS_field}/$filter/ \;
-      ###    echo ~/src/KiDS-VIKING/swarp $input_files \
-        ###	     -NTHREADS 1 \
-        ###	     -BACK_TYPE MANUAL \
-        ###	     -IMAGEOUT_NAME  ${KiDS_field}_${filter}_swarp.fits \
-        ###	     -WEIGHTOUT_NAME ${KiDS_field}_${filter}_swarp.weight.fits
-      ###fi
+      if [ ! -f $md/${KiDS_field}/$filter/${KiDS_field}_${filter}_swarp.fits ] && [ $nr -gt 0 ]
+      then
+          input_files=${image_dir}/${KiDS_field}/$filter/*_r.fits
+          echo -n cd $md/${KiDS_field}/$filter/ \;
+          echo swarp $input_files \
+        	     -NTHREADS 1 \
+        	     -BACK_TYPE MANUAL \
+        	     -WEIGHT_TYPE MAP_WEIGHT \
+        	     -IMAGEOUT_NAME  ${KiDS_field}_${filter}_swarp.fits \
+        	     -WEIGHTOUT_NAME ${KiDS_field}_${filter}_swarp.weight.fits
+      fi
 
       if [ "$nr" != "" ] 
       then 

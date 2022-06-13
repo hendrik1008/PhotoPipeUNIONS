@@ -45,30 +45,42 @@ KiDS:
 - ugri-band void masks  [KIDS_131p0_0p5_r_SDSS_voids.reg]
 - ugri-band flag images (**already in FITS)
 
-KIDS MASK BITS  [CURRENT_VERSION]
+KIDS MASK BITS  [OLD_VERSION]
      1(0): manual_mask_aggressive (THELI det.band)
-     2(1): star_halo_large_faint
-           (THELI det.band; cyan, 10.5<m_r<11.5 of UCAC4 and GSC1 stellar catalog)
-     4(2): star_halo_large (THELI det.band; magenta, m_r<10.5 of UCAC4 and GSC1) 
-           + stellar_mask (THELI det.band; green, m_r<14.0 of UCAC4 and GSC1)
+     2(1): star_halo_large_faint (THELI det.band; cyan, 10.5<m_r<11.5 of UCAC4 and GSC1 stellar catalog)
+     4(2): star_halo_large (THELI det.band; magenta, m_r<10.5 of UCAC4 and GSC1)  + stellar_mask (THELI det.band; green, m_r<14.0 of UCAC4 and GSC1)
      8(3): manual_mask (THELI det.band; magenta)
-    16(4): weight==0 mask (THELI det.band; masking due to saturation, chip gap, etc)
-           + void mask (THELI det.band; green) and asteroids (THELI det.band; red)
+    16(4): weight==0 mask (THELI det.band; masking due to saturation, chip gap, etc) + void mask (THELI det.band; green) and asteroids (THELI det.band; red)
     32(5): (Reserved/Unused)
     64(6): AW manual mask (AW u mask regions)
    128(7): AW manual mask (AW g mask regions)
    256(8): AW manual mask (AW r mask regions)
    512(9): AW manual mask (AW i mask regions)
- 1024(10): AW halo+stellar mask (AW u mask regions)
-           + weight==0 mask (u masking due to saturation, chip gap, etc)
- 2048(11): AW halo+stellar mask (AW g mask regions)
-           + weight==0 mask (g masking due to saturation, chip gap, etc)
- 4096(12): AW halo+stellar mask (AW u mask regions)
-           + weight==0 mask (r masking due to saturation, chip gap, etc)
- 8192(13): AW halo+stellar mask (AW i mask regions)
-           + weight==0 mask (i masking due to saturation, chip gap, etc)
+ 1024(10): AW halo+stellar mask (AW u mask regions) + weight==0 mask (u masking due to saturation, chip gap, etc)
+ 2048(11): AW halo+stellar mask (AW g mask regions) + weight==0 mask (g masking due to saturation, chip gap, etc)
+ 4096(12): AW halo+stellar mask (AW u mask regions) + weight==0 mask (r masking due to saturation, chip gap, etc)
+ 8192(13): AW halo+stellar mask (AW i mask regions) + weight==0 mask (i masking due to saturation, chip gap, etc)
 16384(14): outside the WCS RA/DEC cut (trimming)
 32768(15): (Reserved)  [mask bits FITS in signed 2-byte integer; #15 is reserved for negative sign]
+
+KIDS MASK BITS  [CURRENT_VERSION]
+     1(0): Theli flag (det.band): starhalo mask, conservative (THELI det.band; cyan, 10.5<m_r<11.5 of UCAC4 and GSC1 stellar catalog)
+     2(1): Theli flag (det.band): stellar (THELI det.band; green, m_r<14.0 of UCAC4 and GSC1) + starhalo mask (THELI det.band; magenta, m_r<10.5 of UCAC4 and GSC1)
+     4(2): Theli flag (det.band): manual mask (THELI det.band; magenta)
+     8(3): Theli flag (det.band): void (THELI det.band; green) + weight==0 mask (THELI det.band; masking due to saturation, chip gap, etc) + asteroids (THELI det.band; red)
+    16(4): AW flag (u): auto masks (halo+stellar+weight==0)
+    32(5): AW flag (g): auto masks (halo+stellar+weight==0)
+    64(6): AW flag (r): auto masks (halo+stellar+weight==0)
+   128(7): AW flag (i): auto masks (halo+stellar+weight==0)
+   256(8): AW flag (i2): auto masks (halo+stellar+weight==0)
+   512(9): VISTA footprint mask (Z)
+ 1024(10): VISTA footprint mask (Y)
+ 2048(11): VISTA footprint mask (J)
+ 4096(12): VISTA footprint mask (H)
+ 8192(13): VISTA footprint mask (Ks)
+16384(14): KIDS WCS tiling cuts
+32768(15): Reserved, unused
+  
 
 
 Procedure:
