@@ -93,6 +93,7 @@ flux_average_ma = np.ma.average(fluxes_ma, weights=fluxweights_ma, axis=1)
 fluxflags = np.logical_not(np.greater(nexp,0)).astype(np.int32)
 
 werr_ma = 1.0/np.sqrt(wtot_ma)
+werr_ma[np.equal(wtot_ma,0.0)] = -1.0 
 
 seqnr = np.arange(no_obj_input_cat).astype(np.int32) + 1
 
