@@ -93,7 +93,6 @@ flux_average_ma = np.ma.average(fluxes_ma, weights=fluxweights_ma, axis=1)
 fluxflags = np.logical_not(np.greater(nexp,0)).astype(np.int32)
 
 werr_ma = 1.0/np.sqrt(wtot_ma)
-werr_ma[np.equal(wtot_ma,0.0)] = -1.0 
 
 seqnr = np.arange(no_obj_input_cat).astype(np.int32) + 1
 
@@ -109,7 +108,7 @@ chi_square_red = chi_square / (nexp-1.)
 np.savetxt(outfile,
            np.transpose(
                np.vstack(
-                   (seqnr, flux_average_ma, werr_ma, fluxflags, nexp, chi_square_red)
+                   (seqnr, flux_average_ma.filled(fill_value=0.0), werr_ma.filled(fill_value=-1.0), fluxflags, nexp, chi_square_red)
                )
            ),
            fmt='%d %f %f %d %d %f')
