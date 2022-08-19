@@ -43,8 +43,8 @@ CONFIGPATH=RUNTIME/config/
 #Path to modified script files
 SCRIPTPATH=RUNTIME/scripts/
 #Path to VIKING data 
-#VIKINGROOT=/net/fohlen11/home/awright/KIDZ_NIR_data/Detectors/results/ #KIDZ 
-VIKINGROOT=/net/fohlen11/home/awright/KiDS_VIKING_1350/                 #KiDS 
+VIKINGROOT=/net/fohlen11/home/awright/KIDZ_NIR_data/Detectors/results/ #KIDZ 
+#VIKINGROOT=/net/fohlen11/home/awright/KiDS_VIKING_1350/                 #KiDS 
 #Name of the chip-type for VIKING data 
 VIKINGTYPE=native_bsub
 #Path to THELI data 
@@ -53,19 +53,19 @@ THELIDATAPATH=/net/fohlen13/home/hendrik/KIDSCOLLAB_V1.3.0A/            #KIDS
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
-POINTINGLIST=KiDZ_pointings_list.dat
-POINTINGLIST=KiDS-Legacy_pointings.txt
-POINTINGLIST=KiDS-Legacy_pointings_1.txt
+#POINTINGLIST=KiDZ_pointings_list.dat                                    #KIDZ
+POINTINGLIST=KiDS-Legacy_pointings.txt                                  #KIDS
+#POINTINGLIST=KiDS-Legacy_pointings_1.txt                                #KIDS
 #Path to AstroWISE catalogues 
 #ASTROWISEPATH=/net/fohlen11/home/dvornik/KIDZ/                          #KIDZ
-ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/            #KIDS
+ASTROWISEPATH=/net/fohlen12/home/awright/KiDS/DR5/multiband/            #KIDS & COSMOS
 #Path to AW manual masks
 MANUALMASKPATH=${RUNROOT}/manualmasks/
 #The THELI Filter for photometry 
 THELIFILTER=r_SDSS
 #The THELI Version that was used 
 #THELIVERSION=V1.2.0A                                                    #KIDZ
-THELIVERSION=V1.3.0A                                                    #KIDS
+THELIVERSION=V1.3.0A                                                    #KIDS & COSMOS
 #The Survey used for Photometric Reference
 REFERENCE=Gaia
 #File containing u-band zero-point corrections
@@ -73,6 +73,8 @@ UBANDCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_u_pipeline_0p7_1p0_noDups.
 G2KCORRECTIONSFILE=${RUNROOT}/${CONFIGPATH}/offsets_g2k_FLAG_asOffset.csv
 #File containing the MAG_AUTO zero-point corrections 
 MAGAUTOCORRFILE=${RUNROOT}/${CONFIGPATH}/dmags_mauto.csv
+#File containing chips that fail QC for VIKING
+VIKINGBADQCFILE=/net/home/fohlen11/awright/KiDS_VIKING_1350/VIKING_BadQC_list.txt
 #Look up the AstroWISE name in the above UBUAND corrections file?
 AWNAME_LOOKUP=1
 #File containing Deep Spec-z for photo-z comparison 
@@ -101,7 +103,7 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY AWSURVEYNAME FILESUFFIX USER \
   POINTINGLIST POINTINGLIMITSFILE ASTROWISEPATH MANUALMASKPATH THELIFILTER THELIVERSION \
   REFERENCE UBANDCORRECTIONSFILE UBANDCORRECTIONSFILEAP40 THELIPATH THELIDATAPATH NTHREAD \
   CATALOGUEKEYSFILE REFRESHRATE LOGFILE TWODFLENSCATALOGUE THELIPACKVERS \
-  MACHINE THELIPACKSUFFIX DEEPZCAT AWNAME_LOOKUP G2KCORRECTIONSFILE MAGAUTOCORRFILE"
+  MACHINE THELIPACKSUFFIX DEEPZCAT AWNAME_LOOKUP G2KCORRECTIONSFILE MAGAUTOCORRFILE VIKINGBADQCFILE"
 #}}}
 
 #Read any command line options  {{{
@@ -205,14 +207,16 @@ EOF
   #${RUNROOT}/INSTALL/anaconda2/condabin/conda config --set channel_priority strict
   echo step1 > python_packages.log
   conda create -p ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
-  conda init bash >> python_packages.log 2>&1 
-  echo step2 >> python_packages.log
-  curdir=`pwd`
-  source ~/.bashrc >> python_packages.log 2>&1
-  cd $curdir
+  #echo step1a >> python_packages.log
+  #conda init bash >> python_packages.log 2>&1 
+  #echo step2 >> python_packages.log
+  #curdir=`pwd`
+  #source ~/.bashrc >> python_packages.log 2>&1
+  #cd $curdir
   #${RUNROOT}/INSTALL/anaconda2/condabin/conda init bash --reverse >> python_packages.log 2>&1 
   echo step3 >> python_packages.log
   conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 || echo "ERROR: activate failed. Do the following:\nClose/Reopen the shell\n'conda activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env'\n and rerun the PHOTOPIPE_MASTER_INSTALL.sh."
+  exit 1
 else 
   cd ${RUNROOT}/INSTALL
   export PYTHONPATH=${RUNROOT}/INSTALL/anaconda2/bin/python2:${RUNROOT}/INSTALL/anaconda2/lib/
@@ -291,35 +295,35 @@ then
   cp -r ${PACKROOT}/gapphot_TE . > ${RUNROOT}/INSTALL/gaap_copy.log 2>&1
   #Compile the kk directory 
   cd ${RUNROOT}/INSTALL/gapphot_TE/kk
-  make clean  > ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-  make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-  sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
-  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
-  cp ${PACKROOT}/libgfortran.so.5.0.0 ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/
-  make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-  #compile the bigim directory 
-  cd ${RUNROOT}/INSTALL/gapphot_TE/kk/bigim/
-  make clean  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-  #This binary isn't removed in the clean
-  rm -f kermapm2rot 
-  make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
-  sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
-  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
-  sed -i "s@^all: @all: set gapphot fitkermaptwk imxshmapwithtweak kermapm2rot pix2g8 pixpsfxshcpts8 psfcat2gauskerwithtweak psfcat2gauskerwithtweak_no_recentre showdxdy showpsfmaptwk kermapm2rot @" makefile 
-  echo "" >> makefile 
-  echo "psfcat2gauskerwithtweak_no_recentre: psfcat2gauskerwithtweak_no_recentre.o libshape.a libutil.a" >> makefile 
-  echo '	$(F77)  psfcat2gauskerwithtweak_no_recentre.o $(libs) -o psfcat2gauskerwithtweak_no_recentre' >> makefile
-  echo "" >> makefile 
-  echo "kermapm2rot: kermapm2rot.o libshape.a libutil.a" >> makefile 
-  echo '	$(F77)  kermapm2rot.o $(libs) -o kermapm2rot' >> makefile
-  make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  #make clean  > ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  #make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  #sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
+  #sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/lib/x86_64-conda-linux-gnu/sysroot/lib64/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  #cp ${PACKROOT}/libgfortran.so.5.0.0 ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/
+  #make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  ##compile the bigim directory 
+  #cd ${RUNROOT}/INSTALL/gapphot_TE/kk/bigim/
+  #make clean  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  ##This binary isn't removed in the clean
+  #rm -f kermapm2rot 
+  #make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
+  #sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
+  #sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  #sed -i "s@^all: @all: set gapphot fitkermaptwk imxshmapwithtweak kermapm2rot pix2g8 pixpsfxshcpts8 psfcat2gauskerwithtweak psfcat2gauskerwithtweak_no_recentre showdxdy showpsfmaptwk kermapm2rot @" makefile 
+  #echo "" >> makefile 
+  #echo "psfcat2gauskerwithtweak_no_recentre: psfcat2gauskerwithtweak_no_recentre.o libshape.a libutil.a" >> makefile 
+  #echo '	$(F77)  psfcat2gauskerwithtweak_no_recentre.o $(libs) -o psfcat2gauskerwithtweak_no_recentre' >> makefile
+  #echo "" >> makefile 
+  #echo "kermapm2rot: kermapm2rot.o libshape.a libutil.a" >> makefile 
+  #echo '	$(F77)  kermapm2rot.o $(libs) -o kermapm2rot' >> makefile
+  #make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   cd ${RUNROOT}
   echo -e "\033[0;31m - Done! \033[0m"
   #}}}
   #Install WCSTools {{{
   echo -en "   >\033[0;34m Installing WCStools \033[0m" 
   cd ${RUNROOT}/INSTALL/
-  wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.9.6.tar.gz > ${RUNROOT}/INSTALL/wcstools_wget.log 2>&1
+  wget http://tdc-www.harvard.edu/software/wcstools/Old/wcstools-3.9.6.tar.gz > ${RUNROOT}/INSTALL/wcstools_wget.log 2>&1
   tar -xf wcstools-3.9.6.tar.gz 
   cd wcstools-3.9.6
   make all > ${RUNROOT}/INSTALL/wcstools_make.log 2>&1

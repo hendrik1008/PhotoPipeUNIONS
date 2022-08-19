@@ -397,8 +397,14 @@ do
       for pawname in `cat ${wdband}/pawprint_list.txt`
       do
         wdpaw=${wdband}/${pawname}
-        ### If there is no individual VISTA chip QC (K1000) ###
-        gaap_input_files=${wdpaw}/v*_bsub/v*_bsub_r_smart$ending.gaap
+        if [ ! -f @VIKINGBADQCFILE@ ]
+        then 
+          ### If there is no individual VISTA chip QC ###
+          >&2 echo "WARNING: File  @VIKINGBADQCFILE@ does not exist!"
+          gaap_input_files=v*/v*_bsub/v*_bsub_r_smart$ending.gaap
+        else 
+          gaap_input_files=`ls v*/v*_bsub/v*_bsub_r_smart$ending.gaap | grep -Fvf @VIKINGBADQCFILE@ `
+        fi 
         ### Combine flux measurements for photometric catalogue.
         echo -n python @RUNROOT@/@SCRIPTPATH@/average_fluxes_list.py \
           $no_obj_phot_cat \
@@ -427,8 +433,14 @@ do
       do
         wdband=${mdfield}/${band}
         cd ${wdband}
-        ### If there is no individual VISTA chip QC ###
-        gaap_input_files=v*/v*_bsub/v*_bsub_r_smart$ending.gaap
+        if [ ! -f @VIKINGBADQCFILE@ ]
+        then 
+          ### If there is no individual VISTA chip QC ###
+          >&2 echo "WARNING: File  @VIKINGBADQCFILE@ does not exist!"
+          gaap_input_files=v*/v*_bsub/v*_bsub_r_smart$ending.gaap
+        else 
+          gaap_input_files=`ls v*/v*_bsub/v*_bsub_r_smart$ending.gaap | grep -Fvf @VIKINGBADQCFILE@ `
+        fi 
         num_input_files=( $gaap_input_files )
         num_input_files=${#num_input_files[@]}
         ### Combine flux measurements for photometric catalogue.
@@ -788,6 +800,16 @@ do
         	     -IMAGEOUT_NAME  ${KiDS_field}_${filter}_swarp.fits \
         	     -WEIGHTOUT_NAME ${KiDS_field}_${filter}_swarp.weight.fits
       fi
+      if [ ! -f $md/${KiDS_field}/$filter/${KiDS_field}_${filter}_swarp.tiff ] && [ $nr -gt 0 ]
+      then
+          echo -n cd $md/${KiDS_field}/$filter/ \;
+          echo stiff ${KiDS_field}_${filter}_swarp.fits \
+        	     -NTHREADS 1 \
+        	     -BACK_TYPE MANUAL \
+        	     -WEIGHT_TYPE MAP_WEIGHT \
+        	     -IMAGEOUT_NAME  ${KiDS_field}_${filter}_swarp.fits \
+        	     -WEIGHTOUT_NAME ${KiDS_field}_${filter}_swarp.weight.fits
+      fi
 
       if [ "$nr" != "" ] 
       then 
@@ -955,7 +977,7 @@ do
       echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_DEEP_z_K1000.sh \
         ${mdfield} \
         @DEEPZCAT@ \
-        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
         ${field_name} \;\ 
       echo
     fi
