@@ -990,11 +990,18 @@ do
   if [ "${mode}" = "MASK4" ]; then
     for filter in u g r i i2
     do
-      if [ -f ${mm_dir}/$filter/${AW_name}_${filter}.reg ]
+      #Manual masks and pulecenella masks have different conventions for "i1" 
+      if [ "$filter" == "i" ] 
+      then 
+        manualfilter="i1"
+      else 
+        manualfilter=$filter
+      fi 
+      if [ -f ${mm_dir}/$manualfilter/${AW_name}_${manualfilter}.reg ]
       then
           echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/include_AW_manual_mask.sh \
 	       ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
-	       ${mm_dir}/${filter}/${AW_name}_${filter}.reg \
+	       ${mm_dir}/${manualfilter}/${AW_name}_${manualfilter}.reg \
                ${mdfield}/${field_name}_${filter}_mask_AW.fits \;\ 
       elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
       then
