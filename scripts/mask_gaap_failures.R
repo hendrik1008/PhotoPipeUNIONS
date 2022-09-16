@@ -4,7 +4,7 @@
 #
 #
 
-catcols<-c("Xpos","Ypos","MASK",
+catcols<-c("Xpos","Ypos",
          paste0("MAG_GAAP_", c("Z","Y","J","H","Ks")),
          paste0("FLAG_GAAP_",c("Z","Y","J","H","Ks")))
 
@@ -112,12 +112,12 @@ if (length(ind)>0) {
     png(file=output_plot,width=19.749508*120,height=7.094701*120,res=120)
     layout(cbind(1,2,3))
     #Plot the original sum image
-    magimage(1:nrow(mask$imDat),1:ncol(mask$imDat),raw_mask,stretch='lin',hi=1,lo=0,main='Original Sum Image')
+    magicaxis::magimage(1:nrow(mask$imDat),1:ncol(mask$imDat),raw.mask,stretch='lin',hi=1,lo=0,main='Original Sum Image')
     #Plot the data distribution 
-    magimage(seq(xrange[1],xrange[2],by=pixpergrid[1]),seq(yrange[1],yrange[2],by=pixpergrid[2]),all.hist$map,stretch='lin',hi=0.95,lo=0,main='Data Distribution')
+    magicaxis::magimage(seq(xrange[1],xrange[2],by=pixpergrid[1]),seq(yrange[1],yrange[2],by=pixpergrid[2]),all.hist$map,stretch='lin',hi=0.95,lo=0,main='Data Distribution')
     points(cat$Xpos[ind],cat$Ypos[ind],pch='.',col=ifelse(cat$FLAG_GAAP_H[ind]==0,hsv(0.5,a=0.1),hsv(0.05,a=0.1)))
     #Plot the new sum image 
-    magimage(1:nrow(mask$imDat),1:ncol(mask$imDat),mask$imDat,stretch='lin',hi=1,lo=0,main='New Sum Image')
+    magicaxis::magimage(1:nrow(mask$imDat),1:ncol(mask$imDat),mask$imDat,stretch='lin',hi=1,lo=0,main='New Sum Image')
     points(cat$Xpos[ind],cat$Ypos[ind],pch='.',col=ifelse(cat$FLAG_GAAP_H[ind]==0,hsv(0.5,a=0.1),hsv(0.05,a=0.1)))
     #Close the plot device
     dev.off()

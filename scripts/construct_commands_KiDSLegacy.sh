@@ -1053,9 +1053,9 @@ do
         fi 
       done
       
-      echo @RSCRIPT@ @RUNROOT@/@SCRIPTPATH@/mask_gaap_failures.R \
+      echo -n @RSCRIPT@ @RUNROOT@/@SCRIPTPATH@/mask_gaap_failures.R \
         --pointing ${field_name} \
-        --maincat ${md}/${field_name}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
+        --maincat ${md}/${field_name}/${field_name}_ugriZYJHKs_photoz_ext.cat \
         ${opts} \
         --output_end gaapmask \;\ 
 

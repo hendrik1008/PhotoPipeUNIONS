@@ -95,7 +95,7 @@ TWODFLENSCATALOGUE=/net/fohlen11/home/hendrik/data/2dFLenS/2dflens_bestredshifts
 #Set the wait time between completion checks 
 REFRESHRATE=5
 #Rscript binary 
-RSCRIPT=/net/home/fohlen13/awright/src2/anaconda3/envs/newr/bin/Rscript
+RSCRIPT=/net/home/fohlen13/awright/src2/anaconda3/envs/fohlen13/bin/Rscript
 #Logfile name 
 LOGFILE=PhotoPipe.log
 #}}}
