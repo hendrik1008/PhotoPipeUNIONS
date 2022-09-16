@@ -94,6 +94,8 @@ CATALOGUEKEYSFILE=${CONFIGPATH}/Legacy_keyword_order_comments.csv
 TWODFLENSCATALOGUE=/net/fohlen11/home/hendrik/data/2dFLenS/2dflens_bestredshifts_lrgs_goodz_final_kidss.cat
 #Set the wait time between completion checks 
 REFRESHRATE=5
+#Rscript binary 
+RSCRIPT=/net/home/fohlen13/awright/src2/anaconda3/envs/newr/bin/Rscript
 #Logfile name 
 LOGFILE=PhotoPipe.log
 #}}}
@@ -102,7 +104,7 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY AWSURVEYNAME FILESUFFIX USER \
   WORKINGDIR RAWDIR CONFIGPATH SCRIPTPATH VIKINGROOT VIKINGTYPE DRYRUN \
   POINTINGLIST POINTINGLIMITSFILE ASTROWISEPATH MANUALMASKPATH THELIFILTER THELIVERSION \
   REFERENCE UBANDCORRECTIONSFILE UBANDCORRECTIONSFILEAP40 THELIPATH THELIDATAPATH NTHREAD \
-  CATALOGUEKEYSFILE REFRESHRATE LOGFILE TWODFLENSCATALOGUE THELIPACKVERS \
+  CATALOGUEKEYSFILE REFRESHRATE LOGFILE TWODFLENSCATALOGUE THELIPACKVERS RSCRIPT \
   MACHINE THELIPACKSUFFIX DEEPZCAT AWNAME_LOOKUP G2KCORRECTIONSFILE MAGAUTOCORRFILE VIKINGBADQCFILE"
 #}}}
 
@@ -239,6 +241,16 @@ then
   echo -en "   >\033[0;34m Installing cfitsio, pgplot, gfortran, libxcb, tcsh \033[0m" 
   conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64=9.3.0 \
     libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+  if [ -f ${RSCRIPT} ] 
+  then 
+    echo -e "   >\033[0;31m ERROR: Rscript executable does not exist \033[0m" 
+    echo -e "   >\033[0;34m ${RSCRIPT} \033[0m" 
+    echo -e "   >\033[0;31m If you want to run the mask_gaap_failures.R script, you need it!\033[0m" 
+    echo -e "\033[0;34m=======================================\033[0m"
+    trap : 0 
+    exit 1 
+  fi
+  ${RSCRIPT} ${PACKROOT}/requirements.R
   echo -e "\033[0;31m - Done! \033[0m" 
   #echo -en "   >\033[0;34m Installing gfortran \033[0m" 
   #${RUNROOT}/INSTALL/anaconda2/condabin/conda install  >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt

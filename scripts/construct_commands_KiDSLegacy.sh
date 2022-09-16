@@ -1044,11 +1044,26 @@ do
             $RAmin $RAmax $Decmin $Decmax \;\ 
         fi
       done
+      opts=""
+      for band in Z Y J H Ks
+      do 
+        if [ ! -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.gaapmask.fits ]
+        then
+          opts="$opts --${band}mask $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits"
+        fi 
+      done
+      
+      echo @RSCRIPT@ @RUNROOT@/@SCRIPTPATH@/mask_gaap_failures.R \
+        --pointing ${field_name} \
+        --maincat ${md}/${field_name}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
+        ${opts} \
+        --output_end gaapmask \;\ 
+
       echo -n bash @RUNROOT@/@SCRIPTPATH@/create_9band_mask.sh \
         ${mdfield}\
         ${field_name} \
         ${mask} \
-        $RA $Dec \;\ 
+        $RA $Dec gaapmask \;\ 
       #for band in Z Y J H Ks
       #do
       #  if [ -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits ]
