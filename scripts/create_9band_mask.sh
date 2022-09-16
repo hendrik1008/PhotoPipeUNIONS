@@ -36,44 +36,44 @@ done
 
 for filter in Z Y J H Ks
 do
-    if [ ! -f $md/$filter/${field}_${filter}_swarp_cut.sum.${postfix}.fits ] && [ -f $md/$filter/${field}_${filter}_swarp_cut.sum.${postfix}.fits.gz ]
+    if [ ! -f $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits ] && [ -f $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits.gz ]
     then
-	gunzip $md/$filter/${field}_${filter}_swarp_cut.sum.${postfix}.fits.gz
+	gunzip $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits.gz
     fi
 done
 
 for filter in Z Y J H Ks
 do
-    if [ ! -f $md/$filter/${field}_${filter}_swarp_cut.sum.${postfix}.fits ] && [ -f $md/$filter/${field}_${filter}_swarp_cut.sum.fits ]
+    if [ ! -f $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits ] && [ -f $md/$filter/${field}_${filter}_swarp_cut.sum.fits ]
     then
-      ln -sf $md/$filter/${field}_${filter}_swarp_cut.sum.fits $md/$filter/${field}_${filter}_swarp_cut.sum.${postfix}.fits
+      ln -sf $md/$filter/${field}_${filter}_swarp_cut.sum.fits $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits
     fi
 done
 
 ic '1 0 %1 1.0e-06 > ? ! 512 *' \
-   $md/Z/${field}_Z_swarp_cut.sum.${postfix}.fits \
+   $md/Z/${field}_Z_swarp_cut.sum${postfix}.fits \
    > $md/Z/${field}_Z_swarp_cut.mask.fits
-#gzip $md/Z/${field}_Z_swarp_cut.sum.${postfix}.fits
+#gzip $md/Z/${field}_Z_swarp_cut.sum${postfix}.fits
 
 ic '1 0 %1 1.0e-06 > ? ! 1024 *' \
-   $md/Y/${field}_Y_swarp_cut.sum.${postfix}.fits \
+   $md/Y/${field}_Y_swarp_cut.sum${postfix}.fits \
    > $md/Y/${field}_Y_swarp_cut.mask.fits
-#gzip $md/Y/${field}_Y_swarp_cut.sum.${postfix}.fits
+#gzip $md/Y/${field}_Y_swarp_cut.sum${postfix}.fits
 
 ic '1 0 %1 1.0e-06 > ? ! 2048 *' \
-   $md/J/${field}_J_swarp_cut.sum.${postfix}.fits \
+   $md/J/${field}_J_swarp_cut.sum${postfix}.fits \
    > $md/J/${field}_J_swarp_cut.mask.fits
-#gzip $md/J/${field}_J_swarp_cut.sum.${postfix}.fits
+#gzip $md/J/${field}_J_swarp_cut.sum${postfix}.fits
 
 ic '1 0 %1 1.0e-06 > ? ! 4096 *' \
-   $md/H/${field}_H_swarp_cut.sum.${postfix}.fits \
+   $md/H/${field}_H_swarp_cut.sum${postfix}.fits \
    > $md/H/${field}_H_swarp_cut.mask.fits
-#gzip $md/H/${field}_H_swarp_cut.sum.${postfix}.fits
+#gzip $md/H/${field}_H_swarp_cut.sum${postfix}.fits
 
 ic '1 0 %1 1.0e-06 > ? ! 8192 *' \
-   $md/Ks/${field}_Ks_swarp_cut.sum.${postfix}.fits \
+   $md/Ks/${field}_Ks_swarp_cut.sum${postfix}.fits \
    > $md/Ks/${field}_Ks_swarp_cut.mask.fits
-#gzip $md/Ks/${field}_Ks_swarp_cut.sum.${postfix}.fits
+#gzip $md/Ks/${field}_Ks_swarp_cut.sum${postfix}.fits
 
 ic '%1 %2 + %3 + %4 + %5 + %6 +' \
    $md/Z/${field}_Z_swarp_cut.mask.fits \

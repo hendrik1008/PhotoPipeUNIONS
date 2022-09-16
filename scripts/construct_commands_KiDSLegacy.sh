@@ -1057,13 +1057,13 @@ do
         --pointing ${field_name} \
         --maincat ${md}/${field_name}/${field_name}_ugriZYJHKs_photoz_ext.cat \
         ${opts} \
-        --output_end gaapmask \;\ 
+        --output_end .gaapmask \;\ 
 
       echo -n bash @RUNROOT@/@SCRIPTPATH@/create_9band_mask.sh \
         ${mdfield}\
         ${field_name} \
         ${mask} \
-        $RA $Dec gaapmask \;\ 
+        $RA $Dec .gaapmask \;\ 
       #for band in Z Y J H Ks
       #do
       #  if [ -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits ]
