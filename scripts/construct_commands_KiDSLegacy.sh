@@ -1016,7 +1016,7 @@ do
 	                ${mm_dir}/${manualfilter}/${AW_name}_${manualfilter}.reg \
                   ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\ 
       fi 
-      echo -n python @RUNROOT@/@SCRIPTPATH@/delete_FITS_bit.py \
+      echo -n python @RUNROOT@/@SCRIPTPATH@/erase_FITS_bit.py \
 	            ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \
               ${mdfield}/${field_name}_${filter}_mask_AW.fits \
               8 \;\ 
