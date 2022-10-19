@@ -1046,7 +1046,7 @@ do
     Decmax=`grep ${field_name} @POINTINGLIMITSFILE@ | awk '{print $5}'`
     if [ ! -f ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits ]
     then
-      sumtype='swarp_cut'
+      sumtype='swarp'
       if [ "${sumtype}" != "swarp_cut" ] & [ "${sumtype}" != "swarp" ]
       then 
         >&2 echo "ERROR: sumtype must be 'swarp' or 'swarp_cut'! Instead it is ${sumtype}"
