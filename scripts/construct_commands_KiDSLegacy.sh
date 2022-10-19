@@ -998,8 +998,16 @@ do
         manualfilter=$filter
       fi 
       if [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
+      then 
         echo -n gunzip -c ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz \
           \> ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\ 
+      elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits ]
+      then 
+        echo -n cp ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
+          ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\ 
+      else 
+        >&2 echo "ERROR: Pulecenella Mask not found?!"
+	      exit 1
       fi 
       if [ -f ${mm_dir}/$manualfilter/${AW_name}_${manualfilter}.reg ]
       then
