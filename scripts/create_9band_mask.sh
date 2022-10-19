@@ -18,6 +18,7 @@ mask=$3
 RA=$4
 Dec=$5
 postfix=$6
+sumtype=$7
 
 orig_dir=`pwd`
 
@@ -28,67 +29,67 @@ fi
 
 for filter in Z Y J H Ks
 do
-    if [ ! -f $md/$filter/${field}_${filter}_swarp_cut.sum.fits ] && [ -f $md/$filter/${field}_${filter}_swarp_cut.sum.fits.gz ]
+    if [ ! -f $md/$filter/${field}_${filter}_${sumtype}.sum.fits ] && [ -f $md/$filter/${field}_${filter}_${sumtype}.sum.fits.gz ]
     then
-	gunzip $md/$filter/${field}_${filter}_swarp_cut.sum.fits.gz
+	gunzip $md/$filter/${field}_${filter}_${sumtype}.sum.fits.gz
     fi
 done
 
 for filter in Z Y J H Ks
 do
-    if [ ! -f $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits ] && [ -f $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits.gz ]
+    if [ ! -f $md/$filter/${field}_${filter}_${sumtype}.sum${postfix}.fits ] && [ -f $md/$filter/${field}_${filter}_${sumtype}.sum${postfix}.fits.gz ]
     then
-	gunzip $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits.gz
+	gunzip $md/$filter/${field}_${filter}_${sumtype}.sum${postfix}.fits.gz
     fi
 done
 
 for filter in Z Y J H Ks
 do
-    if [ ! -f $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits ] && [ -f $md/$filter/${field}_${filter}_swarp_cut.sum.fits ]
+    if [ ! -f $md/$filter/${field}_${filter}_${sumtype}.sum${postfix}.fits ] && [ -f $md/$filter/${field}_${filter}_${sumtype}.sum.fits ]
     then
-      ln -sf $md/$filter/${field}_${filter}_swarp_cut.sum.fits $md/$filter/${field}_${filter}_swarp_cut.sum${postfix}.fits
+      ln -sf $md/$filter/${field}_${filter}_${sumtype}.sum.fits $md/$filter/${field}_${filter}_${sumtype}.sum${postfix}.fits
     fi
 done
 
 ic '1 0 %1 1.0e-06 > ? ! 512 *' \
-   $md/Z/${field}_Z_swarp_cut.sum${postfix}.fits \
-   > $md/Z/${field}_Z_swarp_cut.mask.fits
-#gzip $md/Z/${field}_Z_swarp_cut.sum${postfix}.fits
+   $md/Z/${field}_Z_${sumtype}.sum${postfix}.fits \
+   > $md/Z/${field}_Z_${sumtype}.mask.fits
+#gzip $md/Z/${field}_Z_${sumtype}.sum${postfix}.fits
 
 ic '1 0 %1 1.0e-06 > ? ! 1024 *' \
-   $md/Y/${field}_Y_swarp_cut.sum${postfix}.fits \
-   > $md/Y/${field}_Y_swarp_cut.mask.fits
-#gzip $md/Y/${field}_Y_swarp_cut.sum${postfix}.fits
+   $md/Y/${field}_Y_${sumtype}.sum${postfix}.fits \
+   > $md/Y/${field}_Y_${sumtype}.mask.fits
+#gzip $md/Y/${field}_Y_${sumtype}.sum${postfix}.fits
 
 ic '1 0 %1 1.0e-06 > ? ! 2048 *' \
-   $md/J/${field}_J_swarp_cut.sum${postfix}.fits \
-   > $md/J/${field}_J_swarp_cut.mask.fits
-#gzip $md/J/${field}_J_swarp_cut.sum${postfix}.fits
+   $md/J/${field}_J_${sumtype}.sum${postfix}.fits \
+   > $md/J/${field}_J_${sumtype}.mask.fits
+#gzip $md/J/${field}_J_${sumtype}.sum${postfix}.fits
 
 ic '1 0 %1 1.0e-06 > ? ! 4096 *' \
-   $md/H/${field}_H_swarp_cut.sum${postfix}.fits \
-   > $md/H/${field}_H_swarp_cut.mask.fits
-#gzip $md/H/${field}_H_swarp_cut.sum${postfix}.fits
+   $md/H/${field}_H_${sumtype}.sum${postfix}.fits \
+   > $md/H/${field}_H_${sumtype}.mask.fits
+#gzip $md/H/${field}_H_${sumtype}.sum${postfix}.fits
 
 ic '1 0 %1 1.0e-06 > ? ! 8192 *' \
-   $md/Ks/${field}_Ks_swarp_cut.sum${postfix}.fits \
-   > $md/Ks/${field}_Ks_swarp_cut.mask.fits
-#gzip $md/Ks/${field}_Ks_swarp_cut.sum${postfix}.fits
+   $md/Ks/${field}_Ks_${sumtype}.sum${postfix}.fits \
+   > $md/Ks/${field}_Ks_${sumtype}.mask.fits
+#gzip $md/Ks/${field}_Ks_${sumtype}.sum${postfix}.fits
 
 ic '%1 %2 + %3 + %4 + %5 + %6 +' \
-   $md/Z/${field}_Z_swarp_cut.mask.fits \
-   $md/Y/${field}_Y_swarp_cut.mask.fits \
-   $md/J/${field}_J_swarp_cut.mask.fits \
-   $md/H/${field}_H_swarp_cut.mask.fits \
-   $md/Ks/${field}_Ks_swarp_cut.mask.fits \
+   $md/Z/${field}_Z_${sumtype}.mask.fits \
+   $md/Y/${field}_Y_${sumtype}.mask.fits \
+   $md/J/${field}_J_${sumtype}.mask.fits \
+   $md/H/${field}_H_${sumtype}.mask.fits \
+   $md/Ks/${field}_Ks_${sumtype}.mask.fits \
    $mask \
    > $md/${field}_AW_THELI_NIR.mask.fits
 
-rm $md/Z/${field}_Z_swarp_cut.mask.fits
-rm $md/Y/${field}_Y_swarp_cut.mask.fits
-rm $md/J/${field}_J_swarp_cut.mask.fits
-rm $md/H/${field}_H_swarp_cut.mask.fits
-rm $md/Ks/${field}_Ks_swarp_cut.mask.fits
+rm $md/Z/${field}_Z_${sumtype}.mask.fits
+rm $md/Y/${field}_Y_${sumtype}.mask.fits
+rm $md/J/${field}_J_${sumtype}.mask.fits
+rm $md/H/${field}_H_${sumtype}.mask.fits
+rm $md/Ks/${field}_Ks_${sumtype}.mask.fits
 
 #if [ -f $mask ] && [ ! -f $mask.gz ]
 #then

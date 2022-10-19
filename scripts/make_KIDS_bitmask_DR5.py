@@ -313,7 +313,12 @@ try:
 
         ## make available the original AW mask file
         gz_file = aw_orig_flag_file+'.gz'
-        if not os.path.isfile(gz_file):
+        if os.path.isfile(aw_orig_flag_file):
+            # if the unzipped file does exists, create the temporary version 
+            shcommand = 'cp %s %s' % (aw_orig_flag_file, aw_flag_file)
+            print shcommand
+            S.call(shcommand, shell=True)
+        elif not os.path.isfile(gz_file):
             # if the file does not exist, log to error file and continue
             print 'file', base_fname, 'missing from', mask_dir,
             print 'WARNING: mask bits not set for', base_fname

@@ -1046,22 +1046,31 @@ do
     Decmax=`grep ${field_name} @POINTINGLIMITSFILE@ | awk '{print $5}'`
     if [ ! -f ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits ]
     then
-      for band in Z Y J H Ks
-      do
-        if [ ! -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits ]
-        then
-          echo -n python @RUNROOT@/@SCRIPTPATH@/mosaic/add_WCS_cuts_to_sum_image.py \
-            $md/${field_name}/${band}/${field_name}_${band}_swarp.sum.fits \
-            $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits \
-            $RAmin $RAmax $Decmin $Decmax \;\ 
-        fi
-      done
+      sumtype='swarp_cut'
+      if [ "${sumtype}" != "swarp_cut" ] & [ "${sumtype}" != "swarp" ]
+      then 
+        >&2 echo "ERROR: sumtype must be 'swarp' or 'swarp_cut'! Instead it is ${sumtype}"
+	      exit 1
+      fi 
+      if [ "${sumtype}" == "swarp_cut" ]
+      then 
+        for band in Z Y J H Ks
+        do
+          if [ ! -f $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits ]
+          then
+            echo -n python @RUNROOT@/@SCRIPTPATH@/mosaic/add_WCS_cuts_to_sum_image.py \
+              $md/${field_name}/${band}/${field_name}_${band}_swarp.sum.fits \
+              $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits \
+              $RAmin $RAmax $Decmin $Decmax \;\ 
+          fi
+        done
+      fi 
       opts=""
       for band in Z Y J H Ks
       do 
-        if [ ! -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.gaapmask.fits ]
+        if [ ! -f $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.gaapmask.fits ]
         then
-          opts="$opts --${band}mask $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits"
+          opts="$opts --${band}mask $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits"
         fi 
       done
       
@@ -1075,12 +1084,13 @@ do
         ${mdfield}\
         ${field_name} \
         ${mask} \
-        $RA $Dec .gaapmask \;\ 
+        $RA $Dec .gaapmask \
+        ${sumtype} \;\ 
       #for band in Z Y J H Ks
       #do
-      #  if [ -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits ]
+      #  if [ -f $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits ]
       #  then
-      #    echo -n gzip $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits \;\ 
+      #    echo -n gzip $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits \;\ 
       #  fi
       #done
     fi 
