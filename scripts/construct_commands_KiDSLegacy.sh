@@ -997,17 +997,21 @@ do
       else 
         manualfilter=$filter
       fi 
+      if [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
+        echo -n gunzip -c ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz \
+          \> ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\ 
+      fi 
       if [ -f ${mm_dir}/$manualfilter/${AW_name}_${manualfilter}.reg ]
       then
           echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/include_AW_manual_mask.sh \
-	       ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
-	       ${mm_dir}/${manualfilter}/${AW_name}_${manualfilter}.reg \
-               ${mdfield}/${field_name}_${filter}_mask_AW.fits \;\ 
-      elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
-      then
-        echo -n ln -sf ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz \
-          ${mdfield}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
-      fi
+	                ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \
+	                ${mm_dir}/${manualfilter}/${AW_name}_${manualfilter}.reg \
+                  ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\ 
+      fi 
+      echo -n python @RUNROOT@/@SCRIPTPATH@/delete_FITS_bit.py \
+	            ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \
+              ${mdfield}/${field_name}_${filter}_mask_AW.fits \
+              8 \;\ 
     done
   
     #if [ -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz ] && \
