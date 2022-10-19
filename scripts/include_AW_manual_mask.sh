@@ -7,7 +7,8 @@ outfile=$3
 inbase=`basename $infile .fits.gz`
 temp_dir=`dirname $outfile`
 
-gunzip -c $infile > $temp_dir/$inbase.tmp$$.fits
+#gunzip -c $infile > $temp_dir/$inbase.tmp$$.fits
+ln -sf $infile $temp_dir/$inbase.tmp$$.fits
 
 # run weight watcher on the manual mask
 @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ww_theli \
