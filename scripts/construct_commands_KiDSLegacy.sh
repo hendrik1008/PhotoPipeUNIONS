@@ -1087,13 +1087,13 @@ do
         ${field_name} \
         ${mask} \
         $RA $Dec .gaapmask \
-        ${sumtype} \;\
+        ${sumtype} \;\ 
 	
-      echo -n rm $md/${field_name}/{Z,Y,J,H,Ks}/${field_name}_{Z,Y,J,H,Ks}_${sumtype}.sum.gaapmask.fits \;\
+      echo -n rm $md/${field_name}/{Z,Y,J,H,Ks}/${field_name}_{Z,Y,J,H,Ks}_${sumtype}.sum.gaapmask.fits \;\ 
       
       if [ "${sumtype}" == "swarp_cut" ]
       then
-	  echo -n rm $md/${field_name}/{Z,Y,J,H,Ks}/${field_name}_{Z,Y,J,H,Ks}_${sumtype}.sum.fits \;\
+	      echo -n rm $md/${field_name}/{Z,Y,J,H,Ks}/${field_name}_{Z,Y,J,H,Ks}_${sumtype}.sum.fits \;\ 
       fi
       #for band in Z Y J H Ks
       #do
