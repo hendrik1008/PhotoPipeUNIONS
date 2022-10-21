@@ -1020,7 +1020,7 @@ do
 	            ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \
               ${mdfield}/${field_name}_${filter}_mask_AW.fits \
               8 \;\ 
-      echo -n ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\
+      echo -n rm ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \; 
     done
   
     #if [ -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz ] && \
@@ -1033,8 +1033,8 @@ do
   ### create the combined flag file
   echo -n python @RUNROOT@/@SCRIPTPATH@/make_KIDS_bitmask_DR5.py \
     ${field_name} @THELIVERSION@ \"r_SDSS u_SDSS g_SDSS i_SDSS\" \
-    ${mdfield} ${THELIDATAPATH} ${mdfield} @POINTINGLIMITSFILE@ ${mask} \;\
-  echo rm ${mdfield}/${field_name}_{u,g,r,i}_mask_AW.fits
+    ${mdfield} ${THELIDATAPATH} ${mdfield} @POINTINGLIMITSFILE@ ${mask} \; 
+  echo rm ${mdfield}/${field_name}_{u,g,r,i,i2}_mask_AW.fits \; 
 fi
 done
 
