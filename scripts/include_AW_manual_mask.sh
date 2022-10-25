@@ -39,4 +39,4 @@ fi
 
 #gzip -f $outfile
 
-#rm $temp_dir/*tmp$$.fits
+rm $temp_dir/*tmp$$.fits
