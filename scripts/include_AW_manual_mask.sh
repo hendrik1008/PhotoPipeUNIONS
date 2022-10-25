@@ -8,7 +8,14 @@ inbase=`basename $infile .fits`
 temp_dir=`dirname $outfile`
 
 #gunzip -c $infile > $temp_dir/$inbase.tmp$$.fits
-ln -sf $infile $temp_dir/$inbase.tmp$$.fits
+if [ "$outfile" == "$infile" ]
+then 
+  #the input is overwritten by outfile
+  mv $infile $temp_dir/$inbase.tmp$$.fits
+else 
+  #the input is different and kept 
+  ln -sf $infile $temp_dir/$inbase.tmp$$.fits
+fi 
 
 # run weight watcher on the manual mask
 @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ww_theli \
