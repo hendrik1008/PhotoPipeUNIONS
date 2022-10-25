@@ -4,7 +4,7 @@ infile=$1
 manualmask=$2
 outfile=$3
 
-inbase=`basename $infile .fits.gz`
+inbase=`basename $infile .fits`
 temp_dir=`dirname $outfile`
 
 #gunzip -c $infile > $temp_dir/$inbase.tmp$$.fits
@@ -30,6 +30,6 @@ ic -p 16 '%1 %2 +' \
    $temp_dir/manual_mask.tmp$$.fits \
    > $outfile
 
-gzip -f $outfile
+#gzip -f $outfile
 
 rm $temp_dir/*tmp$$.fits
