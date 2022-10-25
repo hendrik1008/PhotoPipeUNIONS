@@ -25,11 +25,11 @@ ln -sf $infile $temp_dir/$inbase.tmp$$.fits
  -OUTWEIGHT_NAME ""
 
 # ic the weight watcher FITS output and infile > outfile
-ic -p 16 '%1 %2 +' \
+@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic -p 16 '%1 %2 +' \
    $temp_dir/$inbase.tmp$$.fits \
    $temp_dir/manual_mask.tmp$$.fits \
    > $outfile
 
 #gzip -f $outfile
 
-rm $temp_dir/*tmp$$.fits
+#rm $temp_dir/*tmp$$.fits
