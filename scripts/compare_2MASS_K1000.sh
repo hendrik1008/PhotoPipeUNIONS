@@ -9,12 +9,14 @@
 #         - Comparison plot
 
 #Set up the PATH {{{
-export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
+export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
-export PATH=@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
 export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/:@RUNROOT@/INSTALL/anaconda2/lib/
 set -e 
 #}}}
 
@@ -38,24 +40,26 @@ then
 fi
 
 case $band in
-    Z) ABcorr=0.521; CT=1.025;  band_col1=J; band_col2=H; const=0.0;; # v1.3
-    Y) ABcorr=0.618; CT=0.610;  band_col1=J; band_col2=H; const=0.0;; # v1.3
-    J) ABcorr=0.92;  CT=-0.077; band_col1=J; band_col2=H; const=0.0;; # v1.3
-    H) ABcorr=1.38;  CT=0.032;  band_col1=J; band_col2=H; const=0.0;; # v1.3
-    Ks) ABcorr=1.84; CT=0.010;  band_col1=J; band_col2=K; const=0.0;; # v1.3
+    Z)  EBcorr=0.370; ABcorr=0.521; CT=1.025;  band_col1=J; band_col2=H; const=0.0;; # v1.3
+    Y)  EBcorr=0.140; ABcorr=0.618; CT=0.610;  band_col1=J; band_col2=H; const=0.0;; # v1.3
+    J)  EBcorr=0.010; ABcorr=0.92;  CT=-0.077; band_col1=J; band_col2=H; const=0.0;; # v1.3
+    H)  EBcorr=0.015; ABcorr=1.38;  CT=0.032;  band_col1=J; band_col2=H; const=0.0;; # v1.3
+    Ks) EBcorr=0.005; ABcorr=1.84;  CT=0.010;  band_col1=J; band_col2=K; const=0.0;; # v1.3
     #Z)  ABcorr=0.521; CT=-0.077;  band_col1=J; band_col2=K; const=0.859;;  # v1.4
     #Y)  ABcorr=0.618; CT=-0.019;  band_col1=J; band_col2=K; const=0.457;;  # v1.4
     #J)  ABcorr=0.92;  CT=0.006;   band_col1=J; band_col2=K; const=-0.031;; # v1.4
     #H)  ABcorr=1.38;  CT=-0.005;  band_col1=J; band_col2=K; const=0.015;;  # v1.4
     #Ks) ABcorr=1.84;  CT=-0.007;  band_col1=J; band_col2=K; const=-0.006;; # v1.4
 esac
+#Average Schelgal dust value in KiDS
+Schlegal=0.1
 
 associate -i $cat ${TWOMASS_cat} \
           -o $wd/tmp1.cat_$$ $wd/tmp2.cat_$$ \
-          -c associate_K1000.conf
+          -c @RUNROOT@/@CONFIGPATH@/associate_K1000.conf
 
-make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
-make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
+bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
+bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
    gawk \
 	'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_2MASS\n",$0; else print $0}' \
 	>> $wd/make_ssc.conf_$$
@@ -65,7 +69,7 @@ echo
 ldacfilter -i $wd/tmp2.cat_$$ -o $wd/tmp4.cat_$$ -t OBJECTS -c "Pair_0>0;"
 echo
 
-maskssc -i ${wd}/tmp3.cat_$$ ${wd}/tmp4.cat_$$ \
+make_ssc -i ${wd}/tmp3.cat_$$ ${wd}/tmp4.cat_$$ \
              -o ${wd}/merg_2MASS_comp.cat_$$ \
              -c $wd/make_ssc.conf_$$
 
@@ -75,8 +79,8 @@ ldacrentab -i $wd/merg_2MASS_comp.cat_$$ -o $wd/${base}_2MASS.cat \
 rm $wd/*_$$
 
 ldactoasc -i $wd/${base}_2MASS.cat -t OBJECTS -s -b -k \
-    RA \
-    DEC \
+    RAJ2000 \
+    DECJ2000 \
     MAG_GAAP_$band \
     MAGERR_GAAP_$band \
     ${band2}mag_2MASS \
@@ -91,10 +95,11 @@ ldactoasc -i $wd/${base}_2MASS.cat -t OBJECTS -s -b -k \
     ${band_col1}mag_2MASS \
     ${band_col2}mag_2MASS \
     | gawk \
-	  '{if ($3>0 && $3<99 && $4<0.5 && $6<=3 && $7>1 && $7<=4 && $8==2 && $9==1 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+'$const')}' \
+    '{if ($3>0 && $3<90 && $6<=3 && $7>0 && $7<=3 && $8==2 && $9==1 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+('$EBcorr'*'$Schlegal')+'$const')}' \
     > $wd/${base}_2MASS_$band.asc
+    #'{if ($3>0 && $3<99 && $4<0.5 && $6<=3 && $7>1 && $7<=4 && $8==2 && $9==1 && $10==0 && $11==0 && $12==0) print $1,$2,$3,$4,$5+('$CT'*($14-$15)+'$ABcorr'+('$EBcorr'*'$Schlegal')+'$const')}' \
 
-python phot_offset.py $wd/${base}_2MASS_$band.asc $mag_min $mag_max \
+python @RUNROOT@/@SCRIPTPATH@/phot_offset.py $wd/${base}_2MASS_$band.asc $mag_min $mag_max \
        > $wd/${base}_2MASS_${band}_offset.asc
 
 median=`awk '{printf "%1.3f\n", $1}' $wd/${base}_2MASS_${band}_offset.asc`

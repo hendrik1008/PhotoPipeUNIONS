@@ -42,16 +42,18 @@
 INSTRUMENT=KiDSVIKING
 
 #Set up the PATH {{{
-export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
+export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
-export PATH=@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
 export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/:@RUNROOT@/INSTALL/anaconda2/lib/
 set -e 
 #}}}
 
-export BPZPATH=~/src/bpz-1.99.3
+export BPZPATH=@RUNROOT@/INSTALL/bpz-1.99.3_expanded/
 
 recalib=""
 
@@ -185,7 +187,7 @@ mkdir -p ${TEMPDIR}
                 }
                 if ( $2 != 99 )
                 {
-                  extcol = 3 + (3 + '${FLAGKEY}' ) * '${NFILT}'
+                  extcol = 5 + (3 + '${FLAGKEY}' ) * '${NFILT}'
                   $2 = $2 - $extcol
                 }
               }
@@ -261,14 +263,22 @@ mkdir -p ${TEMPDIR}
                 }
               }
 
-              if ( $5!=99 && $5!=-99 && $6!=99 && $6!=-99 ) # r-band to i-band conversion
+              #Define the GAAP-to-total aperture correction
+              #MAG_GAAP_r - MAG_AUTO
+              apcorr = $5 - $2
+
+              #BPZ prior is defined for the i-band, so use that if possible!
+              if ( $6!=99 && $6!=-99 ) # i1-band available?
               {
-                $2 = $2 - $5 + $6
+                #Reference magnitude: MAG_GAAP_i1 - (MAG_GAAP_r-MAG_AUTO)
+                $2 = $6 - apcorr
               }
-              #else
-              #{
-              #  $2 = -99
-              #}
+              else if ( $7!=99 && $7!=-99 ) # i2-band available?
+              {
+                #Reference magnitude: MAG_GAAP_i2 - (MAG_GAAP_r-MAG_AUTO)
+                $2 = $7 - apcorr
+              }
+	      # otherwise MAG_AUTO (r-band) is used as M_0 in BPZ
 
               print bpzfilters, 
                     nbpzfilters, 
@@ -358,19 +368,19 @@ mkdir -p ${TEMPDIR}
 # disabled test (see above)
 #fi
 
-#test -f $1/${BASE}_photoz.cat.tmp       && rm $1/${BASE}_photoz.cat.tmp
+test -f $1/${BASE}_photoz.cat.tmp       && rm $1/${BASE}_photoz.cat.tmp
 #test -f $1/${BASE}_photoz.cat.tmp2      && rm $1/${BASE}_photoz.cat.tmp2
-#test -f ${TEMPDIR}/tmp_$$.asc           && rm ${TEMPDIR}/tmp_$$.asc
-#test -f ${TEMPDIR}/tmp1_$$.asc          && rm ${TEMPDIR}/tmp1_$$.asc
+test -f ${TEMPDIR}/tmp_$$.asc           && rm ${TEMPDIR}/tmp_$$.asc
+test -f ${TEMPDIR}/tmp1_$$.asc          && rm ${TEMPDIR}/tmp1_$$.asc
 #test -f ${TEMPDIR}/tmp2_$$.asc          && rm ${TEMPDIR}/tmp2_$$.asc
 #test -f ${TEMPDIR}/tmp3_$$.asc          && rm ${TEMPDIR}/tmp3_$$.asc
 #test -f ${TEMPDIR}/tmp4_$$.asc          && rm ${TEMPDIR}/tmp4_$$.asc
 #test -f ${TEMPDIR}/tmp5_$$.asc          && rm ${TEMPDIR}/tmp5_$$.asc
 #test -f ${TEMPDIR}/tmp6_$$.asc          && rm ${TEMPDIR}/tmp6_$$.asc
 #test -f ${TEMPDIR}/tmp6_$$.cat          && rm ${TEMPDIR}/tmp6_$$.cat
-#test -f ${TEMPDIR}/bpz_filters_$$.txt   && rm ${TEMPDIR}/bpz_filters_$$.txt
-#test -f ${TEMPDIR}/asctoldac_bpzfilter.conf &&\
-#     rm ${TEMPDIR}/asctoldac_bpzfilter.conf
+test -f ${TEMPDIR}/bpz_filters_$$.txt   && rm ${TEMPDIR}/bpz_filters_$$.txt
+test -f ${TEMPDIR}/asctoldac_bpzfilter.conf &&\
+     rm ${TEMPDIR}/asctoldac_bpzfilter.conf
 
 cd ${DIR}
 

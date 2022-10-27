@@ -1,0 +1,52 @@
+This file describes important functional changes in the programs
+Sextractor (v2.5.0), swarp (v2.19.1) and weightwatcher (v1.12) originally
+developed by E. Bertin (bertin@iap.fr).
+
+Besides the use of the programs itself we integrate E. Bertins
+command-line and configuration-file handling into our eclipse and qfits
+based preprocessing softwares.
+
+In the following we only list program modifications that are directly
+visible to users, who are familiar with the original codes. Changes in
+the internal program structures are not reported here but documented
+in the source files.
+
+We use 'swarp', 'sex' and 'ww' for modified codes of the original
+program versions listed above.
+
+swarp v2.19.1:
+==============
+
+- The 'swarp' executable within THELI has the name 'swarp_theli'
+
+- The original package is rearranged to non-GNU installation to be
+  consistent with the rest of the THELI installation scheme.
+
+- Image headers from FITS files created by swarp contain version
+  number information of the THELI pipeline
+
+- Image headers from FITS files created by swarp contain DUMMY keyword
+  at the end. Those can later be replaced by user information.
+
+- I rewrote the header keyword handling so that we obtain consistent,
+  and 'nice looking' headers for our special THELI processing
+  (A three stage process: first create a header for the final, co-added
+  image, then resample images, and finally coadd them). Probably this breaks
+  the standard 'swarp' behaviour in more standard applications!
+
+sextractor v2.5.0:
+==================
+
+- The 'sex' executable within THELI has the name 'sex_theli'
+
+- checkimages and FITS_LDAC catalogs created with 'sex' now carry
+  THELI pipeline version information in HISTORY FITS keywords
+
+weightwatcher v1.12:
+===================
+
+- The 'ww' executable within THELI has the name 'ww_theli'
+
+- FITS images produced by ww now carry history information about
+  the program run in the form of HISTORY FITS keywords.
+

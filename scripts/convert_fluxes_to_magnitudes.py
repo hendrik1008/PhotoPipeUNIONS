@@ -11,7 +11,16 @@ import os
 
 catname = sys.argv[1]
 outcat = sys.argv[2]
-u_offset = float(sys.argv[3])
+u_offset_0p7 = float(sys.argv[3])
+u_offset_1p0 = float(sys.argv[4])
+g_offset_0p7 = float(sys.argv[5])
+g_offset_1p0 = float(sys.argv[6])
+r_offset_0p7 = float(sys.argv[7])
+r_offset_1p0 = float(sys.argv[8])
+i1_offset_0p7 = float(sys.argv[9])
+i1_offset_1p0 = float(sys.argv[10])
+i2_offset_0p7 = float(sys.argv[11])
+i2_offset_1p0 = float(sys.argv[12])
 
 ### read the input catalogue
 
@@ -27,13 +36,57 @@ for aperture in ('0p7', '1p0'):
         band_cap = band.capitalize()[0]
         # read the SLR+Gaia calibration from the header
         if aperture == '0p7':
-            SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+"_07_i1"]+ldac_cat.header['DMAG_'+band_cap+"_07_i2"])/2.0
+            if band_cap == "I":
+                band_num = band.capitalize()[1]
+                SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i"+band_num]
+                if SLR_Gaia_offset < -98.:
+                    SLR_Gaia_offset = 0.
+            else:
+                if ldac_cat.header['DMAG_'+band_cap+"_07_i1"] > -98. and ldac_cat.header['DMAG_'+band_cap+"_07_i2"] > -98.:
+                    SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+"_07_i1"]+ldac_cat.header['DMAG_'+band_cap+"_07_i2"])/2.0
+                elif ldac_cat.header['DMAG_'+band_cap+"_07_i1"] > -98.:
+                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i1"]
+                elif ldac_cat.header['DMAG_'+band_cap+"_07_i2"] > -98.:
+                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i2"]
+                else:
+                    SLR_Gaia_offset = 0.                
+            if band == "u":
+                SLR_Gaia_offset -= u_offset_0p7
+            elif band == "g":
+                SLR_Gaia_offset -= g_offset_0p7
+            elif band == "r":
+                SLR_Gaia_offset -= r_offset_0p7
+            elif band == "i1":
+                SLR_Gaia_offset -= i1_offset_0p7
+            elif band == "i2":
+                SLR_Gaia_offset -= i2_offset_0p7
         if aperture == '1p0':
-            SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+'_10_i1']+ldac_cat.header['DMAG_'+band_cap+"_10_i2"])/2.0
-
-        if band == "u":
-            SLR_Gaia_offset -= u_offset
+            if band_cap == "I":
+                band_num = band.capitalize()[1]
+                SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+'_10_i'+band_num]
+                if SLR_Gaia_offset < -98.:
+                    SLR_Gaia_offset = 0.
+            else: 
+                if ldac_cat.header['DMAG_'+band_cap+"_10_i1"] > -98. and ldac_cat.header['DMAG_'+band_cap+"_10_i2"] > -98.:
+                    SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+'_10_i1']+ldac_cat.header['DMAG_'+band_cap+"_10_i2"])/2.0
+                elif ldac_cat.header['DMAG_'+band_cap+"_10_i1"] > -98.:
+                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_10_i1"]
+                elif ldac_cat.header['DMAG_'+band_cap+"_10_i2"] > -98.:
+                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_10_i2"]
+                else:
+                    SLR_Gaia_offset = 0.                
+            if band == "u":
+                SLR_Gaia_offset -= u_offset_1p0
+            elif band == "g":
+                SLR_Gaia_offset -= g_offset_1p0
+            elif band == "r":
+                SLR_Gaia_offset -= r_offset_1p0
+            elif band == "i1":
+                SLR_Gaia_offset -= i1_offset_1p0
+            elif band == "i2":
+                SLR_Gaia_offset -= i2_offset_1p0
             
+        flag = ldac_table['FLAG_GAAP_'+aperture+'_'+band]
         flux = ldac_table['FLUX_GAAP_'+aperture+'_'+band]
         fluxerr = ldac_table['FLUXERR_GAAP_'+aperture+'_'+band]
         
@@ -47,25 +100,33 @@ for aperture in ('0p7', '1p0'):
         mag[np.logical_and(flux < fluxerr, fluxerr>0.)] = 99.0
         
         # check for failures
+        flag[flux==0.] = 1
         magerr[flux==0.] = -99.0
         mag[flux==0.] = -99.0
         
+        flag[fluxerr<0.] = 1
         mag[fluxerr<0.] = -99.0
         magerr[fluxerr<0.] = -99.0
 
+        flag[np.isinf(magerr)] = 1
         mag[np.isinf(magerr)] = -99.0
         magerr[np.isinf(magerr)] = -99.0
         
+        flag[np.isinf(mag)] = 1
         magerr[np.isinf(mag)] = -99.0
         mag[np.isinf(mag)] = -99.0
 
+        flag[np.isnan(mag)] = 1
         magerr[np.isnan(mag)] = -99.0
         mag[np.isnan(mag)] = -99.0
 
+        flag[np.isnan(magerr)] = 1
         mag[np.isnan(magerr)] = -99.0
         magerr[np.isnan(magerr)] = -99.0
 
         # store the mag and magerr in the LDAC table
+        ldac_table['FLAG_GAAP_'+aperture+'_'+band] = flag
+        ldac_table.set_comment('FLAG_GAAP_'+aperture+'_'+band, band+'-band GAaP flag min_aper='+aperture2+'arcsec')
         ldac_table['MAG_GAAP_'+aperture+'_'+band] = mag
         ldac_table.set_comment('MAG_GAAP_'+aperture+'_'+band, band+'-band GAaP magnitude min_aper='+aperture2+'arcsec')
         ldac_table.set_unit('MAG_GAAP_'+aperture+'_'+band, 'mag')

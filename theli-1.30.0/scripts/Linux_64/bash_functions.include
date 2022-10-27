@@ -1,0 +1,763 @@
+# If we include this script in bash verbose and trace mode we do not want
+# all the (verbose) output from this script:
+USE_X=0
+if  [[ ${-/x} != $- ]] ; then
+  USE_X=1
+  set +xv
+fi
+
+# this file contains bash script functions that can be included in
+# scripts with '. bash_functions.include' The functions need program
+# definitions from the ldacpipeline's progs.ini file which is NOT
+# included in this file.
+
+#
+# 20.04.2005:
+# I corrected a bug in NEXTDUMMY and added the function LASTDUMMY that
+# returns the number of the last DUMMY keyword.
+#
+# 16.01.2006:
+# A non-existing key (tested with dfits) gives now the 'value' KEY_N/A
+# instead of an empty string.  Hence, tests for non-existing keywords
+# have been changed accordingly.
+#
+# 20.06.2006:
+# I included sanity checks in the NEXTDUMMY and LASTDUMMY
+# functions. If no DUMMY keyword was present both functions returned
+# wrong results.
+#
+# 06.11.2006:
+# A new, special function for adding COMMENT and HISTORY keywords was
+# added.
+#
+# 16.03.2007:
+# I delete the temporary file commhis_$$.txt at the end of the
+# function 'writecommhis'
+#
+# 19.10.2007:
+# I made the treatment of the command line argument to function
+# 'value' more robust. It is quotet when being assigned to a variable
+# and hence treating spaces in it correctly.
+#
+# 24.11.2008:
+# I included the functions mean_sigma and modified_median to
+# estimate medians, means and sigmas from data vectors in ASCII files.
+#
+# 25.12.2010:
+# Bug fix in function mean_sigma: Predefined bounds were ignored
+# for final estimates of 'mean-k*sigma' and/or 'mean+k*sigma'.
+#
+# 20.05.2011:
+# I included afunction to determine the real location of files that
+# are accessed via (multiple) links.
+#
+# 20.07.2011:
+# - bugfix in function 'get_real_file'. The function did not terminate
+#   when the argument was not a link.
+# - new function 'single_slash_filename' that removes multiple,
+#   continuous slashes in file and directory names.
+#
+# 26.11.2012:
+# bug fix in function 'writecommhis'; strings composed of multiple
+# words were not treated correctly.
+#
+# 04.01.2013:
+# new functions: theli_start, theli_end, theli_error, theli_warn: The
+# first two should be called at the start and at the end of each THELI
+# processing script. They provide start and end messages with
+# timestamps. They can be extended to handle logging for instance.
+# The second pair theli_error and theli_warn should be used to print
+# out error and warning messages.
+#
+# 10.01.2013:
+# I significantly extended the function theli_start, theli_end,
+# theli_error and theli_warn to write messages into logfiles if
+# corresponding environment variables are set.
+#
+# 13.01.2013:
+# I corrected bugs in the theli_end function. Things were not handled
+# correctly if no log files were created.
+#
+# 07.02.2013:
+# function theli_start: The THELI_LOGDIR is now created if it does
+# not yet exist.
+#
+# 10.02.2013:
+# Bug fix in function theli_error: The function produced error outputs
+# when the THELI_LOGLEVEL was not defined.
+#
+# 19.02.2013:
+# function theli_start: I changed the variable LOGNAME to LOGFILENAME;
+# LOGNAME is already defined under Linux and it represents the user name.
+#
+# 28.02.2013:
+# I added the function get_fitshead_key as a shortcut for the
+# tedious dfits ... | fitsort ... | cut -f 2
+#
+# 17.03.2013:
+# Bug fix: The script stopped with the bash '-u' setting if THELI_LOGLEVEL
+# was not set.
+#
+# 09.05.2013:
+# Bug fix: The function 'writecommhis' did not take into account the
+# second argument and always wrote 'COMMENT' keywords (thanks to O. Cordes)
+#
+# 19.07.2013:
+# function 'mean_sigma': I changed the output from two decimal digits to
+# four. It turned out that two might not be enough if a low number of
+# objects enters mean and sigma estimation.
+#
+# 31.10.2013:
+# function mean_sigma: An optional fifth argument gives the minimum
+# sigma that the function needs to return. The argument is used if the
+# estimated sigma within the function is smaller than the argument
+# value.
+#
+# 21.11.2013:
+# I corrected a major bug in 'mean_sigma'. The number of elements with
+# that means and sigmas were estimated was always too high by '1'!
+#
+# 12.02.2014:
+# I simplified the functions 'value' and 'fitskey' with the bash 'printf'
+# command.
+#
+# 10.11.2014:
+# The file was renamed from bash_functions.include to
+# bash_functions.include.raw. It is now modified with the actual
+# global pipeline version number by the installation scripts.
+#
+# 09.12.2014:
+# - new function dummies which returns an array of all free dummy key
+#   numbers in a FITS file.
+# - I extended the function writekey so that several keys can be treated
+#   in one go.
+#
+# 03.07.2015:
+# Major bug in function writekey: The used variable 'i' was not declared
+# local and hence a vraible with the same name was falsely modified
+# in the scope of the calling script! - fixed!
+#
+# 09.07.2015:
+# - The THELI start message now also contains the user staring the process
+#   and the hostname of the machine where it was started.
+# - I introduced an additional theli_message function to print out
+#   status messages in log files. The theli_warn and theli_error
+#   messages now just call this function with an additional argument.
+#   This avoid unnecessary identical codings.
+# - Theli messages (messages, warnings and errors) have a timestamp now.
+#
+# 04.08.2015:
+# We need to check whether we run a script on a terminal before trying
+# to produce nice output via 'tput'. Not running with a terminal is
+# the case in Edinburgh when submitting jobs via qsub to worker nodes.
+# In this case the tput commands produce error messages.
+#
+# 06.08.2015:
+# Bug fix for the modification from 04.08.2015: The included tput wrapper
+# function was not used correctly if tput took more than 1 argument.
+#
+# 22.11.2016:
+# - The global variable NEXTDUMMY was renamend to G_NEXTDUMMY
+# - function writecommhis: Bug fix - The function did not work correctly
+#   if we wanted to write an empty COMMENT/HISTORY line.
+#
+# 01.11.2017:
+# Names of logfiles are adapted so that they do not produce files with '/'s
+# for exposure parallelisation (scripts parallelised with the new
+# exp_parallel_manager.sh script).
+
+# The pipeline version number - the string Pipeline Version: 1.30.0 is substituted
+# with the actual pipeline version number during pipeline installation:
+THELI_PIPEVERS="Pipeline Version: 1.30.0"
+
+# the function term_tput is a wrapper around tput. If we do not
+# run within a terminal environment this function just does nothing.
+# Otherwise it executes tput with the argument given
+function term_tput {
+  if [ -t 1 ]; then
+    tput "$@"
+  fi
+}
+
+# function value ensures that numeric FITS cards (argument 1) have a
+# length of 20.
+#
+# The function changes the global variable
+# 'VALUE'
+function value {
+  VALUE="`printf '%20s' $1`"
+}
+
+# function fitskey ensures that FITS cards (argument 1) have a length of 8.
+#
+# The function changes the global variable 'FITSKEY'
+function fitskey {
+  FITSKEY="`printf '%-8s' $1`"
+}
+
+# the function nextdummy searches the next free dummy keyword in a
+# FITS file (argument 1).  The number of the next free DUMMY keyword
+# is returned in the G_NEXTDUMMY variable.  In the case that NO more
+# keywords are available '-1' is returned.
+#
+# The function changes the global variable 'G_NEXTDUMMY'.
+function nextdummy {
+  G_NEXTDUMMY=`${P_DFITS} $1 | grep DUMMY | ${P_GAWK} \
+  'BEGIN {nrmin = 1000+0} {
+      if (index($1,"DUMMY") == 1) {
+        nr = substr($1,6) + 0;
+        if (nr < nrmin) {
+          nrmin=nr
+        }
+      }} END {if(NR > 0) {print nrmin}}'`
+}
+
+# the function dummies returns an array of all free dummy numbers of a
+# FITS file (argument 1).  The array is returned (index starts with 0!)
+# in the global array 'DUMMIES_ARR'. The global variable DUMMIES_LENGTH
+# contains the number of free dummy elements.
+#
+# The function changes the global variables 'G_DUMMIES' and
+# 'G_DUMMIES_LENGTH'.
+function dummies {
+  local DUMMIES
+  DUMMIES=`${P_DFITS} $1 | grep DUMMY | ${P_GAWK} \
+           'BEGIN {dummies = ""} {
+           if (index($1,"DUMMY") == 1) {
+             dummy = substr($1,6) + 0;
+             dummies = dummies " " dummy
+           }} END {print dummies}'`
+
+  G_DUMMIES=(${DUMMIES})
+  G_DUMMIES_LENGTH=${#G_DUMMIES[@]}
+}
+
+# the function lastdummy searches the last dummy keyword in a FITS
+# file (argument 1).  The number of the last free DUMMY keyword is
+# returned in the LASTDUMMY variable.  In the case that NO DUMMY
+# keywords are in the header, '0' is returned. This function is
+# intended to allow programs to convert an existing keyword into a
+# DUMMY.
+#
+# The function changes the global variable 'LASTDUMMY'.
+function lastdummy {
+  LASTDUMMY=`${P_DFITS} $1 | grep DUMMY | ${P_GAWK} \
+  'BEGIN {nrmax = 0} {
+     if (index($1,"DUMMY") == 1) {
+       nr = substr($1, 6) + 0;
+       if (nr > nrmax) {
+         nrmax=nr
+       }
+     }} END {if(NR>0) {print nrmax}}'`
+
+  if [ "${G_NEXTDUMMY}_A" = "_A" ]; then
+    G_NEXTDUMMY=-1
+  fi
+}
+
+# the function writes a FITS COMMENT or HISTORY keyword to a FITS file
+# (argument 1). The second argument is COMMENT/HISTORY and prepresents
+# the keyword to be written.  The comment/history string itself is
+# given as argument 3.  A DUMMY keyword is replaced for the comment.
+# If no dummy keyword is available, NO action is performed.  If the
+# comment string is longer than 69 characters it is automatically
+# split in lines with a length of 69 characters.
+function writecommhis {
+  # sanity check:
+  if [ "$2" = "COMMENT" ] || [ "$2" = "HISTORY" ]; then
+    # split up the comment in lines of length 69 characters
+    echo $3 | ${P_GAWK} 'BEGIN {len = 69}
+              {if((n = length($1)/len) - (int(length($1)/len)) > 0.001) {
+                 n = n + 1
+               }
+               pos=1; for(i = 1; i <= n; i++) {
+                 print substr($0, pos, len); pos+=len}
+               }' > commhis_$$.txt
+
+    # test whether we just want to write an empty HISTORY/COMMENT
+    # line:
+    if [ -s commhis_$$.txt ]; then
+      while read string
+      do
+        nextdummy $1
+        if [ ${G_NEXTDUMMY} -gt -1 ]; then
+          ${P_REPLACEKEY} $1 "${2} ${string}" DUMMY${G_NEXTDUMMY}
+          touch $1
+        else
+          echo "No DUMMY keyword to write $2 to $1"
+        fi
+      done < commhis_$$.txt
+    else
+      nextdummy $1
+      if [ ${G_NEXTDUMMY} -gt -1 ]; then
+        ${P_REPLACEKEY} $1 "${2}" DUMMY${G_NEXTDUMMY}
+        touch $1
+      else
+        echo "No DUMMY keyword to write empty $2 line"
+      fi
+    fi
+    test -f commhis_$$.txt && rm commhis_$$.txt
+  else
+    echo "Second argument to writecommhis must be COMMENT or HISTORY."
+  fi
+}
+
+# the function writes several FITS keywords to a FITS file (argument
+# 1). The keywords to be written need to be given in command argument
+# triples as 'keyword value REPLACE/NOREPLACE'. If a keyowrd is
+# present in the header it is either replaced by the new value or no
+# action is performed. This depends on the REPLACE/NOREPLACE argument
+# (setting it to 'REPLACE' the keyword is overwritten). If it does not
+# yet exist, a DUMMY keyword is replaced. If no dummy keyword is
+# available, NO action is performed.
+function writekey {
+  local IMAGE
+  local ARGS
+  local KEYS
+  local NKEYS
+  local INDEX
+  local TEST
+  local TESTKEYS
+  local ARGSTRING
+  local I
+
+  IMAGE=$1
+  shift
+  ARGS=("$@")
+  NKEYS=$(( ${#ARGS[@]} / 3 ))
+
+  if [ ${NKEYS} -gt 0 ]; then
+    I=0
+    KEYS=""
+    while [ ${I} -lt ${NKEYS} ]
+    do
+      INDEX=$(( ${I} * 3 ))
+      KEYS="${KEYS} ${ARGS[${INDEX}]}"
+      ((I++))
+    done
+
+    TEST=`${P_DFITS} ${IMAGE} | ${P_FITSORT} -d ${KEYS} | \
+          ${P_GAWK} '{$1 = ""; print $0}'`
+
+    TESTKEYS=(${TEST})
+
+    I=0
+    ARGSTRING=()
+    dummies ${IMAGE}
+    while [ ${I} -lt ${NKEYS} ]
+    do
+      fitskey ${ARGS[0]}
+      if [ "${TESTKEYS[0]}" = "KEY_N/A" ]; then
+        if [ -n ${G_DUMMIES[0]} ]; then
+          ARGSTRING+=("${FITSKEY}= ${ARGS[1]}" DUMMY${G_DUMMIES[0]})
+          G_DUMMIES=("${G_DUMMIES[@]:1}")
+        else
+          echo "No DUMMY keyword to write ${ARGS[0]} to ${IMAGE}"
+        fi
+      else
+        if [ "${ARGS[2]}" = "REPLACE" ]; then
+          ARGSTRING+=("${FITSKEY}= ${ARGS[1]}" ${ARGS[0]})
+        fi
+      fi
+      TESTKEYS=("${TESTKEYS[@]:1}")
+      ARGS=("${ARGS[@]:3}")
+      ((I++))
+    done
+
+    ${P_REPLACEKEY} ${IMAGE} "${ARGSTRING[@]}"
+    touch ${IMAGE}
+  fi
+}
+
+# the function estimates mean and sigma from a data vector the data
+# vector has to be provided in a simple ASCII file (each line contains
+# a single value); only data values within two threshold values
+# (second and third argument) enter the estimation. The function
+# modifies the (global) variable G_MEAN_SIGMA which contains "mean - k
+# * sigma mean + k * sigma" where 'k' is the fourth argument to the
+# function. A fifth argument can be given to the function. If provided
+# it gives the mininum 'sigma' that should be used for the result. It is
+# used if the estimated sigma is smaller.
+function mean_sigma {
+  G_MEAN_SIGMA=`gawk 'BEGIN {
+    n = 1;
+    minzpsdev = 0.0;
+    if('$#' == 5) {
+      minzpsdev = '$5';
+    }}
+  function max(x, y) {
+    if (x > y) {
+      return x;
+    } else {
+      return y;
+    }
+  }
+  function min(x, y) {
+    if (x < y) {
+      return x;
+    } else {
+      return y;
+    }
+  }
+  {
+    if ($1 > '$2' && $1 < '$3') {
+      oldline[n] = $0;
+      newline[n] = $0;
+      oldzp[n]   = $1;
+      newzp[n]   = $1;
+      n++;
+  }}
+  END {
+    # when reading the input data, n is increased
+    # one time too much at the end of the awk main loop.
+    n = n - 1;
+    if (n > 5) { maxiter = 3 } else { maxiter = 0 }
+    oldnelem = 0;
+    newnelem = n;
+    actuiter = 0;
+    while (actuiter <= maxiter && oldnelem != newnelem) {
+      zpmean = 0.0; zpsdev = 0.0;
+      for (i = 1; i <= newnelem; i++) {
+        zpmean += newzp[i];
+        zpsdev += newzp[i] * newzp[i];
+      }
+      zpmean /= newnelem;
+      if (newnelem > 2) {
+        zpsdev = sqrt(zpsdev / newnelem - zpmean * zpmean);
+      } else {
+        zpsdev = minzpsdev;
+      }
+
+      oldnelem = newnelem;
+      if (newnelem > 2 && actuiter < maxiter) {
+        newnelem = 0;
+        for (i = 1; i <= oldnelem; i++) {
+          oldzp[i]   = newzp[i];
+          oldline[i] = newline[i];
+        }
+        for (i = 1; i <= oldnelem; i++) {
+          if ((sqrt((oldzp[i] - zpmean) * (oldzp[i] - zpmean)) < 2.5 * zpsdev) &&
+              (sqrt((oldzp[i] - zpmean) * (oldzp[i] - zpmean)) < 1.0))
+          {
+            newzp[++newnelem] = oldzp[i];
+            newline[newnelem] = oldline[i];
+          }
+        }
+      }
+      actuiter++;
+    }
+    printf("%.4f %.4f", max((zpmean - '$4' * zpsdev), '$2'),
+                        min((zpmean + '$4' * zpsdev), '$3'));
+  }' $1`
+}
+
+# the function outputs the median of a datavector 'plus' a given value
+# 'x'. The data vector has to be provided in a simple ASCII file with
+# one value in each line.  This file is the first argument. The value
+# 'x' the second argument. The function returns the result value in
+# the global variable G_MODMEDIAN. If a medain cannot be obtained (two
+# or less data points) a default value is returned (third argument)
+function modified_median {
+  G_MODMEDIAN=`gawk 'BEGIN {i = 1} { a[i] = $1; i++ }
+    END {
+      n = asort(a);
+      if (n > 2) {
+        if (n%2 == 0) {
+          printf("%.3f", (a[n / 2] + a[n / 2 + 1]) / 2. + ('$2'));
+        } else {
+          printf("%.3f", a[int(n / 2)] + ('$2'));
+        }
+      } else {
+        print '$3';
+      }
+    }' $1`
+}
+
+# the function determines the 'real' basename and dir. name of a given
+# file. It is intended to obtain these 'real' infromations on files
+# that are (multiply) symbollically linked.  The function modifies the
+# 'global' variables 'G_REAL_FILE_BASE' (basename of the real file)
+# and 'G_REAL_FILE_DIR' (dirname of the real file)
+function get_real_file {
+  FILE=$1
+  G_REAL_FILE_BASE=`basename ${FILE}`
+  G_REAL_FILE_DIR=`dirname ${FILE} | sed -e 's!//*!/!g'`
+
+  if [ -L ${FILE} ]; then
+    LINKTRUE=1
+    TESTFILE=${FILE}
+
+    while [ ${LINKTRUE} -eq 1 ]
+    do
+      LINK=`readlink ${TESTFILE}`
+
+      if [ ! -L ${LINK} ]; then
+        LINKTRUE=0
+        G_REAL_FILE_BASE=`basename ${LINK}`
+        G_REAL_FILE_DIR=`dirname ${LINK} | sed -e 's!//*!/!g'`
+      else
+        TESTFILE=${LINK}
+      fi
+    done
+  fi
+
+  G_REAL_FILE_DIR=${G_REAL_FILE_DIR%/}
+}
+
+# the function removes multiple, continuous occurrences of slashes in
+# file and directory names. E.g. the filename //bla///bla1/bla.txt
+# would be converted into /bla/bla1/bla.txt The result is returned in
+# the gloabl variable 'G_FILE'
+function single_slash_filename {
+  FILE=$1
+  G_FILE=`echo ${FILE} | sed -e 's!//*!/!g'`
+
+  # remove last-character slash from directory names
+  G_FILE=${G_FILE%/}
+}
+
+# the function get_fitshead_key is a shortcut for
+# dfits -x 'ext' 'file.fits' | fitsort -d 'FITSKEY' | cut -f 2
+# Here, file.fits is the first function argument, FITSKEY the
+# second and 'ext' the optional third one. If a third argument
+# is not given, the primary header is searched for the keyword.
+function get_fitshead_key {
+  EXTENSION=""
+  if [ $# -eq 3 ]; then
+    EXTENSION="-x $3"
+  fi
+
+  ${P_DFITS} ${EXTENSION} $1 | ${P_FITSORT} -d "$2" | cut -f 2
+}
+
+# The function theli_start should be called in each THELI script after
+# bash_functions.include has been sourced. It displays a start message
+# on the screen and creates logfiles if requested (environment variables
+# influencing the log files are: THELI_LOGGING, THELI_LOGDIR and
+# THELI_LOGLEVEL).
+# The first argument should be always "$*". It is interpreted as the
+# command line options given to the script and they are displayed on
+# screen and in a logfile. An optional second argument is interpreted
+# as the parallel channels for that the script (a parallel script of
+# course) was called. It is also displayed on screen and in a THELI
+# logfile.
+function theli_start {
+  local MESSAGE
+
+  term_tput bold
+  term_tput setf 2
+  PARASCRIPT=0
+  if [ $# -gt 1 ]; then
+    MESSAGE="Parallel Script $0 started for channels '${2}' at `date`"
+    PARASCRIPT=1
+  else
+    MESSAGE="Script $0 started at `date`"
+  fi
+  MESSAGE="${MESSAGE}\n(user: ${USER}; machine: `hostname`)"
+  MESSAGE="${MESSAGE}\n\nTHELI ${THELI_PIPEVERS}"
+  if [ $# -gt 0 ]; then
+    MESSAGE="${MESSAGE}\n\nScript arguments: ${1}"
+  else
+    MESSAGE="${MESSAGE}\n\nScript has no arguments"
+  fi
+  echo -e "${MESSAGE}"
+  term_tput sgr0
+
+  # deal with logging stuff:
+  THELI_LOGFILE=""
+  THELI_LOGGING=${THELI_LOGGING:-""}
+  if [ ! -z ${THELI_LOGGING} ]; then
+    # use TEMPDIR for log files if THELI_LOGDIR is not
+    # set. Of course we implicitely assume here that
+    # TEMPDIR is set!
+    THELI_LOGDIR=${THELI_LOGDIR:-"${TEMPDIR}"}
+
+    # create THELI_LOGDIR if necessary:
+    if [ "${THELI_LOGDIR}" != "${TEMPDIR}" ] && [ ! -d ${THELI_LOGDIR} ]
+    then
+      mkdir -p ${THELI_LOGDIR}
+    fi
+
+    if [ ${PARASCRIPT} -eq 1 ]; then
+      CHAN=`echo ${2} | awk 'BEGIN {FS = " "; OFS = "_"} {
+                                    $1 = $1; print $0}' | \
+                        awk -F/ '{print $NF}'`
+      LOGFILENAME=log_`basename $0`_chan_${CHAN}_`date +'%m_%d_%y_%H:%M:%S'`.log
+    else
+      LOGFILENAME=log_`basename $0`_`date +'%m_%d_%y_%H:%M:%S'`.log
+    fi
+    THELI_LOGFILE=${THELI_LOGDIR}/${LOGFILENAME}
+
+    # # copy all output to the logfile:
+    # exec > >(tee ${THELI_LOGFILE})
+    # exec 2>&1
+
+    # redirect all output to the logfile (stdout and stderr)
+    # we copy stdout to file descriptor '6' so that we can temporarily
+    # restore stdout and print to the screen only. We want this
+    # for short status messages, e.g. in functions theli_warn,
+    # theli_error etc.
+    exec 6>&1 # copy stdout
+    exec 7>&2 # copy stderr
+    exec 1> ${THELI_LOGFILE} # redirect stdout to logfile
+    exec 2>&1 # redirect stderr also to the logfile;
+              # how does this behave (buffered/unbuffered output?)
+
+    # write the start message to the logfile
+    echo -e "${MESSAGE}"
+    echo ""
+
+    # A THELI_LOGLEVEL greater than 1 indicates that
+    # we want the 'full' script output via option 'xv'
+    THELI_LOGLEVEL=${THELI_LOGLEVEL:-1}
+
+    if [ ${THELI_LOGLEVEL} -gt 1 ]; then
+      set -xv
+    fi
+  fi
+}
+
+# the function displays end time of the current script on screen and
+# in THELI logfiles. The function should be called if everything went
+# fine and we quit with an error status of 0. An optional argument is
+# interpreted as parallel channels for that the script is called:
+function theli_end {
+  local MESSAGE
+
+  if [ ${THELI_LOGLEVEL:-1} -gt 1 ]; then
+    set +xv
+  fi
+
+  if [ $# -gt 0 ]; then
+    MESSAGE="Parallel Script $0 for channels '${1}' ended without problems at `date`"
+  else
+    MESSAGE="Script $0 ended without problems at `date`"
+  fi
+
+  # write end message to logfile and restore stdout/stderr:
+  if [ ! -z ${THELI_LOGGING} ]; then
+    echo ""
+    echo "${MESSAGE}"
+
+    exec 1>&6
+    exec 2>&7
+    exec 6>&-
+    exec 7>&-
+  fi
+
+  # write end message to screen:
+  term_tput bold
+  term_tput setf 2
+  echo "${MESSAGE}"
+  term_tput sgr0
+}
+
+# the function displays a message on the screen and in THELI logfiles;
+# First argument is the message string to be displayed. An optional
+# second argument contains the parallel channels for that the script
+# was called. An optional, third (or second) argument can be 'Warning'
+# or 'Error' to specify Theli warning or error messages:
+
+function theli_message {
+  # temporarily suppress verbose output if necessary
+  if [ ${THELI_LOGLEVEL:-1} -gt 1 ]; then
+    set +xv
+  fi
+
+  local MESSAGE
+  local MESSAGE_TYPE
+
+  MESSAGE_TYPE="Message"
+
+  if [ $# -eq 3 ]; then
+    MESSAGE_TYPE="$3"
+    MESSAGE="${MESSAGE_TYPE} in parallel script $0 (channels '${2}'; time `date`): \n$1"
+  fi
+
+  if [ $# -eq 1 ]; then
+    MESSAGE="${MESSAGE_TYPE} in script $0 (time: `date`): \n$1"
+  fi
+
+  if [ $# -eq 2 ] && [ "$2" != "Error" ] && [ "$2" != "Warning" ]; then
+    MESSAGE="${MESSAGE_TYPE} in parallel script $0 (channels '${2}'; time `date`): \n$1"
+  else
+    if [ $# -eq 2 ]; then
+      MESSAGE_TYPE="$2"
+      MESSAGE="${MESSAGE_TYPE} in script $0 (time `date`): \n$1"
+    fi
+  fi
+
+  # write message to logfile:
+  if [ ! -z ${THELI_LOGGING} ]; then
+    echo ""
+    echo -e "${MESSAGE}"
+    echo ""
+  fi
+
+  # temporarily restore stdout and stderr if necessary and print
+  # error message to stderr:
+  if [ ! -z ${THELI_LOGGING} ]; then
+    exec 1>&6
+    exec 2>&7
+  fi
+
+  term_tput bold
+  if [ "${MESSAGE_TYPE}" = "Error" ]; then
+    term_tput setf 4
+  fi
+  if [ "${MESSAGE_TYPE}" = "Warning" ]; then
+    term_tput setf 1
+  fi
+
+  echo -e "${MESSAGE}" >&2
+  term_tput sgr0
+
+  if [ ! -z ${THELI_LOGGING} ]; then
+    exec 1>> ${THELI_LOGFILE}
+    exec 2>&1
+  fi
+
+  if [ ${THELI_LOGLEVEL:-1} -gt 1 ]; then
+    set -xv
+  fi
+}
+
+# the function displays an error message on the screen and in THELI
+# logfiles; we do not terminate the script to give it the possibility
+# to perform cleanup operations. First argument is the error string to
+# be displayed.  An optional, second argument contains the parallel
+# channels for that the script was called:
+function theli_error {
+  # temporarily suppress verbose output if necessary
+  if [ ${THELI_LOGLEVEL:-1} -gt 1 ]; then
+    set +xv
+  fi
+
+  theli_message "$@" Error
+
+  if [ ${THELI_LOGLEVEL:-1} -gt 1 ]; then
+    set -xv
+  fi
+}
+
+# the function displays a warning message on the screen and in
+# logifles; we do not terminate the script to give it the possibility
+# to perform cleanup operations. An optional, second argument contains
+# the parallel channels for that the script was called:
+function theli_warn {
+  # temporarily suppress verbose output if necessary
+  if [ ${THELI_LOGLEVEL:-1} -gt 1 ]; then
+    set +xv
+  fi
+
+  theli_message "$@" Warning
+
+  if [ ${THELI_LOGLEVEL:-1} -gt 1 ]; then
+    set -xv
+  fi
+}
+
+# restore verbose and xtrace bash flags if necessary:
+if  [ ${USE_X} -eq 1 ]; then
+  set -xv
+fi

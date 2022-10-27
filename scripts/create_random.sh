@@ -1,12 +1,14 @@
 #!/bin/bash
 
 #Set up the PATH {{{
-export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
+export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
-export PATH=@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
 export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/:@RUNROOT@/INSTALL/anaconda2/lib/
 set -e 
 #}}}
 
@@ -27,11 +29,12 @@ xy2sky -d $mask @$md/${field}_rand_tmp.pos_$$ | \
 echo
 asctoldac -a $md/${field}_rand_tmp2.pos_$$ \
 	  -o $md/${field}_rand_tmp.cat_$$ \
-	  -t OBJECTS -c asctoldac_rand.conf
+	  -t OBJECTS -c @RUNROOT@/@CONFIGPATH@/asctoldac_rand.conf
 
-./addmask_fits.sh $md/${field}_rand_tmp.cat_$$ \
-		  $md/${field}_rand.cat $mask \
-		  MASK "" SHORT OBJECTS
+bash @RUNROOT@/@SCRIPTPATH@/addmask_fits.sh \
+     $md/${field}_rand_tmp.cat_$$ \
+     $md/${field}_rand.cat $mask \
+     MASK "" SHORT OBJECTS
 
 rm $md/*tmp*_$$
 

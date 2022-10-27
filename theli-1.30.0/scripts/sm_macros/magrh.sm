@@ -1,0 +1,27 @@
+# SM-script to make a size vs. magnitude plot of detected sources
+# We provide two files. The first lists galaxies, the second
+# stars. Stars are plotted in red, galaxies as blue dots.
+#
+# $1: data-file with galaxies (columns are size and mag)
+# $2: data-file with stars (columns are size and mag)
+# $3: top label string
+plot 3
+        undef TeX_strings
+        expand 1.8
+        lweight 4.0
+	data $1
+	read { rh 1 mag 2 }
+	data $2
+	read { rh2 1 mag2 2 }
+
+        toplabel $3
+	xlabel FLUX_RADIUS
+	ylabel MAG_AUTO
+	limits 0.5 10 28 14
+	box
+	ctype black
+	ptype 1 1
+	points rh mag
+ 	ctype red
+	points rh2 mag2
+

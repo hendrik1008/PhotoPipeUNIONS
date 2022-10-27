@@ -16,6 +16,7 @@ import astropy.io.fits as fits
 import numpy as np
 import sys, os
 import astropy.wcs as wcs
+import gc
 
 image=sys.argv[1]
 outimage=sys.argv[2]
@@ -36,17 +37,40 @@ n=np.arange(NAXIS1*NAXIS2)
 p=np.ones(NAXIS1*NAXIS2,dtype=np.int16)*NAXIS1
 x=np.mod(n,p)
 y=np.divide(n,p)
+# delete n and p here
+del n
+del p
+gc.collect()
 sky = wcs_header.all_pix2world(x,y,0)
+# delete x and y here
+del x
+del y
+gc.collect()
 ra = sky[0]
 dec = sky[1]
+# delete sky here
+del sky
+gc.collect()
 deccut1 = np.greater(dec, declow)
 deccut2 = np.less_equal(dec, dechigh)
+# delete dec here
+del dec
+gc.collect()
 racut1 = np.greater(ra, ralow)
 racut2 = np.less_equal(ra, rahigh)
+# delete ra here
+del ra
+gc.collect()
 if ralow < rahigh:
     wcscut = racut1 * racut2 * deccut1 * deccut2
 else:
     wcscut = np.logical_or(racut1, racut2) * deccut1 * deccut2
+# delete racut1/2 and deccut1/2 here
+del racut1
+del racut2
+del deccut1
+del deccut2
+gc.collect()
 
 wcscut = np.reshape(wcscut, (NAXIS2, NAXIS1))
 

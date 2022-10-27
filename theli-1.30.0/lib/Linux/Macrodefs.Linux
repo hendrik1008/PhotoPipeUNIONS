@@ -1,0 +1,16 @@
+#
+# macro definitions for the gcc ANSI-C Compiler on PC-LINUX systems
+#
+# E.BERTIN 1999
+#
+SEXMACHINE= linuxpc
+# C-compiler
+CC    = gcc
+# options for C-compiler:
+COPTS = $(OPTFLAGS) -DPC_LINUX -O3 -funroll-loops -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DHAVE_GETENV -DHAVE_SYS_MMAN_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG_INT -DHAVE_UNSIGNED_LONG_LONG_INT
+#CC    = icc				# the C compiler
+#COPTS = -DPC_LINUX -O3 -axiMKW -ipo -ipo_obj -unroll		# options for the C compiler
+CD    = cd
+CP    = cp
+RM    = rm -f
+

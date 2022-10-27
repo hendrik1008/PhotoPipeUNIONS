@@ -18,12 +18,14 @@
 # 2017-02-18 V1.0
 
 #Set up the PATH {{{
-export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
+export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
-export PATH=@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
 export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/:@RUNROOT@/INSTALL/anaconda2/lib/
 set -e 
 #}}}
 
@@ -133,8 +135,47 @@ tcsh $gaap_dir/gaap-corr.csh \
     $phot_cat_RA \
     $phot_cat_Dec
 
+#### Stars GAaP script - photometric catalogue - fixed aperture 1.0"
+
+phot_cat_image_stars=$wd/${original_image_base}_stars.cat
+
+ln -sf $phot_cat_image $phot_cat_image_stars
+
+tcsh $gaap_dir/gaap-corr_stars_DR5.csh \
+    $phot_cat_image_stars \
+    $original_image \
+    $gaussianised_image \
+    $original_image_weight \
+    1.0 \
+    2.0 \
+    $gaussianised_image_dir/${original_image_base}_smart_ker.map \
+    $wd/${original_image_base}_smart_stars.gaap \
+    $gaap_dir \
+    $phot_cat_RA \
+    $phot_cat_Dec
+
+### Stars GAaP script - photometric catalogue - fixed aperture 0.7"
+
+phot_cat_image_stars0p7=$wd/${original_image_base}_stars0p7.cat
+
+ln -sf $phot_cat_image $phot_cat_image_stars0p7
+
+tcsh $gaap_dir/gaap-corr_stars_DR5.csh \
+    $phot_cat_image_stars0p7 \
+    $original_image \
+    $gaussianised_image \
+    $original_image_weight \
+    0.7 \
+    2.0 \
+    $gaussianised_image_dir/${original_image_base}_smart_ker.map \
+    $wd/${original_image_base}_smart_stars0p7.gaap \
+    $gaap_dir \
+    $phot_cat_RA \
+    $phot_cat_Dec
+
 rm orders.par starsused.txt kerpos.ps fitkermap.ps \
-   kersticks.ps $phot_cat_image $phot_cat_image_minaper1p0 default.*
+   kersticks.ps $phot_cat_image $phot_cat_image_minaper1p0 \
+   $phot_cat_image_stars $phot_cat_image_stars0p7 default.*
 
 mv cov.fits   $wd/${original_image_base}_smart_cov.fits
 mv covsh.fits $wd/${original_image_base}_smart_covsh.fits

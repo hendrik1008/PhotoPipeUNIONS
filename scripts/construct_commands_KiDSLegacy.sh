@@ -21,12 +21,14 @@
 # 2020-08-05 V1.0
 
 #Set up the PATH {{{
-export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
+export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
-export PATH=@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
 export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/:@RUNROOT@/INSTALL/anaconda2/lib/
 set -e
 #}}}
 
@@ -66,6 +68,10 @@ do
       ;;
     -cd)
       cats_dir=${2} # Catalogue directory where the KiDS catalogues live.
+      shift 2
+      ;;
+    -mm)
+      mm_dir=${2} # Directory where the AW manual masks live.
       shift 2
       ;;
     -bd)
@@ -111,8 +117,18 @@ done
 #}}}
 
 #Define the pointing name in AstroWISE convention {{{
-AW_name=`echo ${field_name} | sed 's/p/\./g' | sed 's/m/\-/g'`
-AW_name_new=`echo $AW_name | sed 's/KIDS/@SURVEY@/g'`
+if [ "@AWNAME_LOOKUP@" == "1" ]
+then 
+  AW_name=`grep ${field_name} @UBANDCORRECTIONSFILE@ | awk -F, '{print $1}'`
+  if [ "${AW_name}" == "" ]
+  then 
+    >&2 echo "ERROR: The field ${field_name} doesn't exist in @UBANDCORRECTIONSFILE@"
+    >&2 echo "       If this is expected, then set AWNAME_LOOKUP to 0 in the parameter file!"
+    exit 1 
+  fi 
+else 
+  AW_name=`echo ${field_name} | sed 's/p/\./g' | sed 's/m/\-/g'`
+fi 
 #}}}
 
 ### Create a working directory
@@ -121,12 +137,9 @@ mdfield=$md/${field_name}
 test ! -d ${mdfield} && mkdir ${mdfield}
 
 ### Read RA and Dec from KiDS field name.
-
-if [ -f ${mask} ]
-then
-  RA=`dfits ${mask}|fitsort -d CRVAL1|awk '{print $2}'`
-  Dec=`dfits ${mask}|fitsort -d CRVAL2|awk '{print $2}'`
-fi 
+detect_image=${THELIDATAPATH}/${field_name}/@THELIFILTER@/coadd_@THELIVERSION@/${KiDS_field}_@THELIFILTER@.@THELIVERSION@.swarp.cut.fits
+RA=`dfits  ${detect_image}|fitsort -d CRVAL1|awk '{printf "%1.8f\n", $2}'`
+Dec=`dfits ${detect_image}|fitsort -d CRVAL2|awk '{printf "%1.8f\n", $2}'`
 
 ### Paths to the photometric, lensfit, and star catalogues.
 
@@ -172,7 +185,7 @@ do
     for filter in Z Y J H Ks
     do
       #Check that the VIKING chip list is present
-      if [ ! -f @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_wcs.txt ]
+      if [ ! -f @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_@SURVEY@_wcs.txt ]
       then 
         #Construct the chip list
         chiplist=`find  @VIKINGROOT@/@VIKINGTYPE@/${filter}/ | grep "_r.fits"`
@@ -182,7 +195,7 @@ do
           then 
             chipRA=`dfits ${chip}|fitsort -d CRVAL1|awk '{print $2}'`
             chipDec=`dfits ${chip}|fitsort -d CRVAL2|awk '{print $2}'`
-            echo `basename ${chip} .fits` ${chipRA} ${chipDec} >> @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_wcs.txt
+            echo `basename ${chip} .fits` ${chipRA} ${chipDec} >> @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_@SURVEY@_wcs.txt
           fi 
         done
         #>&2 echo "ERROR: the VIKING Chip List is not available for Filter ${filter}"
@@ -191,7 +204,7 @@ do
       #Construct the list of chips for this pointing
       test ! -d ${image_dir}/${KiDS_field}/${filter} && mkdir ${image_dir}/${KiDS_field}/${filter}
       echo bash @RUNROOT@/@SCRIPTPATH@/collect_chips.sh \
-        @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_wcs.txt \
+        @RUNROOT@/@CONFIGPATH@/VIKING_${filter}_@SURVEY@_wcs.txt \
         ${WCS_cuts} \
         \> ${image_dir}/${KiDS_field}/${filter}/chips_list.txt
     done
@@ -224,33 +237,40 @@ do
       test ! -d ${wdband} && mkdir ${wdband}
 
       ### Create a list of all chips.
-      ls $image_dir/${KiDS_field}/${band}/*_r.fits > ${wdband}/file_list.txt
+      ls $image_dir/${KiDS_field}/${band}/ | grep "_r.fits$" > ${wdband}/file_list.txt || \
+        >&2 echo "There are no VISTA chips in $image_dir/${KiDS_field}/${band}/"
+      nimage=`cat ${wdband}/file_list.txt | wc -l `
 
-      ### Create a list of all pawprints.
-      {
-        while read file
+      if [ "${nimage}" != "0" ]
+      then
+        ### Create a list of all pawprints.
+        {
+          while read file
+          do
+            basename $file
+          done < ${wdband}/file_list.txt
+        } | cut -d "_" -f 1-2 |sort | uniq > ${wdband}/pawprint_list.txt
+
+        ### Loop over all pawprints.
+        for pawname in `cat ${wdband}/pawprint_list.txt`
         do
-          basename $file
-        done < ${wdband}/file_list.txt
-      } | cut -d "_" -f 1-2 |sort | uniq > ${wdband}/pawprint_list.txt
+          ### Create a pawprint directory.
+          wdpaw=${wdband}/${pawname}
+          test ! -d ${wdpaw} && mkdir ${wdpaw}
 
-      ### Loop over all pawprints.
-      for pawname in `cat ${wdband}/pawprint_list.txt`
-      do
-        ### Create a pawprint directory.
-        wdpaw=${wdband}/${pawname}
-        test ! -d ${wdpaw} && mkdir ${wdpaw}
-
-        ### Loop over all chips in this pawprint.
-        for image in $image_dir/${KiDS_field}/${band}/${pawname}_*_r.fits
-        do
-          base=`basename $image _r.fits`
-          wd=${wdpaw}/$base
-          test ! -d $wd && mkdir $wd
+          ### Loop over all chips in this pawprint.
+          for image in $image_dir/${KiDS_field}/${band}/${pawname}_*_r.fits
+          do
+            base=`basename $image _r.fits`
+            wd=${wdpaw}/$base
+            test ! -d $wd && mkdir $wd
+          done
         done
-      done
+      else 
+        echo > ${wdband}/pawprint_list.txt
+      fi 
     done
-    echo "echo PREPARE has no parallel section. Folder's were set up correctly"
+    echo "echo PREPARE has no parallel section. Folders were set up correctly"
   fi
 done
 
@@ -347,14 +367,20 @@ do
         done
       done
     done
-    missingFraction=`echo $missingCounter $allCounter | awk '{printf "%.2f", $1/$2*100}'`
-    errorMissing=`echo $missingCounter $allCounter | awk '{ if ($1/$2 > 0.1) { print "BREAK" } }'`
-    if [ "$errorMissing" == "BREAK" ]
+    if [ "$allCounter" != "0" ]
     then 
-       >&2 echo "ERROR: Too many Gaussianised images do not exist: ${missingFraction}% > 10%"
-       exit 1
+      missingFraction=`echo $missingCounter $allCounter | awk '{printf "%.2f", $1/$2*100}'`
+      errorMissing=`echo $missingCounter $allCounter | awk '{ if ($1/$2 > 0.1) { print "BREAK" } }'`
+      if [ "$errorMissing" == "BREAK" ]
+      then 
+         >&2 echo "ERROR: Too many Gaussianised images do not exist: ${missingFraction}% > 10%"
+         exit 1
+      elif [ "$missingCounter" != "0" ]
+      then 
+         >&2 echo "NB: ${missingFraction}% of the Gaussianised images do not exist in pointing ${KiDS_field}!"
+      fi 
     else 
-       >&2 echo "NB: ${missingFraction}% of the Gaussianised images do not exist!"
+      >&2 echo "WARNING: There are no VISTA data in pointing ${KiDS_field}!"
     fi 
   fi
 done
@@ -371,8 +397,14 @@ do
       for pawname in `cat ${wdband}/pawprint_list.txt`
       do
         wdpaw=${wdband}/${pawname}
-        ### If there is no individual VISTA chip QC (K1000) ###
-        gaap_input_files=${wdpaw}/v*_bsub/v*_bsub_r_smart$ending.gaap
+        if [ ! -f @VIKINGBADQCFILE@ ]
+        then 
+          ### If there is no individual VISTA chip QC ###
+          >&2 echo "WARNING: File  @VIKINGBADQCFILE@ does not exist!"
+          gaap_input_files=v*/v*_bsub/v*_bsub_r_smart$ending.gaap
+        else 
+          gaap_input_files=`ls v*/v*_bsub/v*_bsub_r_smart$ending.gaap | grep -Fvf @VIKINGBADQCFILE@ `
+        fi 
         ### Combine flux measurements for photometric catalogue.
         echo -n python @RUNROOT@/@SCRIPTPATH@/average_fluxes_list.py \
           $no_obj_phot_cat \
@@ -394,15 +426,21 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COMBINETILE" ]; then
     ### Loop over all VISTA bands.
-    for ending in _minaper1p0 ""
+    for ending in "" _minaper1p0 _stars _stars0p7
     do
       home=`pwd`
       for band in Z Y J H Ks
       do
         wdband=${mdfield}/${band}
         cd ${wdband}
-        ### If there is no individual VISTA chip QC ###
-        gaap_input_files=v*/v*_bsub/v*_bsub_r_smart$ending.gaap
+        if [ ! -f @VIKINGBADQCFILE@ ]
+        then 
+          ### If there is no individual VISTA chip QC ###
+          >&2 echo "WARNING: File  @VIKINGBADQCFILE@ does not exist!"
+          gaap_input_files=v*/v*_bsub/v*_bsub_r_smart$ending.gaap
+        else 
+          gaap_input_files=`ls v*/v*_bsub/v*_bsub_r_smart$ending.gaap | grep -Fvf @VIKINGBADQCFILE@ `
+        fi 
         num_input_files=( $gaap_input_files )
         num_input_files=${#num_input_files[@]}
         ### Combine flux measurements for photometric catalogue.
@@ -449,8 +487,6 @@ do
 done
 
 ### Preparation of SDSS catalogue.
-### Requires Dominik Klaes' SDSS-catalogue-creator-1.2 in repo
-### https://github.com/dklaes/SDSS-catalogue-creator
 for mode in ${MODE}
 do
   if [ "${mode}" = "SDSSPREP" ]; then
@@ -464,9 +500,7 @@ do
     if [ $continue -eq 1 ]
     then
       echo -n mkdir ${mdfield}/SDSS \;\ 
-      echo -n cd @RUNROOT@/INSTALL/SDSS-catalogue-creator-1.2 \;\ 
-      echo -n bash @RUNROOT@/@SCRIPTPATH@/retrieve_sloan_K1000.sh ${mdfield}/SDSS/ $KiDS_field $RA $Dec \;\ 
-      echo cd @RUNROOT@
+      echo -n bash @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $KiDS_field $RA $Dec \;\ 
     else 
       echo "echo 'Field is in the South'"
     fi
@@ -518,7 +552,7 @@ do
   if [ "${mode}" = "COMPTILE" ]; then
     SDSS_cat=${mdfield}/SDSS/${KiDS_field}_sdssdr8_stars.cat
     ### Loop over all VISTA bands.
-    for ending in _minaper1p0 ""
+    for ending in "" _minaper1p0 _stars _stars0p7
     do
       for band in Z Y J H Ks
       do
@@ -649,17 +683,63 @@ do
       \;\ 
     echo -n rm ${mdfield}/*_$$ \;\ 
 
-    if [ -f @UBANDCORRECTIONSFILE@ ]
+    u_offset=""
+    g_offset=""
+    r_offset=""
+    i1_offset=""
+    i2_offset=""
+    if [ -f @G2KCORRECTIONSFILE@ ]
     then 
-      u_offset=`grep $AW_name_new @UBANDCORRECTIONSFILE@ | awk '{print $2}'`
-    else 
-      u_offset='0.0'
+	    u_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $27,$28}'`
+    fi 
+    if [ "$u_offset" == "" ]
+    then 
+      if [ -f @UBANDCORRECTIONSFILE@ ]
+      then 
+	      u_offset=`grep $AW_name @UBANDCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $8,$9}'`
+      fi 
+      if [ "$u_offset" == "" ]
+      then 
+        u_offset='0.0 0.0'
+      fi 
+    fi 
+    if [ -f @G2KCORRECTIONSFILE@ ]
+    then 
+	    g_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $29,$30}'`
+    fi 
+    if [ "$g_offset" == "" ]
+    then 
+      g_offset='0.0 0.0'
+    fi 
+    if [ -f @G2KCORRECTIONSFILE@ ]
+    then 
+	    r_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $31,$32}'`
+    fi 
+    if [ "$r_offset" == "" ]
+    then 
+      r_offset='0.0 0.0'
+    fi 
+    if [ -f @G2KCORRECTIONSFILE@ ]
+    then 
+	    i1_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $33,$34}'`
+    fi 
+    if [ "$i1_offset" == "" ]
+    then 
+      i1_offset='0.0 0.0'
+    fi 
+    if [ -f @G2KCORRECTIONSFILE@ ]
+    then 
+	    i2_offset=`grep $AW_name @G2KCORRECTIONSFILE@ | awk 'BEGIN{FS=","}{print $35,$36}'`
+    fi 
+    if [ "$i2_offset" == "" ]
+    then 
+      i2_offset='0.0 0.0'
     fi 
 
     echo -n python @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes.py \
       ${mdfield}/${field_name}_ugriZYJHKs.cat_tmp \
       ${mdfield}/${field_name}_ugriZYJHKs.cat \
-      $u_offset \;\ 
+      $u_offset $g_offset $r_offset $i1_offset $i2_offset \;\ 
 
     echo rm ${mdfield}/${field_name}_ugriZYJHKs.cat_tmp
   fi
@@ -670,12 +750,18 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEVST" ]; then
+    if [ "$RA" == "" ]
+    then 
+      >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
+      RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
+      Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+    fi 
     continue=`echo $Dec | awk '{if ($1>-10) print 1; else print 0}'`
     if [ $continue -eq 1 ]
     then
       SDSS_cat=${mdfield}/SDSS/${KiDS_field}_sdssdr8_stars.cat
       ### Loop over all VST bands.
-      for band in u g r i
+      for band in u g r i1 i2
       do
         wdband=${mdfield}/${band}
         test ! -d ${wdband} && mkdir ${wdband}
@@ -687,6 +773,8 @@ do
           ${band} \
           16.5 19
       done
+    else
+      echo Southern field. No need to run COMPTILEVST.
     fi
   fi
 done
@@ -701,16 +789,27 @@ do
       nr=`wc ${image_dir}/${KiDS_field}/$filter/chips_list.txt | awk '{print $1}'`
 
       ### Science image stack (NOT USED) ###
-      ###if [ ! -f $md/${KiDS_field}/$filter/${KiDS_field}_${filter}_swarp.fits ] && [ $nr -gt 0 ]
-      ###then
-      ###    input_files=${image_dir}/${KiDS_field}/$filter/*_r.fits
-      ###    echo -n cd $md/${KiDS_field}/$filter/ \;
-      ###    echo ~/src/KiDS-VIKING/swarp $input_files \
-        ###	     -NTHREADS 1 \
-        ###	     -BACK_TYPE MANUAL \
-        ###	     -IMAGEOUT_NAME  ${KiDS_field}_${filter}_swarp.fits \
-        ###	     -WEIGHTOUT_NAME ${KiDS_field}_${filter}_swarp.weight.fits
-      ###fi
+      if [ ! -f $md/${KiDS_field}/$filter/${KiDS_field}_${filter}_swarp.fits ] && [ $nr -gt 0 ]
+      then
+          input_files=${image_dir}/${KiDS_field}/$filter/*_r.fits
+          echo -n cd $md/${KiDS_field}/$filter/ \;
+          echo swarp $input_files \
+        	     -NTHREADS 1 \
+        	     -BACK_TYPE MANUAL \
+        	     -WEIGHT_TYPE MAP_WEIGHT \
+        	     -IMAGEOUT_NAME  ${KiDS_field}_${filter}_swarp.fits \
+        	     -WEIGHTOUT_NAME ${KiDS_field}_${filter}_swarp.weight.fits
+      fi
+      if [ ! -f $md/${KiDS_field}/$filter/${KiDS_field}_${filter}_swarp.tiff ] && [ $nr -gt 0 ]
+      then
+          echo -n cd $md/${KiDS_field}/$filter/ \;
+          echo stiff ${KiDS_field}_${filter}_swarp.fits \
+        	     -NTHREADS 1 \
+        	     -BACK_TYPE MANUAL \
+        	     -WEIGHT_TYPE MAP_WEIGHT \
+        	     -IMAGEOUT_NAME  ${KiDS_field}_${filter}_swarp.fits \
+        	     -WEIGHTOUT_NAME ${KiDS_field}_${filter}_swarp.weight.fits
+      fi
 
       if [ "$nr" != "" ] 
       then 
@@ -734,9 +833,8 @@ do
           echo -n cd $md/${KiDS_field}/$filter/ \;\ 
           if [ "$RA" == "" ]
           then 
-            >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
-            RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
-            Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+              >&2 echo "ERROR: Central RA/Dec not defined."
+	      exit 1
           fi 
           ### THIS NEEDS TO BE TESTED WITH swarp_theli!!! ###
           echo -n swarp $input_files01 \
@@ -766,17 +864,30 @@ do
   fi
 done
 
+### Correct the MAG_AUTO values 
+for mode in ${MODE}
+do
+  if [ "${mode}" = "MAGAUTOCORR" ]; then
+	  mag_auto_corr=`grep $AW_name @MAGAUTOCORRFILE@ | awk 'BEGIN{FS=","}{print $2}'`
+    #Run the MAG_AUTO correction for this field, in place 
+    echo python @RUNROOT@/@SCRIPTPATH@/correct_mag_auto.py \
+      ${mdfield}/${field_name}_ugriZYJHKs.cat \
+      ${mdfield}/${field_name}_ugriZYJHKs_mac.cat \
+      ${mag_auto_corr} \;\ 
+  fi 
+done
+
 ### Run BPZ
 for mode in ${MODE}
 do
   if [ "${mode}" = "BPZ" ]; then
     echo -n "set -e ; "
-    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugriZYJHKs.cat \
+    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugriZYJHKs_mac.cat \
       ${mdfield}/${field_name}_ugriZYJHKs_maglim.cat \;\ 
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
       ${mdfield}\
       ${field_name}_ugriZYJHKs_maglim.cat \
-      \"u g r i2 Z Y J H Ks\" \
+      \"u g r i1 i2 Z Y J H Ks\" \
       MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
       0.01 \;\ 
     echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriZYJHKs.py \
@@ -790,8 +901,8 @@ do
       -o ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
       -t OBJECTS \
       -k  \
-      MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i2 MAG_LIM_0p7_Z MAG_LIM_0p7_Y MAG_LIM_0p7_J MAG_LIM_0p7_H MAG_LIM_0p7_Ks \
-      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i2 MAG_LIM_1p0_Z MAG_LIM_1p0_Y MAG_LIM_1p0_J MAG_LIM_1p0_H MAG_LIM_1p0_Ks \;\ 
+      MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i1 MAG_LIM_0p7_i2 MAG_LIM_0p7_Z MAG_LIM_0p7_Y MAG_LIM_0p7_J MAG_LIM_0p7_H MAG_LIM_0p7_Ks \
+      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i1 MAG_LIM_1p0_i2 MAG_LIM_1p0_Z MAG_LIM_1p0_Y MAG_LIM_1p0_J MAG_LIM_1p0_H MAG_LIM_1p0_Ks \;\ 
     echo rm ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat_tmp_$$ \
       ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat_tmp2_$$ \
       ${mdfield}/${field_name}_ugriZYJHKs_maglim.cat \
@@ -805,6 +916,12 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEZ" ]; then
+    if [ "$RA" == "" ]
+    then 
+      >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
+      RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
+      Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+    fi 
     continue=`echo $Dec | awk '{if ($1>-10) print 1; else print 0}'`
     if [ $continue -eq 1 ]
     then
@@ -816,6 +933,8 @@ do
         ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
         ${field_name} \;\ 
       echo
+    else
+      echo Southern field. No need to run COMPTILEZ.
     fi
   fi
 done
@@ -825,14 +944,40 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEZ2DF" ]; then
+    if [ "$RA" == "" ]
+    then 
+      >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
+      RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
+      Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
+    fi 
     continue=`echo $Dec | awk '{if ($1<=-10) print 1; else print 0}'`
-    if [ $continue -eq 1 ] && [ -f @2DFLENSCATALOGUE@ ]
+    if [ $continue -eq 1 ] && [ -f @TWODFLENSCATALOGUE@ ]
     then
       #### Comparison to SDSS.
       echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_2dFLenS_z_K1000.sh \
         ${mdfield} \
-        @2DFLENSCATALOGUE@ \
+        @TWODFLENSCATALOGUE@ \
         ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+        ${field_name} \;\ 
+      echo
+    else
+      echo Northern field. No need to run COMPTILEZ2DF.
+    fi
+  fi
+done
+
+### Comparison to Deep Spec redshift compilation.
+### Full tile.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "COMPTILEDEEPZ" ]; then
+    if [ -f @DEEPZCAT@ ]
+    then
+      #### Comparison to DEEP specz 
+      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_DEEP_z_K1000.sh \
+        ${mdfield} \
+        @DEEPZCAT@ \
+        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
         ${field_name} \;\ 
       echo
     fi
@@ -843,30 +988,53 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "MASK4" ]; then
-    for filter in u g r i
+    for filter in u g r i i2
     do
-      if [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits ]
+      #Manual masks and pulecenella masks have different conventions for "i1" 
+      if [ "$filter" == "i" ] 
+      then 
+        manualfilter="i1"
+      else 
+        manualfilter=$filter
+      fi 
+      if [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
+      then 
+        echo -n gunzip -c ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz \
+          \> ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\ 
+      elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits ]
+      then 
+        echo -n cp ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
+          ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\ 
+      else 
+        >&2 echo "ERROR: Pulecenella Mask not found?!"
+	      exit 1
+      fi 
+      if [ -f ${mm_dir}/$manualfilter/${AW_name}_${manualfilter}.reg ]
       then
-        echo -n gzip -c ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits \
-          \> ${cats_dir}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
-      elif [ -f ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz ]
-      then
-        echo -n ln -sf ${cats_dir}/${field_name}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_Pulecenella_${filter}.fits.gz \
-          ${cats_dir}/${field_name}_${filter}_mask_AW.fits.gz \;\ 
-      fi
+          echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/include_AW_manual_mask.sh \
+	                ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \
+	                ${mm_dir}/${manualfilter}/${AW_name}_${manualfilter}.reg \
+                  ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\ 
+      fi 
+      echo -n python @RUNROOT@/@SCRIPTPATH@/erase_FITS_bit.py \
+	            ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \
+              ${mdfield}/${field_name}_${filter}_mask_AW.fits \
+              8 \;\ 
+      echo -n rm ${mdfield}/${field_name}_${filter}_mask_AW_all.fits \;\  
     done
-
-    if [ -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz ] && \
-      [ ! -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits ]
-  then
-    echo -n gunzip -c ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz \
-      \> ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits \;\ 
-  fi
-
+  
+    #if [ -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz ] && \
+    #   [ ! -f ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits ]
+    #then
+    #	echo -n gunzip -c ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits.gz \
+    #	     \> ${THELIDATAPATH}/@THELIFILTER@/coadd_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@.swarp.cut.flag.fits \;\ 
+    #fi
+  
   ### create the combined flag file
-  echo python @RUNROOT@/@SCRIPTPATH@/make_KIDS_bitmask.py \
+  echo -n python @RUNROOT@/@SCRIPTPATH@/make_KIDS_bitmask_DR5.py \
     ${field_name} @THELIVERSION@ \"r_SDSS u_SDSS g_SDSS i_SDSS\" \
-    ${mdfield} ${THELIDATAPATH} ${cats_dir} @RUNROOT@ ${mask}
+    ${mdfield} ${THELIDATAPATH} ${mdfield} @POINTINGLIMITSFILE@ ${mask} \;\ 
+  echo rm ${mdfield}/${field_name}_{u,g,r,i,i2}_mask_AW.fits \; 
 fi
 done
 
@@ -874,46 +1042,78 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "MASK" ]; then
-    RAmin=`grep  ${field_name} @RUNROOT@/@CONFIGPATH@/KIDS_ra_dec_cuts.txt | awk '{print $2}'`
-    RAmax=`grep  ${field_name} @RUNROOT@/@CONFIGPATH@/KIDS_ra_dec_cuts.txt | awk '{print $3}'`
-    Decmin=`grep ${field_name} @RUNROOT@/@CONFIGPATH@/KIDS_ra_dec_cuts.txt | awk '{print $4}'`
-    Decmax=`grep ${field_name} @RUNROOT@/@CONFIGPATH@/KIDS_ra_dec_cuts.txt | awk '{print $5}'`
+    RAmin=`grep  ${field_name} @POINTINGLIMITSFILE@ | awk '{print $2}'`
+    RAmax=`grep  ${field_name} @POINTINGLIMITSFILE@ | awk '{print $3}'`
+    Decmin=`grep ${field_name} @POINTINGLIMITSFILE@ | awk '{print $4}'`
+    Decmax=`grep ${field_name} @POINTINGLIMITSFILE@ | awk '{print $5}'`
     if [ ! -f ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits ]
     then
+      sumtype='swarp'
+      if [ "${sumtype}" != "swarp_cut" ] & [ "${sumtype}" != "swarp" ]
+      then 
+        >&2 echo "ERROR: sumtype must be 'swarp' or 'swarp_cut'! Instead it is ${sumtype}"
+	      exit 1
+      fi 
+      if [ "${sumtype}" == "swarp_cut" ]
+      then 
+        for band in Z Y J H Ks
+        do
+          if [ ! -f $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits ]
+          then
+            echo -n python @RUNROOT@/@SCRIPTPATH@/mosaic/add_WCS_cuts_to_sum_image.py \
+              $md/${field_name}/${band}/${field_name}_${band}_swarp.sum.fits \
+              $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits \
+              $RAmin $RAmax $Decmin $Decmax \;\ 
+          fi
+        done
+      fi 
+      opts=""
       for band in Z Y J H Ks
-      do
-        if [ ! -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits ]
+      do 
+        if [ ! -f $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.gaapmask.fits ]
         then
-          echo -n python @RUNROOT@/@SCRIPTPATH@/mosaic/add_WCS_cuts_to_sum_image.py \
-            $md/${field_name}/${band}/${field_name}_${band}_swarp.sum.fits \
-            $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits \
-            $RAmin $RAmax $Decmin $Decmax \;\ 
-        fi
+          opts="$opts --${band}mask $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits"
+        fi 
       done
+      
+      echo -n @RSCRIPT@ @RUNROOT@/@SCRIPTPATH@/mask_gaap_failures.R \
+        --pointing ${field_name} \
+        --maincat ${md}/${field_name}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+        ${opts} \
+        --output_end .gaapmask \;\ 
+
       echo -n bash @RUNROOT@/@SCRIPTPATH@/create_9band_mask.sh \
         ${mdfield}\
         ${field_name} \
         ${mask} \
-        $RA $Dec \;\ 
-      for band in Z Y J H Ks
-      do
-        if [ -f $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits ]
-        then
-          echo -n gzip $md/${field_name}/${band}/${field_name}_${band}_swarp_cut.sum.fits \;\ 
-        fi
-      done
-      echo -n bash @RUNROOT@/@SCRIPTPATH@/addmask_fits_WCS.sh \
-        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
-        ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
-        ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
-        MASK \
-        \"9-band mask information\" \
-        LONG \
-        ${mdfield}/ \;\ 
-      echo gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
-        \> ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz
-      echo
-    fi
+        $RA $Dec .gaapmask \
+        ${sumtype} \;\ 
+	
+      echo -n rm $md/${field_name}/{Z,Y,J,H,Ks}/${field_name}_{Z,Y,J,H,Ks}_${sumtype}.sum.gaapmask.fits \;\ 
+      
+      if [ "${sumtype}" == "swarp_cut" ]
+      then
+	      echo -n rm $md/${field_name}/{Z,Y,J,H,Ks}/${field_name}_{Z,Y,J,H,Ks}_${sumtype}.sum.fits \;\ 
+      fi
+      #for band in Z Y J H Ks
+      #do
+      #  if [ -f $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits ]
+      #  then
+      #    echo -n gzip $md/${field_name}/${band}/${field_name}_${band}_${sumtype}.sum.fits \;\ 
+      #  fi
+      #done
+    fi 
+    echo -n bash @RUNROOT@/@SCRIPTPATH@/addmask_fits_WCS.sh \
+      ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+      ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
+      ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+      MASK \
+      \"9-band mask information\" \
+      LONG \
+      ${mdfield}/ \;\ 
+    #echo gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+    #  \> ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz
+    echo
   fi
 done
 
@@ -922,18 +1122,18 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "RAND" ]; then
     mask_base=`basename ${mask} .flags.fits`
-    if [ -f ${mdfield}/${mask_base}_NIR.mask.fits.gz ] && [ ! -f ${mdfield}/${mask_base}_NIR.mask.fits ]
-    then
-      echo -n gunzip -c ${mdfield}/${mask_base}_NIR.mask.fits.gz \> ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
-    fi
+    #if [ -f ${mdfield}/${mask_base}_NIR.mask.fits.gz ] && [ ! -f ${mdfield}/${mask_base}_NIR.mask.fits ]
+    #then
+    #  echo -n gunzip -c ${mdfield}/${mask_base}_NIR.mask.fits.gz \> ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
+    #fi
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_random.sh \
       ${mdfield}\
       ${field_name} \
       ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
-    if [ -f ${mdfield}/${mask_base}_NIR.mask.fits.gz ]
-    then
-      echo -n rm ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
-    fi
+    #if [ -f ${mdfield}/${mask_base}_NIR.mask.fits.gz ]
+    #then
+    #  echo -n rm ${mdfield}/${mask_base}_NIR.mask.fits \;\ 
+    #fi
     echo
   fi
 done
@@ -945,10 +1145,10 @@ do
     test ! -d ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/ && \
       mkdir ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/
     echo -n chmod -R g+wX ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/ \;\ 
-    echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext.cat \
+    echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_mask.cat \
       ${THELIDATAPATH}/${field_name}/@THELIFILTER@/colourcat_@THELIVERSION@/${field_name}_@THELIFILTER@.@THELIVERSION@_ugriZYJHKs_photoz.cat \;\ 
-    echo -n cp ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits.gz \
-      ${THELIDATAPATH}/${field_name}/@THELIFILTER@/masks_@THELIVERSION@/ \;\ 
+    echo -n gzip -c ${mdfield}/${field_name}_AW_THELI_NIR.mask.fits \
+      \> ${THELIDATAPATH}/${field_name}/@THELIFILTER@/masks_@THELIVERSION@/${field_name}_AW_THELI_NIR.mask.fits.gz \;\ 
     echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_*_zz.txt \
       ${THELIDATAPATH}/${field_name}/@THELIFILTER@/postcoadd_@THELIVERSION@/plots/ \;\ 
     echo -n cp ${mdfield}/${field_name}_ugriZYJHKs_photoz_ext_*_zz.png \

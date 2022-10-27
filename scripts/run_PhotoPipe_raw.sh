@@ -37,17 +37,19 @@ set -e
 #}}}
 
 #Set up the PATH {{{
-export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
+export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
-export PATH=@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
 export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/:@RUNROOT@/INSTALL/anaconda2/lib/
 #}}}
 
 #Check for the MODE specification {{{
 ALLMODES=`echo CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINEPAW COMBINETILE 2MASSPREP SDSSPREP COMPPAW \
-               COMPTILE MERGE COMPTILEVST STACK BPZ COMPTILEZ COMPTILE2DF MASK4 MASK RAND COPY `
+               COMPTILE MERGE COMPTILEVST STACK MAGAUTOCORR BPZ COMPTILEZ COMPTILEZ2DF COMPTILEDEEPZ MASK4 MASK RAND COPY `
 MODELIST=""
 while [ $# -gt 0 ]
 do 
@@ -58,12 +60,12 @@ do
       echo -e "Using\033[0;31m Mode Set\033[0;34m ALL\033[0m"
       MODELIST=`echo ${MODELIST} \
         CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINEPAW COMBINETILE 2MASSPREP SDSSPREP COMPPAW \
-        COMPTILE MERGE COMPTILEVST STACK BPZ COMPTILEZ COMPTILE2DF MASK4 MASK RAND COPY `
+        COMPTILE MERGE COMPTILEVST STACK MAGAUTOCORR BPZ COMPTILEZ COMPTILEZ2DF COMPTILEDEEPZ MASK4 MASK RAND COPY `
     elif [ "$MODE" == "REQUIRED" ]
     then 
       echo -e "Using\033[0;31m Mode Set\033[0;34m REQUIRED\033[0m"
       MODELIST=`echo ${MODELIST} \
-        CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINETILE MERGE BPZ MASK4 MASK COPY`
+        CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINETILE MERGE MAGAUTOCORR BPZ MASK4 MASK COPY`
     elif [ "$MODE" == "PHOTOMETRY" ]
     then 
       echo -e "Using\033[0;31m Mode Set\033[0;34m PHOTOMETRY\033[0m"
@@ -73,12 +75,12 @@ do
     then 
       echo -e "Using\033[0;31m Mode Set\033[0;34m PZ+MASK\033[0m"
       MODELIST=`echo ${MODELIST} \
-      BPZ MASK4 MASK`
+      MAGAUTOCORR BPZ MASK4 MASK`
     elif [ "$MODE" == "QC" ]
     then 
       echo -e "Using\033[0;31m Mode Set\033[0;34m QC\033[0m"
       MODELIST=`echo ${MODELIST} \
-      2MASSPREP SDSSPREP COMPTILE COMPTILEVST STACK COMPTILEZ COMPTILE2DF `
+      2MASSPREP SDSSPREP COMPTILE COMPTILEVST STACK COMPTILEZ COMPTILEZ2DF COMPTILEDEEPZ `
     else 
       found=0
       for mode in ${ALLMODES}
@@ -156,9 +158,11 @@ else
   echo -e "\033[0;31m   12.\033[0;34m MERGE:\033[0m Paste the measurements from individual bands into a full 9-band catalogue."
   echo -e "\033[0;31m   13.\033[0;34m COMPTILEVST:\033[0m Comparisons to SDSS (ugri-bands). Full tile."
   echo -e "\033[0;31m   14.\033[0;34m STACK:\033[0m Create a stack and sum image of all chips that went into the photometry."
+  echo -e "\033[0;31m   15.\033[0;34m MAGAUTOCORR:\033[0m Correct the MAG_AUTO values with improved ZPs."
   echo -e "\033[0;31m   15.\033[0;34m BPZ:\033[0m Run BPZ."
   echo -e "\033[0;31m   16.\033[0;34m COMPTILEZ:\033[0m Comparison to SDSS redshifts. Full tile."
-  echo -e "\033[0;31m   17.\033[0;34m COMPTILE2DF:\033[0m Comparison to 2dFLenS redshifts. Full tile."
+  echo -e "\033[0;31m   17.\033[0;34m COMPTILEZ2DF:\033[0m Comparison to 2dFLenS redshifts. Full tile."
+  echo -e "\033[0;31m   17.\033[0;34m COMPTILEDEEPZ:\033[0m Comparison to Deep Specz Compilation redshifts. Full tile."
   echo -e "\033[0;31m   18.\033[0;34m MASK4:\033[0m Create the 4-band MASK."
   echo -e "\033[0;31m   19.\033[0;34m MASK:\033[0m Create the 9-band MASK."
   echo -e "\033[0;31m   20.\033[0;34m RAND:\033[0m Create a new random catalogue. (OPTIONAL)"
@@ -258,22 +262,23 @@ do
   	  bash @SCRIPTPATH@/construct_commands_KiDSLegacy.sh \
            -md @RUNROOT@/@WORKINGDIR@/ \
            -cd @ASTROWISEPATH@/ \
+	   -mm @MANUALMASKPATH@ \
            -bd @VIKINGROOT@/@VIKINGTYPE@/ \
            -id @RUNROOT@/@WORKINGDIR@/@RAWDIR@/ \
            -fi ${field} \
            -fn ${field} \
         	 -lg @RUNROOT@/@WORKINGDIR@/@LOGFILE@ \
-        	 -ma @RUNROOT@/@WORKINGDIR@/${field}_AW_THELI.flags.fits \
+        	 -ma @RUNROOT@/@WORKINGDIR@/${field}/${field}_AW_THELI.flags.fits \
   	       -th @THELIDATAPATH@/ \
            -m $MODE \
            >> ${MODE}_commandlist.sh 2>> ${MODE}_commandlist.log
        #}}}
-       #Remove any duplicated commands {{{ 
-       cat ${MODE}_commandlist.sh | sort | uniq > tmp_${MODE}_commandlist.sh 
-       mv tmp_${MODE}_commandlist.sh ${MODE}_commandlist.sh 
-       #}}}
     fi
   done < ${POINTINGLIST}
+  #Remove any duplicated commands {{{ 
+  cat ${MODE}_commandlist.sh | sort | uniq > tmp_${MODE}_commandlist.sh 
+  mv tmp_${MODE}_commandlist.sh ${MODE}_commandlist.sh 
+  #}}}
   #}}}
   #Launch the commands {{{
   if [ "$DRYRUN" == "0" ]

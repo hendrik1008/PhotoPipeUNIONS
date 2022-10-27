@@ -1,0 +1,488 @@
+# last update 11.06.15
+# Authors: Marco Hetterscheidt & Thomas Erben
+
+# sm-program expects an asc-file:Xpos Ypos MAG_AUTO ISO0 FLUX_RADIUS
+# CLASS_STAR
+ 
+# It calculates the number of galaxies and stars per 0.5 mag and
+# sq. degree.  It takes into account that each object occupies an
+# area, so that darker objects can not be detected in this area. For
+# this corr. the isophotal area ISO0 (isophote above analysis
+# threshold) and the pixel size of pz is taken .
+
+# The total area is calculated from the position of detected objects.
+
+# To separate stars & gal., CLASS_STAR is taken. Objects with
+# CLASS_STAR > cs are defined as stars, if additionally the
+# FLUX_RADIUS < fr (close to half light radius of stars) and MAG_AUTO
+# < ma (close to saturation level).
+
+# The fit of the logarithmic number counts is an error weighted liner
+# regres.  of the data points between mag ma and the 4th last point
+# (detection limit).
+
+# 01.07.2004:
+# for the fit of the number count slope we now exlude the last 6
+# measurement points instead of only 4.
+#
+# 28.02.2005:
+# We included number counts from the CDFS in addition to those of
+# McCracken.
+#
+# 30.08.2006:
+# The script now expects the instrument for which to plot comparison
+# plots and a labelling string as arguments. Also the pixel size is
+# now a variable parameter. These changes make the script more
+# flexibel for the use of multiple instruments.
+#
+# 23.09.2006:
+# I added comparison counts from u, g, r and z MEGAPRIME filters.
+#
+# 23.11.2006:
+# I added a missing comment '#' sign in the description of the
+# MEGAPRIME filters.
+#
+# 16.09.2008:
+# I added numbercounts for the 'i_new' filter (replacement for the
+# broken i) for MEGAPRIME
+#
+# 21.11.2008:
+# I renamed the new i-band filter to 'y' to be in accordance with
+# Terapix definition.
+#
+# 14.05.2010:
+# I disabled the result file output at the end of this script. We
+# never looked at these files.
+#
+# 12.09.2013:
+# I added OMEGACAM@VST i_SDSS and r_SDSS filters
+#
+# 13.09.2013:
+# I added the OMEGACAM@VST g_SDSS filter.
+#
+# 11/10/2013:
+# I added the OMEGACAM@VST u_SDSS filter
+#
+# 14/05/2014:
+# I added (preliminary) OMEGACAM@VST z_SDSS filter comparison counts
+#
+# 11/05/2015:
+# Labels are made larger to support better quick-look checks of the plots
+#
+# 11/06/2015:
+# I added support for the new 40-chip MEGAPRIME configuration.
+# For the time being we use the numbercounts from the traditional,
+# 36-chip configuration as reference counts.
+
+#
+# $1: ASCII data file
+# $2: INSTRUMENT string
+# $3: string to be printed for comparison points 
+
+plot 3
+	data $1
+        undef TeX_strings
+        expand 1.8
+        lweight 4
+	read{Xpos 1 Ypos 2 mag 3 area 4 r 5 classstar 6}
+	
+	#--------------- initialization and sorting ---------------------#
+	
+	define n $(dimen(mag)-1)        #- dimension of data vectors
+	echo sorting ....
+	sort { mag area r classstar}
+	
+
+	define name ?                   #- name of science image
+	define colourindex ?		#- to compare with McCracken et al. 2004
+	define cs ?			#- CLASS_STAR value for separation
+	define fr ?			#- FLUX_RADIUS value for separation
+	define ma ?		        #- MAG_AUTO value for separation	
+	define binsize 0.5              #- binsize
+	define pz ?	                #- pixel size
+	define instrument $2
+
+	echo
+	echo name=$name
+	echo colour=$colourindex
+	echo CLASS_STAR: cs=$cs
+	echo FLUX_RADIUS: fr=$fr
+	echo MAG_AUTO: ma=$ma
+	echo "Pixel size: pz="$pz
+	echo Instrument=$instrument
+	
+	define end $(INT((mag[$n-1]-mag[0])/0.5))   #- number of bins
+	define endf $((mag[$n-1]-mag[0])/0.5)       
+	#define binsize $((mag[0]-mag[$n])/30.0)
+
+	define s 0                                  #
+	define sx 0				    #	
+	define sxx 0			  	    #- variables for fitting  
+	define sy 0				    #
+	define sxy 0				    #		
+
+	define anfang 0				    #- begin of counting in a bin
+	define zaehler 0			    #- no. of objects in a bin
+	define gesamtgal 0			    #- total number of galaxies	
+	define gesamtstar 0			    #- total number of stars	
+
+	set magmax=0.0,$endf			    #- max. of mag. of a bin
+	set center=0,$endf			    #- center pos. of a bin
+	set nr=0,$end				    #- number of galaxies in a bin
+	set nrstar=0,$end			    #- number of stars in a bin
+	set lognr=0,$endf			    #- logarithmic value of nr
+	set lognrstar=0,$endf			    #- logarithmic value of nrstar
+	set areabin=0.0,$endf			    #- area in a bin caused by objects
+	set erryo=0.0,$endf			    #- upper log. error of lognr
+	set erryu=0.0,$endf			    #- lower log. error of lognr	
+	
+
+	#-------------- determine size of the field in sq. deg. ----------#
+
+	define Xposmin $(Xpos[0])
+	define Xposmax $(Xpos[0])
+	define Yposmin $(Ypos[0])
+	define Yposmax $(Ypos[0])	
+
+	echo determine field size .....
+	do i=0,$n {
+          if ($Xposmin > Xpos[$i]) {
+	    define Xposmin $(Xpos[$i])
+          }
+	  if ($Xposmax < Xpos[$i]) {
+	    define Xposmax $(Xpos[$i])
+	  }
+	  if ($Yposmin > Ypos[$i]) {
+	    define Yposmin $(Ypos[$i])
+	  }
+	  if ($Xposmin < Ypos[$i]) {
+	    define Yposmax $(Ypos[$i])
+	  }
+	}
+
+	define areatotal $(($Xposmax-$Xposmin)*($Yposmax-$Yposmin)*$pz*$pz/(3600*3600))
+	define areatot $($areatotal)
+	echo total area=$areatot
+	
+	
+	#------------------ counting ..... ------------------------#
+
+	do j=0,$end {
+	  set nr[$j]=0
+	  set nrstar[$j]=0
+	  set magmax[$j]=mag[0]+($j+1)*$binsize
+		
+	  do i=$anfang,$n {
+            if (mag[$i] <= magmax[$j]) {
+	      define areatot $($areatot-$pz*$pz*area[$i]/(3600*3600))	
+              define zaehler $($zaehler+1)
+			
+	      #----------------- star or galaxy ? ------------------#
+
+	      if (classstar[$i] <= $cs){
+	        define gesamtgal $($gesamtgal+1)
+		set nr[$j]=nr[$j]+1
+	      }
+			
+	      if (classstar[$i] > $cs) {
+	        define gesamtstar $($gesamtstar+1)
+	        set nrstar[$j]=nrstar[$j]+1
+		if (r[$i] > $fr) {
+		  if (mag[$i] > $ma) {
+		    define gesamtstar $($gesamtstar-1)
+		    define gesamtgal $($gesamtgal+1)
+		    set nrstar[$j]=nrstar[$j]-1
+		    set nr[$j]=nr[$j]+1
+		  }
+	        }
+              }
+	      #----------------- end of 'star or galaxy ? -----------# 
+            }
+          }	
+	  set areabin[$j]=$areatot
+	  set center[$j]=magmax[$j]-$binsize/2.0	
+	  define anfang $($anfang+$zaehler)
+	  define zaehler 0
+	  echo $j: centermag=$(center[$j]), area=$(areabin[$j])
+	}
+
+	
+	#----------------- calculating logarithm and error of data points ----------------#
+
+	do j=0,$end {
+	  set erryo[$j]=0
+	  set erryu[$j]=0
+	}
+
+	if (nr[0]>1) {	
+	  set erryo[0]=LG(1/$areatotal*(nr[0]+SQRT(nr[0])))
+	  set erryu[0]=LG(1/$areatotal*(nr[0]-SQRT(nr[0])))
+	}
+	if (nr[0]>0) {
+	   set lognr[0]=LG(1/$areatotal*nr[0]) 
+	}
+
+	do j=1,$end {
+	  if (nr[$j]>0) {
+	    set lognr[$j]=LG(1/areabin[$j-1]*nr[$j])
+	  }
+
+	  if (nrstar[$j]>0) {
+	    set lognrstar[$j]=LG(1/areabin[$j-1]*nrstar[$j])	
+	  }
+			
+	  if (nr[$j]>1) {
+	    set erryo[$j]=LG(1/areabin[$j-1]*(nr[$j]+SQRT(nr[$j])))
+	    set erryu[$j]=LG(1/areabin[$j-1]*(nr[$j]-SQRT(nr[$j])))
+	  }	
+	  echo $j: centermag=$(center[$j]), lognr=$(lognr[$j])	
+	}
+	
+	set deltayo=erryo-lognr
+	set deltayu=lognr-erryu
+
+	do j=0,$end {
+	  if (erryu[$j]==0){
+	    set deltayu[$j]=0
+	  }
+	  if (erryo[$j]==0){
+	    set deltayo[$j]=0
+	  } 
+	}
+
+	set deltay=SQRT(deltayo*deltayo+deltayu*deltayu)  #- calaculated for linear fit ---#
+	
+
+	#----- fitting data to a straight line (see numerical recipes) --------#	
+	#----- fitting between mag def. by ma and the 6th last data point -----#
+	
+	define k 0
+	while {center[$k] < $ma} {
+	  define k $($k+1)
+	}
+	
+	do j=$k,$end-6 {
+	  if (nr[$j]>0) {
+	    define s $($s+1/(deltay[$j]*deltay[$j]))
+	    define sx $($sx+center[$j]/(deltay[$j]*deltay[$j]))
+	    define sy $($sy+lognr[$j]/(deltay[$j]*deltay[$j]))
+	    define sxx $($sxx+center[$j]*center[$j]/(deltay[$j]*deltay[$j]))
+	    define sxy $($sxy+center[$j]*lognr[$j]/(deltay[$j]*deltay[$j]))
+          }
+	}
+	
+	define delta $($s*$sxx-$sx*$sx)
+	define a $(($sxx*$sy-$sx*$sxy)/$delta)
+	define b $(($s*$sxy-$sx*$sy)/$delta)
+
+	set line=$a+$b*center
+	define errorslope $(SQRT($s/$delta))
+	echo slope=$b error=$errorslope
+
+	#set lognr2=LG(1/0.355*nr)
+
+	
+	#---------------------- graphical output ------------------------#
+
+	window 1 1 1 1
+	xlabel MAG_AUTO
+	ylabel log[N(mag)]/0.5 mag/1 deg^2
+
+	toplabel $name
+	expand 0.75
+	relocate (4500 30000)
+	label {galaxy no.= $gesamtgal}
+	relocate (4500 29200)
+	define slope (sprintf('slope = %.3f',$($b)))
+	define left (sprintf('%.1f',$(center[$k])))
+	define right (sprintf('%.1f',$(center[$end-4]))) 
+	label linefit for mag in [$left;$right] with $slope
+	relocate (4500 28400)
+	label {star no.= $gesamtstar}
+	relocate (4500 27600)
+	label black crosses: galaxies	
+	relocate (4500 26800)
+	label red diamonds: stars
+	
+	expand 1.8
+	define magleft $($ma-0.5)
+	limits $magleft 26 1.5 4.8   
+	box	
+	ptype 4 1
+
+	points center lognr
+	errorbar center lognr deltayo 2
+	errorbar center lognr deltayu 4	
+	connect center line
+
+	ctype red
+	ptype 6 3
+	points center lognrstar	
+
+
+	#------------------- number counts for comparison ------------------#
+	# For the moment we have comparison counts for the instruments
+        # WFI@ESO2.2m, CFH12K@CFHT, MEGAPRIME@CFHT
+
+	set centercomp={0}
+	set lognrcomp={0} 
+	define comp 0
+
+	# Note that for the CFH12K counts we are not yet sure whether they are in
+        # AB or VEGA. The listed filters correspond to the broad-band filters
+	if ( '$instrument' == 'CFH12K' ) {
+	  if ('$colourindex'=='B') {
+	    define comp 1
+            set centercomp={ 18.25 18.75 19.25 19.75 20.25 20.75 21.25 21.75 22.25 22.75 23.25 23.75 24.25 24.75 25.25 }
+            set lognrcomp={ 1.50 1.82 2.0 2.17 2.44 2.63 2.87 3.02 3.29 3.51 3.77 4.03 4.27 4.47 4.60 }
+	  }
+	  if ('$colourindex'=='V') {
+	    define comp 1
+            set centercomp={ 18.25 18.75 19.25 19.75 20.25 20.75 21.25 21.75 22.25 22.75 23.25 23.75 24.25 24.75 25.25 }
+            set lognrcomp={ 2.06 2.33 2.45 2.67 2.81 3.0 3.14 3.34 3.54 3.76 3.99 4.22 4.42 4.57 4.66 }
+	  }
+	  if ('$colourindex'=='R') {	
+	    define comp 1
+            set centercomp={ 18.25 18.75 19.25 19.75 20.25 20.75 21.25 21.75 22.25 22.75 23.25 23.75 24.25 24.75 25.25 }
+            set lognrcomp={ 2.41 2.47 2.63 2.83 2.99 3.17 3.32 3.52 3.7 3.89 4.07 4.28 4.45 4.59 4.68 }
+	  }
+	  if ('$colourindex'=='I') {
+	    define comp 1
+            set centercomp={ 18.25 18.75 19.25 19.75 20.25 20.75 21.25 21.75 22.25 22.75 23.25 23.75 24.25 24.75 25.25 }
+            set lognrcomp={ 2.45 2.59 2.84 2.99 3.2 3.37 3.55 3.76 3.93 4.06 4.23 4.39 4.53 4.6 4.57 }
+	  }
+        }
+        #
+	# The listed WFI@ESO2.2m filters correspond to (BB#B/99_ESO841 (B), BB#V/89_ESO843 (V), BB#Rc/162_ESO844,
+        # BB#Ic/Iwp_ESO845 (I), BB#U/38_ESO841 (U_38) and BB#U/50_ESO877 (U_35060))
+
+	if ( '$instrument' == 'WFI' ) {
+	  if ('$colourindex'=='B') {
+	    define comp 1
+	    set centercomp={ 17.47 17.97 18.47 18.97 19.47 19.97 20.47 20.97 21.47 21.97 22.47 22.97 23.47 23.97 24.47 24.97 25.47}
+            set lognrcomp={ 1.21 1.30 1.80 1.80 2.14 2.39 2.59 2.67 2.88 3.09 3.39 3.62 3.91 4.16 4.36 4.50 4.59 } 
+	  }
+	  if ('$colourindex'=='V') {
+	    define comp 1
+            set centercomp={16.54 17.04 17.54 18.04 18.54 19.04 19.54 20.04 20.54 21.04 21.54 22.04 22.54 23.04 23.54 24.04 24.54 25.04}
+            set lognrcomp={0.81 1.35 1.59 1.77 2.00 2.28 2.51 2.59 2.78 2.94 3.15 3.40 3.59 3.85 4.08 4.28 4.43 4.51 }
+	  }
+	  if ('$colourindex'=='R') {	
+	    define comp 1
+            set centercomp={ 16.44 16.94 17.44 17.94 18.44 18.94 19.44 19.94 20.44 20.94 21.44 21.94 22.44 22.94 23.44 23.94 24.44 24.94 }
+            set lognrcomp={ 0.82 1.60 1.77 2.11 2.22 2.50 2.65 2.80 3.04 3.28 3.47 3.61 3.82 4.02 4.21 4.39 4.51 4.58 } 
+	  }
+	  if ('$colourindex'=='I') {
+	    define comp 1
+            set centercomp={ 15 15.5 16 16.5 17 17.5 18 18.5 19 19.5 20 20.5 21 21.5 22 22.5 }
+            set lognrcomp={ 0.82 1.22 1.43 1.85 1.94 2.30 2.46 2.67 2.71 3.07 3.30 3.50 3.62 3.83 3.83 3.94 }
+	  }
+	  if ('$colourindex'=='U_38') {
+	    define comp 1
+            set centercomp={17.13 17.63 18.13 18.63 19.13 19.63 20.13 20.63 21.13 21.63 22.13 22.63 23.13 23.63}
+            set lognrcomp={0.42 1.03 1.47 1.70 2.00 2.18 2.47 2.74 2.92 3.15 3.47 3.74 3.95 4.07} 	
+	  }
+	  if ('$colourindex'=='U_35060') {
+	    define comp 1
+            set centercomp={17.58 18.08 18.58 19.08 19.58 20.08 20.58 21.08 21.58 22.08 22.58 23.08 23.58}
+            set lognrcomp={0.74 1.61 1.72 2.02 2.16 2.47 2.75 2.94 3.19 3.50 3.78 4.00 4.14} 	
+	  }
+        }
+        #
+	# The listed MEGAPRIME@CFHT filters correspond to: 
+        # u.MP9301 (u), g.MP9401 (g), r.MP9601 (r),
+        # i.MP9701 (i), y.MP9702 (y), z.MP9801 (z)
+        # The new 40-chip MEGAPRIME mode supports the
+        # following filters:
+        # u.MP9302, g.MP9402, r.MP9602, i.MP9703 and z.MP9901
+        # 
+        # For the moment we just take the number counts from the
+        # old filters (until we have sufficient data to
+        # determine reliable counts 
+	
+	if ( '$instrument' == 'MEGAPRIME' || '$instrument' == 'MEGAPRIME_FOURTYCHIP') {
+          if ('$colourindex'=='u' || '$colourindex'=='u.MP9301' || '$colourindex'=='u.MP9302') {
+	    define comp 1
+            set centercomp={ 18.0 18.5 19.0 19.5 20.0 20.5 21.0 21.5 22.0 22.5 23.0 23.5 24.0 24.5 }
+            set lognrcomp={  1.35 1.48 1.52 1.81 1.92 2.20 2.46 2.69 2.96 3.21 3.48 3.76 4.02 4.16 }
+          }
+          if ('$colourindex'=='g' || '$colourindex'=='g.MP9401' || '$colourindex'=='g.MP9402') {
+	    define comp 1
+            set centercomp={ 18.0 18.5 19.0 19.5 20.0 20.5 21.0 21.5 22.0 22.5 23.0 23.5 24.0 24.5 }
+            set lognrcomp={  1.59 1.87 2.09 2.31 2.48 2.73 2.90 3.09 3.29 3.50 3.74 3.99 4.24 4.40 }
+          }
+          if ('$colourindex'=='r' || '$colourindex'=='r.MP9601' || '$colourindex'=='r.MP9602') {
+	    define comp 1
+            set centercomp={ 18.1 18.6 19.1 19.6 20.1 20.6 21.1 21.6 22.1 22.6 23.1 23.6 24.1 24.6 }
+            set lognrcomp={ 2.07 2.30 2.45 2.70 2.89 3.04 3.22 3.37 3.55 3.73 3.92 4.12 4.36 4.48 }
+          }
+          if ('$colourindex'=='i' || '$colourindex'=='i.MP9701' || '$colourindex'=='i.MP9703') {
+	    define comp 1
+            set centercomp={ 18.0 18.5 19.0 19.5 20.0 20.5 21.0 21.5 22.0 22.5 23.0 23.5 24.0 24.5 }
+            set lognrcomp={ 2.25 2.41 2.65 2.84 3.03 3.21 3.40 3.56 3.70 3.87 4.07 4.28 4.43 4.52 }
+          }
+          if ('$colourindex'=='y' || '$colourindex'=='i.MP9702' ) {
+	    define comp 1
+            set centercomp={ 17.8 18.3 18.8 19.3 19.8 20.3 20.8 21.3 21.8 22.3 22.8 23.3 23.8 24.3 }
+            set lognrcomp={  2.15 2.33 2.53 2.78 2.96 3.16 3.35 3.54 3.70 3.88 4.04 4.21 4.37 4.48 }
+          }
+          if ('$colourindex'=='z' || '$colourindex'=='z.MP9801' || '$colourindex'=='z.MP9901') {
+	    define comp 1
+            set centercomp={ 18.0 18.5 19.0 19.5 20.0 20.5 21.0 21.5 22.0 22.5 23.0 }
+            set lognrcomp={ 2.37 2.56 2.82 2.99 3.20 3.40 3.58 3.75 3.92 4.03 4.11 }
+          }
+        }
+        #
+	# The listed OMEGACAM@VST filters correspond to: 
+        # i_SDSS, r_SDSS
+	
+	if ( '$instrument' == 'OMEGACAM' ) {
+          if ('$colourindex'=='i_SDSS') {
+	    define comp 1
+            set centercomp={ 18.15 18.64 19.15 19.64 20.15 20.64 21.15 21.64 22.15 22.64 23.15 }
+            set lognrcomp={  2.16 2.35 2.57 2.76 2.97 3.16 3.37 3.55 3.72 3.84 3.92 }
+          }
+          if ('$colourindex'=='r_SDSS') {
+	    define comp 1
+            set centercomp={ 17.9 18.4 18.9 19.4 19.9 20.4 20.9 21.4 21.9 22.4 22.9 23.4 23.9 24.4 }
+            set lognrcomp={ 1.91 2.12 2.37 2.55 2.72 2.91 3.1 3.28 3.47 3.69 3.90 4.10 4.25 4.35  }
+          }
+          if ('$colourindex'=='g_SDSS') {
+	    define comp 1
+            set centercomp={ 18.03 18.53 19.03 19.53 20.03 20.53 21.03 21.53 22.03 22.53 23.03 23.53 24.03 24.53 }
+            set lognrcomp={ 1.53 1.65 1.96 2.16 2.38 2.54 2.75 2.95 3.2 3.42 3.69 3.94 4.10 4.18  }
+          }
+          if ('$colourindex'=='u_SDSS') {
+	    define comp 1
+            set centercomp={ 18.06 18.56 19.06 19.56 20.06 20.56 21.06 21.56 22.06 22.56 23.06 }
+            set lognrcomp={ 0.54 0.97 1.50 1.59 1.81 2.05 2.40 2.56 2.83 3.07 3.27 }
+          }
+          if ('$colourindex'=='z_SDSS') {
+	    define comp 1
+            set centercomp={ 16.33 16.83 17.33 17.83 18.33 18.83 19.33 19.83 20.32 }
+            set lognrcomp={ 1.40 1.64 1.91 2.18 2.45 2.74 2.93 3.06 3.12 }
+          }
+        }
+	ctype blue
+	ptype 6 3
+	points centercomp lognrcomp
+
+	expand 0.75
+	ctype default
+	relocate (4500 25200)
+
+	if ( '$comp' == '1' ) {
+	  label blue diamonds: $3
+        } else {
+	  label no comparison counts available !
+        }
+	
+	
+	#------------------------- file output ---------------------------#
+
+	#print $name"_"$colourindex"_gal.asc" '%f %f\n' { center lognr }
+	#print $name"_"$colourindex"_stars.asc" '%f %f\n' { center lognrstar }
+
+	expand 1.
+        lweight 1.
+	quit

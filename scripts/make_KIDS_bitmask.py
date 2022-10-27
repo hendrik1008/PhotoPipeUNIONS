@@ -342,7 +342,7 @@ try:
 
 
             ## SWARP the original AW mask file and generate a resampled file
-            shcommand = '@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/swarp_theli %s' % (aw_flag_file)
+            shcommand = '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/swarp_theli %s' % (aw_flag_file)
             shcommand += ' -IMAGEOUT_NAME   xxx'    # unused (see RESAMPLE_SUFFIX below)
             shcommand += ' -HEADER_ONLY     N'      # want output image
             shcommand += ' -HEADER_SUFFIX   xxx'    # don't use external header; run manually
@@ -370,10 +370,10 @@ try:
                 S.call(shcommand, shell=True)
 
             ## now resize the image with the correct center
-            shcommand =  '@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/makesubimage'
+            shcommand =  '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/makesubimage'
             shcommand += " -%d -%d %d %d -o 1 -c < %s" % (CRPIX1, CRPIX2, NAXIS1, NAXIS2,
                                                           aw_outflag_fname,)
-            shcommand += " | %s -p %d '%%1' - > %s" % ('@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/ic', BITPIX,
+            shcommand += " | %s -p %d '%%1' - > %s" % ('@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic', BITPIX,
                                                        aw_outflag_swarped_centered)
             if not os.path.isfile(aw_outflag_swarped_centered):
                 print shcommand
@@ -414,7 +414,7 @@ try:
 
         ## combine THELI-scaled AW flag files using WeightWatchers
         temp_fname = aw_ww_outflag_fname.replace('.fits', '.temp.fits')
-        shcommand =  '@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/ww_theli '
+        shcommand =  '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ww_theli '
         shcommand += ' -c @RUNROOT@/@CONFIGPATH@/MAKEFLAGMASK.default.ww'  # TODO: fix ww, remove config file
         shcommand += ' -WEIGHT_NAMES    ' + aw_outflag_list
         shcommand += ' -WEIGHT_MIN      -1,-1,-1,-1,-1,-1,-1,-1' # pixel value below -1 is masked
@@ -432,7 +432,7 @@ try:
             S.call(shcommand, shell=True,)
 
         ## convert output to BITPIX (= int16)
-        shcommand =   '@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/ic'
+        shcommand =   '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic'
         shcommand += " -p %d '%%1' %s > %s" % (BITPIX, temp_fname, aw_ww_outflag_fname)
         if not os.path.isfile(aw_ww_outflag_fname):
             print shcommand
@@ -495,7 +495,7 @@ try:
             print >> outf, reg_str
 
         ## convert region file to FITS file
-        shcommand =  '@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/ww_theli '
+        shcommand =  '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ww_theli '
         shcommand += ' -c @RUNROOT@/@CONFIGPATH@/MAKEFLAGMASK.default.ww'  # TODO: fix ww, remove config file
         shcommand += ' -WEIGHT_NAMES ' + new_coadd_mask_file
         shcommand += ' -WEIGHT_MIN -1e9 -WEIGHT_MAX 1e9'  # don't mask based on new_coadd_mask_file
@@ -634,7 +634,7 @@ try:
             poly_outflags += ',%d' % (flagbit_dict['F_TH_MANUAL'][0])
 
         ## combine void[, asteroid,] and wt==0 masks
-        shcommand =  '@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/ww_theli '
+        shcommand =  '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ww_theli '
         shcommand += ' -c @RUNROOT@/@CONFIGPATH@/MAKEFLAGMASK.default.ww'  # TODO: fix ww, remove config file
         shcommand += ' -WEIGHT_NAMES ' + new_wtmask_fits        # this is a 0/1 file
         shcommand += ' -WEIGHT_MIN -1 -WEIGHT_MAX 0.5'          # 1==masked
@@ -718,7 +718,7 @@ try:
         flag_images += ' ' + wcscut_mask_fname
 
         ## run ic
-        shcommand =  '@RUNROOT@/INSTALL/theli-1.6.1/bin/Linux_64/ic'
+        shcommand =  '@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic'
         shcommand += " -p %d '%s' %s" % (final_BITPIX, flag_commands, flag_images)
         shcommand += " > %s" % (bitmask_temp,)
         print shcommand

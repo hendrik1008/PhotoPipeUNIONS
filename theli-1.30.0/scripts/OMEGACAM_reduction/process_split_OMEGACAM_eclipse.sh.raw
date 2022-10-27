@@ -1,0 +1,409 @@
+#!/bin/bash -u
+
+# Splits OMEGACAM Fits extension images into the 32 chips.  Assumes
+# that ONLY unsplit images are in the directory.
+#
+
+# History comments:
+# =================
+#
+# 28.10.2011:
+# Project Started
+#
+# 19.11.2012:
+# We now transfer the GAIN as header keyword to the splitted images.
+#
+# 23.11.2012:
+# I corrected a bug in the writing of the SATLEVEL keyword. It was
+# too low by 5000.
+#
+# 27.12.2012:
+# - I reversed the change from 23.11.2012. Setting the saturation level
+#   'lower' by 500 counts is conservative. I somethmes observed saturated
+#   pixels low by some counts from our estimate.
+# - All images now get a BADCCD keyword to make CCDs as BAD if necessary.
+#
+# 02.01.2013:
+# I made the script more robust if no files to process are present.
+#
+# 11.01.2013:
+# We now transfer the start time of the OB to the exposure. At the moment
+# we need this to test whether crosstalk correction is stable over an OB.
+#
+# 13.01.2013:
+# I corrected a bug in transfering OB info (change from 11.01.2013)
+#
+# 11.05.2013:
+# We have now the option to delete the original files after splitting
+# (set the '-d' command line option if you want to do so).
+#
+# 08.07.2013:
+# chip 23 is marked as BAD if the observation was obtained before 02/06/2012.
+# Before that date the chip had gain issues.
+#
+# 04.12.2013:
+# The masking of chip 23 (see change from 08.07.) can be switched on/off
+# with the command line switch '-markchip'. I introduced it to allow
+# backwards compatible processing.
+#
+# 20.01.2014:
+# We can now provide a file with OBJECTS names - command line argument 'of'
+# (OBJECTS file). The file needs to list per line: 'basename_of_ESO_archive
+# image_name' and 'OBJECTS_name' (the basename is without .fits etc.). It
+# is useful if you want to give other OBJECTS names than those provided in
+# the original headers, e.g. for the ATLAS survey.
+#
+# 19.02.2014:
+# I deal with empty OBJECT names. Files with such a name were not splitted.
+# They now obtain 'DUMMY_OBJECT' as OBJECT keyword.
+#
+# 26.05.2014:
+# We can now provide a RUN keyword which is transfered to the image headers
+# of splitted data. This is absolutely necessary to obtain proper astrometric
+# calibration for pointings observed in different runs! The option is realised
+# with a '-r' command line argument.
+#
+# 24.06.2014:
+# OMEGACAM data from 09/09/2011 to 16/09/2011 were obtained with chip 28
+# malfunctioning. All these data were observed in run 11_09_f which spans
+# the time from 08/09/2011 to 20/09/2011. So I just mark as bad chip 28
+# for the complete period of run 11_09_f.
+#
+# 15.08.2015:
+# - I added the possibility to provide a file listing exposures that
+#   should be processed (command line option '-pf'. If provided only
+#   images listed in that file are split and processed in further
+#   pipeline steps. I need this functionality to only process short
+#   exposed ATLAS images. Processing 'all' images would take too long
+#   and is unnecessary.
+# - I simplified the code and made the script better readable at some
+#   places.
+# - I made the script runnable with the '-u' bash option (modification
+#   of command line parsing)
+#
+# 27.08.2015:
+# I included the possibility to provide a badchip list. The file lists
+# images and (known) bad chips. Those chips are given the BADCCD flag
+# during the splitting process (command line option -bcf).
+#
+# 04.09.2015:
+# I corrected inaccuracies and errors in the retrieval of the OBJECT header
+# keyword.
+
+. ./OMEGACAM.ini
+. ./bash_functions.include
+theli_start "$*"
+
+# On some systems we might consider to split data in parallel;
+# e.g. on a RAMDISK. As the systems where this is possible without
+# different mefsplit processes blocking each other we keep this
+# functionality VERY internal!
+NPROC=6
+
+#
+# parse command line arguments
+#
+MD=
+SD=
+CLEANORIG=0 # delete original files after splitting? (1=Yes)
+MARKCHIP=0  # by default we do not mark chip 23 for problematic periods
+OBJECTSFILE="" # provide the objectsfile with the complete path!
+PROCESSFILE="" # provide the process file with the complete path!
+BADCHIPFILE="" # file lisiting known bad chips
+RUN="DEFAULT_RUN" # The RUN keyword appearing in image headers.
+
+while [ $# -gt 0 ]
+do
+  case $1 in
+  -bcf)
+      BADCHIPFILE=${2}
+      shift 2
+      ;;
+  -d)
+      CLEANORIG=1
+      shift
+      ;;
+  -markchip)
+      MARKCHIP=1
+      shift
+      ;;
+  -md)
+      MD=${2}
+      shift 2
+      ;;
+  -of)
+      OBJECTSFILE=${2}
+      shift 2
+      ;;
+  -pf)
+      PROCESSFILE=${2}
+      shift 2
+      ;;
+  -r)
+      RUN=${2}
+      shift 2
+      ;;
+  -sd)
+      SD=${2}
+      shift 2
+      ;;
+   *)
+      # there might be an 'empty string' argument which we can ignore:
+      if [ ! -z "$1" ]; then
+        theli_error "Unknown command line option: ${1}"
+        exit 1;
+      else
+        shift
+      fi
+      ;;
+  esac
+done
+
+# sanity checks:
+if [ -z ${MD} ] || [ -z ${SD} ]; then
+  theli_error "You need to provide at least main and science directory!"
+  exit 1;
+fi
+
+for FILE in "${OBJECTSFILE}" "${BADCHIPFILE}"
+do
+  if [ "${FILE}" != "" ] && [ ! -f "${FILE}" ]; then
+    theli_error "${FILE} does not exist!"
+    exit 1;
+  fi
+  if [ "${FILE}" != "" ] && [[ "${FILE}" != /* ]]; then
+    theli_error "${FILE} must be provided with its abolute path!"
+    exit 1;
+  fi
+done
+
+DIR=`pwd`
+
+# get file list to work with:
+${P_FIND} /${MD}/${SD}/ORIGINALS/ -name \*.fits -type f > \
+   ${TEMPDIR}/files_present.txt_$$
+
+if [ "${PROCESSFILE}" != "" ] && [ -s "${PROCESSFILE}" ]; then
+  grep -f ${PROCESSFILE}  ${TEMPDIR}/files_present.txt_$$ > \
+    ${TEMPDIR}/files_split.txt_$$
+else
+  cp ${TEMPDIR}/files_present.txt_$$ ${TEMPDIR}/files_split.txt_$$
+fi
+
+# do we need to do something at all?
+if [ -s ${TEMPDIR}/files_split.txt_$$ ]; then
+  i=0
+  while [ ${i} -lt ${NPROC} ]
+  do
+    NFIELDS[${i}]=0
+    FIELDS[${i}]=""
+    i=$(( $i + 1 ))
+  done
+
+  i=1
+  for FIELD in `cat ${TEMPDIR}/files_split.txt_$$`
+  do
+    PROC=$(( $i % ${NPROC} ))
+    FIELDS[${PROC}]="${FIELDS[${PROC}]} ${FIELD}"
+    NFIELDS[${PROC}]=$(( ${NFIELDS[${PROC}]} + 1 ))
+    i=$(( $i + 1 ))
+  done
+
+  # build up some command line options for mefsplit; those are needed
+  # in the parallel loops below but there is no need to define these
+  # variables over and over again:
+  CRPIX1="${REFPIXX[1]}"
+  CRPIX2="${REFPIXY[1]}"
+  CD11="${CD11[1]}"
+  CD12="${CD12[1]}"
+  CD21="${CD21[1]}"
+  CD22="${CD22[1]}"
+  M11="${M11[1]}"
+  M12="${M12[1]}"
+  M21="${M21[1]}"
+  M22="${M22[1]}"
+  IMAGEID="${IMAGEID[1]}"
+
+  for k in `seq 2 ${NCHIPS}`
+  do
+    CRPIX1="${CRPIX1},${REFPIXX[${k}]}"
+    CRPIX2="${CRPIX2},${REFPIXY[${k}]}"
+    CD11="${CD11},${CD11[${k}]}"
+    CD12="${CD12},${CD12[${k}]}"
+    CD21="${CD21},${CD21[${k}]}"
+    CD22="${CD22},${CD22[${k}]}"
+    M11="${M11},${M11[${k}]}"
+    M12="${M12},${M12[${k}]}"
+    M21="${M21},${M21[${k}]}"
+    M22="${M22},${M22[${k}]}"
+    IMAGEID="${IMAGEID},${IMAGEID[${k}]}"
+  done
+
+  cd /${MD}/${SD}/ORIGINALS
+
+  IPARA=0
+  while [ ${IPARA} -lt ${NPROC} ]
+  do
+    JPARA=$(( ${IPARA} + 1 ))
+    echo -e "Starting Job ${JPARA}. It has ${NFIELDS[${IPARA}]} files to process!\n"
+    (
+      for FILE in ${FIELDS[${IPARA}]}
+      do
+        BASE=`basename ${FILE} .fits`
+
+        FILTNAM=`${P_DFITS} ${FILE} |\
+          ${P_FITSORT} -d "HIERARCH ESO INS FILT1 NAME"  | cut -f 2`
+
+        OBJECT=""
+        if [ -f ${OBJECTSFILE} ]; then
+          grep ${BASE} ${OBJECTSFILE}
+
+          if [ $? -eq 0 ]; then
+            OBJECT=`grep ${BASE} ${OBJECTSFILE} | ${P_GAWK} '{print $2}'`
+          fi
+        fi
+
+        if [ "${OBJECT}" = "" ]; then
+          OBJECT=`${P_DFITS} ${FILE} | ${P_FITSORT} -s -d OBJECT | cut -f 2`
+
+          # deal with an empty OBJECTS string or one that only
+          # contains whitespace characters; this would lead to an
+          # error message in the splitting process below:
+          OBJECT=`echo ${OBJECT} | tr -d '[:space:]'`
+          if [ "${OBJECT}" = "" ]; then
+            OBJECT="DUMMY_OBJECT"
+          fi
+        fi
+
+        RA=`${P_DFITS} -x 1  ${FILE} | ${P_FITSORT} -d CRVAL1  | cut -f 2`
+        DEC=`${P_DFITS} -x 1 ${FILE} | ${P_FITSORT} -d CRVAL2 | cut -f 2`
+        LST=`${P_DFITS} ${FILE} | ${P_FITSORT} -d LST | cut -f 2`
+        MJD=`${P_DFITS} ${FILE} | ${P_FITSORT} -d MJD-OBS  | cut -f 2`
+        EXPTIME=`${P_DFITS} ${FILE} | ${P_FITSORT} -d EXPTIME | cut -f 2`
+        AIRMASS=`${P_AIRMASS} -t ${LST} -e ${EXPTIME} \
+                              -r ${RA} -d ${DEC} -l ${OBSLAT}`
+        GABODSID=`${P_NIGHTID} -t ${REFERENCETIME} -d 31/12/1998 -m ${MJD} |\
+                  ${P_GAWK} ' ($1 ~ /Days/) {print $6}' |\
+                  ${P_GAWK} 'BEGIN{ FS = "."} {print $1}'`
+
+        # we recalculate the civil observation date from the GABODSID because
+        # we want the local time at the telescope, NOT UT.
+        DATEOBS=`${P_CALDATE} -d 31/12/1998 -i ${GABODSID} | cut -d ' ' -f 3`
+
+        HEADERSTRING="-HEADER DATE-OBS ${DATEOBS} obs._date_(YYYY-MM-DD;_local_time_at_tel.)"
+
+        # add BADCCD header keyword:
+        HEADERSTRING="${HEADERSTRING} -HEADER BADCCD 0 Is_CCD_Bad_(1=Yes)"
+
+        # get an identifier for the ESO observing block of the exposure.
+        # I only found suitable 'HIERARCH ESO TPL START' giving the start
+        # date/time of the OB:
+        OBSTART=`${P_DFITS} ${FILE} |\
+                 ${P_FITSORT} -d "HIERARCH ESO TPL START" | cut -f 2`
+        HEADERSTRING="${HEADERSTRING} -HEADER OBSTART ${OBSTART} Start_time_of_Observing_Block"
+
+        # add a RUN keyword:
+        HEADERSTRING="${HEADERSTRING} -HEADER RUN ${RUN} Observing_Run"
+
+        ${P_FITSSPLIT_ECL} \
+            -CRPIX1 "${CRPIX1}" -CRPIX2 "${CRPIX2}" \
+            -CD11 "${CD11}" -CD12 "${CD12}" -CD21 "${CD21}" -CD22 "${CD22}" \
+            -M11 "${M11}" -M12 "${M12}" -M21 "${M21}" -M22 "${M22}" \
+            -IMAGEID ${IMAGEID} \
+            -CRVAL1 ${RA} -CRVAL2 ${DEC}\
+            -EXPTIME ${EXPTIME}\
+            -AIRMASS ${AIRMASS}\
+            -GABODSID ${GABODSID}\
+            -FILTER ${FILTNAM}  \
+            -OBJECT "${OBJECT}"  \
+            ${HEADERSTRING} \
+            -HEADTRANSFER "HIERARCH ESO DET OUT1 CONAD" GAIN \
+            -OUTPUT_DIR .. \
+            ${FILE}
+
+
+        # update image headers of unsplit images with the saturation level:
+        # the following is optimised for speed, not for readability!
+        BASE=`basename ${FILE} .fits`
+
+        # as we are in a subshell '$$' still contains the process ID from
+        # the calling script. We therefore include the parallel channel
+        # to construct unique names for temporary files.
+        IDENTIFIER=job_${JPARA}_$$
+        ${P_IMSTATS} -t 50000 100000 ../${BASE}_*fits > \
+            satlevels.txt_${IDENTIFIER}
+        ${P_GAWK} '$1 !~ /#/ {
+                image = $1;
+                if ($2 > 50000) {
+                  satlev = sprintf(" \"SATLEVEL= %20.2f / saturation level\"",
+                                   int($2) - 5000);
+                } else {
+                  satlev = sprintf(" \"SATLEVEL= %20.2f / saturation level\"",
+                                   60000.00);
+                }
+                system("'${P_REPLACEKEY}' " image satlev " DUMMY1");
+                }' satlevels.txt_${IDENTIFIER}
+        rm satlevels.txt_${IDENTIFIER}
+
+        # mark chip 23 as BAD if requested. It had 'random' gain variations
+        # up to 02/02/2012.
+        if [ ${MARKCHIP} -eq 1 ]; then
+          # chip 23 had gain issues before 02/02/2012 (GABODSID 4902).
+          # We mark it as BAD if the observation was taken before that date:
+          if [ "${GABODSID}" -le 4902 ]; then
+            value "1"
+            writekey ../${BASE}_23.fits BADCCD \
+                     "${VALUE} / Is_CCD_Bad_(1=Yes)" REPLACE
+          fi
+        fi
+
+        # mark as bad chip 28 for run 11_09_f (period from 08/09/2011 to
+        # 20/09/2011).
+        if [ "${GABODSID}" -ge 4633 ] && [ "${GABODSID}" -le 4646 ]; then
+          value "1"
+          writekey ../${BASE}_28.fits BADCCD \
+                   "${VALUE} / Is_CCD_Bad_(1=Yes)" REPLACE
+        fi
+
+        # mark known bad chips if a badchips file is provided:
+        if [ "${BADCHIPFILE}" != "" ]; then
+          grep ${BASE} ${BADCHIPFILE}
+
+          if [ $? -eq 0 ]; then
+            BADCHIPS="$(grep ${BASE} ${BADCHIPFILE} | \
+                       ${P_GAWK} '{$1 = ""; print $0}')"
+
+            for CHIP in ${BADCHIPS}
+            do
+              value "1"
+              writekey ../${BASE}_${CHIP}.fits BADCCD \
+                   "${VALUE} / Is_CCD_Bad_(1=Yes)" REPLACE
+            done
+          fi
+        fi
+
+        # delete original file if requested:
+        if [ ${CLEANORIG} -eq 1 ]; then
+          rm ${FILE}
+        fi
+      done
+    ) 2> ${DIR}/process_split_job_${IPARA}.log &
+    IPARA=$(( ${IPARA} + 1 ))
+  done
+
+  wait
+
+  cd ${DIR}
+
+  # clean up!!
+  for FILE in ${TEMPDIR}/*_$$
+  do
+    test -f ${FILE} && rm ${FILE}
+  done
+else
+  theli_error "No files to process in $0!"
+  exit 1;
+fi
+
+theli_end
+exit 0;

@@ -1,0 +1,15 @@
+This file describes our use of the 'eclipse/qfits' library routines
+integrated in the THELI pipeline. They originate from the source packages
+'eclipse-main-4.6.3.tar.gz' and 'eclipse-main-4.6.3.tar.gz' and were
+originally developed by the Eclipse Team at ESO (eclipse-team@eso.org).
+
+In contrast to other foreign packages the eclipse/qfits softwares do
+not provide us with ready to use programs but they form, with their
+advanced FITS handling and image manipulation functions, the
+development library for our preprocessing tools (at the time being
+those are mefsplit, mefcreate and preprocess). The stand-alone
+programs 'dfits', 'fitsort', 'replacekey', 'hierearch28' and 'iofits'
+are used to query/update our FITS headers.
+
+The original codes are rearranged to fit in the THELI installation
+scheme
