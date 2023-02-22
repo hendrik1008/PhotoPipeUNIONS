@@ -66,6 +66,10 @@ Decmax=`dmstodecimal $Decmax_dms | gawk '{print $1}'`
 ### New star catalogue based on the image itself ###
 # saturation levels
 case $band in
+    "u")  sat_level=70000;;
+    "g")  sat_level=70000;;
+    "r")  sat_level=70000;;
+    "i")  sat_level=70000;;
     "Z")  sat_level=70000;;
     "Y")  sat_level=220000;;
     "J")  sat_level=100000;;
@@ -140,6 +144,7 @@ then
    mv starsused.txt $wd/${measurement_image_base}_smart_ggstarsused.txt
    mv psfsticks.ps  $wd/${measurement_image_base}_smart_ggpsfsticks.ps
    mv dxdy.ps       $wd/${measurement_image_base}_smart_ggdxdy.ps
+   mv checkgpsf2d_pages.ps $wd/${measurement_image_base}_smart_checkgpsf2d_pages.ps
    
    rm -f inimage.fits
 fi 
@@ -153,10 +158,10 @@ rm -f inimage.fits
 ln -sf $wd/${measurement_image_base}_smart_ggpsf.fits inimage.fits
 $gaap_dir/kk/shummary < $wd/${measurement_image_base}_smart_ggpsf.sh | \
     sort -g -k 8 | gawk '$7==0' | tail -200 | $gaap_dir/kk/bigim/checkgpsf2d
-convert -density 200 $wd/checkgpsf2d.ps $wd/${measurement_image_base}_smart_ggpsf.jpg
-rm $wd/checkgpsf2d_pages.ps $wd/checkgpsf2d.ps
+#convert -density 200 $wd/checkgpsf2d.ps $wd/${measurement_image_base}_smart_ggpsf.jpg
+#rm $wd/checkgpsf2d_pages.ps $wd/checkgpsf2d.ps
 
 rm orders.par  bgnoise.dat
-rm -f gpsfsig.dat inimage.fits
+rm -f gpsfsig.dat #inimage.fits
 
 cd $orig_dir

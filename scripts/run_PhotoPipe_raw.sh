@@ -48,40 +48,13 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_
 #}}}
 
 #Check for the MODE specification {{{
-ALLMODES=`echo CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINEPAW COMBINETILE 2MASSPREP SDSSPREP COMPPAW \
-               COMPTILE MERGE COMPTILEVST STACK MAGAUTOCORR BPZ COMPTILEZ COMPTILEZ2DF COMPTILEDEEPZ MASK4 MASK RAND COPY `
+ALLMODES=`echo PREPARE GAUSSIANISE GAAP COMBINETILE SDSSPREP \
+               COMPTILE MERGE BPZ COMPTILEZ`
 MODELIST=""
 while [ $# -gt 0 ]
 do 
   for MODE in $1
   do 
-    if [ "$MODE" == "ALL" ] 
-    then 
-      echo -e "Using\033[0;31m Mode Set\033[0;34m ALL\033[0m"
-      MODELIST=`echo ${MODELIST} \
-        CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINEPAW COMBINETILE 2MASSPREP SDSSPREP COMPPAW \
-        COMPTILE MERGE COMPTILEVST STACK MAGAUTOCORR BPZ COMPTILEZ COMPTILEZ2DF COMPTILEDEEPZ MASK4 MASK RAND COPY `
-    elif [ "$MODE" == "REQUIRED" ]
-    then 
-      echo -e "Using\033[0;31m Mode Set\033[0;34m REQUIRED\033[0m"
-      MODELIST=`echo ${MODELIST} \
-        CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINETILE MERGE MAGAUTOCORR BPZ MASK4 MASK COPY`
-    elif [ "$MODE" == "PHOTOMETRY" ]
-    then 
-      echo -e "Using\033[0;31m Mode Set\033[0;34m PHOTOMETRY\033[0m"
-      MODELIST=`echo ${MODELIST} \
-      CONVERT COLLECT LINK PREPARE GAUSSIANISE GAAP COMBINETILE MERGE`
-    elif [ "$MODE" == "PZ+MASK" ]
-    then 
-      echo -e "Using\033[0;31m Mode Set\033[0;34m PZ+MASK\033[0m"
-      MODELIST=`echo ${MODELIST} \
-      MAGAUTOCORR BPZ MASK4 MASK`
-    elif [ "$MODE" == "QC" ]
-    then 
-      echo -e "Using\033[0;31m Mode Set\033[0;34m QC\033[0m"
-      MODELIST=`echo ${MODELIST} \
-      2MASSPREP SDSSPREP COMPTILE COMPTILEVST STACK COMPTILEZ COMPTILEZ2DF COMPTILEDEEPZ `
-    else 
       found=0
       for mode in ${ALLMODES}
       do 
@@ -98,7 +71,6 @@ do
         >&2 echo -e "Run\033[0;34m 'bash run_PhotoPipe.sh'\033[0m to see the list of available modes"
         exit 1
       fi 
-    fi 
   done 
   shift 
 done 
@@ -143,36 +115,15 @@ else
   #Print the available MODES {{{
   echo -e "\033[0;31mERROR:\033[0m There are no MODES provided! I have nothing to do!" 
   echo -e "The available modes (and the order in which they should be called) are:"
-  echo -e "\033[0;31m   1. \033[0;34m CONVERT:\033[0m Convert AW catalogues."
-  echo -e "\033[0;31m   2. \033[0;34m COLLECT:\033[0m Collect VISTA chips."
-  echo -e "\033[0;31m   3. \033[0;34m LINK:\033[0m Link VISTA chips."
   echo -e "\033[0;31m   4. \033[0;34m PREPARE:\033[0m Create directories."
   echo -e "\033[0;31m   5a.\033[0;34m GAUSSIANISE:\033[0m Gaussianise the VIKING chips."
   echo -e "\033[0;31m   5. \033[0;34m GAAP:\033[0m Extract GaAP photometry."
-  echo -e "\033[0;31m   6. \033[0;34m COMBINEPAW:\033[0m Combine flux measurements of all chips per pawprint. (OPTIONAL)"
   echo -e "\033[0;31m   7. \033[0;34m COMBINETILE:\033[0m Combine flux measurements of all chips per tile. "
-  echo -e "\033[0;31m   8. \033[0;34m 2MASSPREP:\033[0m Preparation of 2MASS catalogue."
   echo -e "\033[0;31m   9. \033[0;34m SDSSPREP:\033[0m Preparation of SDSS catalogue."
-  echo -e "\033[0;31m   10.\033[0;34m COMPPAW:\033[0m Comparisons to 2MASS (JHKs bands) and SDSS (Z band). Individual pawprints. (OPTIONAL)"
-  echo -e "\033[0;31m   11.\033[0;34m COMPTILE:\033[0m Comparisons to 2MASS (JHKs bands) and SDSS (Z band). Full tile."
+  echo -e "\033[0;31m   11.\033[0;34m COMPTILE:\033[0m Comparisons to SDSS. Full tile."
   echo -e "\033[0;31m   12.\033[0;34m MERGE:\033[0m Paste the measurements from individual bands into a full 9-band catalogue."
-  echo -e "\033[0;31m   13.\033[0;34m COMPTILEVST:\033[0m Comparisons to SDSS (ugri-bands). Full tile."
-  echo -e "\033[0;31m   14.\033[0;34m STACK:\033[0m Create a stack and sum image of all chips that went into the photometry."
-  echo -e "\033[0;31m   15.\033[0;34m MAGAUTOCORR:\033[0m Correct the MAG_AUTO values with improved ZPs."
   echo -e "\033[0;31m   15.\033[0;34m BPZ:\033[0m Run BPZ."
   echo -e "\033[0;31m   16.\033[0;34m COMPTILEZ:\033[0m Comparison to SDSS redshifts. Full tile."
-  echo -e "\033[0;31m   17.\033[0;34m COMPTILEZ2DF:\033[0m Comparison to 2dFLenS redshifts. Full tile."
-  echo -e "\033[0;31m   17.\033[0;34m COMPTILEDEEPZ:\033[0m Comparison to Deep Specz Compilation redshifts. Full tile."
-  echo -e "\033[0;31m   18.\033[0;34m MASK4:\033[0m Create the 4-band MASK."
-  echo -e "\033[0;31m   19.\033[0;34m MASK:\033[0m Create the 9-band MASK."
-  echo -e "\033[0;31m   20.\033[0;34m RAND:\033[0m Create a new random catalogue. (OPTIONAL)"
-  echo -e "\033[0;31m   21.\033[0;34m COPY:\033[0m Copy data products into THELI tree."
-  echo -e "\033[0;31mALTERNATIVELY:\033[0m You can specify the MODE as one of the below:"
-  echo -e "\033[0;31m  [Set]\033[0;34m ALL\033[0m: Runs all modes (1-21)"
-  echo -e "\033[0;31m  [Set]\033[0;34m REQUIRED\033[0m: Runs all modes required to produce science-data (1-5,7,12,15,18-19,21)"
-  echo -e "\033[0;31m  [Set]\033[0;34m PHOTOMETRY\033[0m: Runs modes 1-5,7,12"
-  echo -e "\033[0;31m  [Set]\033[0;34m PZ+MASK\033[0m: Runs modes 15,18-19"
-  echo -e "\033[0;31m  [Set]\033[0;34m QC\033[0m: Runs modes 8-9,11,13-14,16-17"
   exit 1 
   #}}}
 fi 
@@ -253,27 +204,23 @@ do
   #}}}
   #Construct the executable list {{{
   echo -e "Starting Mode \033[0;31m${MODE}\033[0m (`date`)" 
-  while read field ra dec 
+  while read field #ra dec 
   do
     #Check that the required files exist: 
-    if [ -f @ASTROWISEPATH@/${field}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_GAaP_@REFERENCE@.fits ]
-    then
+    #if [ -f @ASTROWISEPATH@/${field}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_GAaP_@REFERENCE@.fits ]
+    #then
       #Construct the executable list {{{
   	  bash @SCRIPTPATH@/construct_commands_KiDSLegacy.sh \
            -md @RUNROOT@/@WORKINGDIR@/ \
-           -cd @ASTROWISEPATH@/ \
-	   -mm @MANUALMASKPATH@ \
-           -bd @VIKINGROOT@/@VIKINGTYPE@/ \
-           -id @RUNROOT@/@WORKINGDIR@/@RAWDIR@/ \
+           -cd @CATDIR@/ \
+           -id @IMDIR@/ \
            -fi ${field} \
-           -fn ${field} \
-        	 -lg @RUNROOT@/@WORKINGDIR@/@LOGFILE@ \
-        	 -ma @RUNROOT@/@WORKINGDIR@/${field}/${field}_AW_THELI.flags.fits \
-  	       -th @THELIDATAPATH@/ \
+           -lg @RUNROOT@/@WORKINGDIR@/@LOGFILE@ \
+           -ma @IMDIR@/masks/${field}_lensingcandidate_r.MP9602.fits \
            -m $MODE \
            >> ${MODE}_commandlist.sh 2>> ${MODE}_commandlist.log
        #}}}
-    fi
+    #fi
   done < ${POINTINGLIST}
   #Remove any duplicated commands {{{ 
   cat ${MODE}_commandlist.sh | sort | uniq > tmp_${MODE}_commandlist.sh 
