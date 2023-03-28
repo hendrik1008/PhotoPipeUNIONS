@@ -58,7 +58,7 @@ do
       shift 2
       ;;
     -fi)
-      field_name=${2} # Field name (THELI convenction).
+      field_name=${2} # Field name (MP convenction).
       shift 2
       ;;
     -ma)
@@ -86,18 +86,25 @@ mdfield=$md/${field_name}
 
 test ! -d ${mdfield} && mkdir ${mdfield}
 
-### Read RA and Dec from KiDS field name.
-RA=`echo $field_name | cut -d "_" -f 2`
-Dec=`echo $field_name | cut -d "_" -f 3`
+#### Read RA and Dec from KiDS field name.
+#RA=`echo $field_name | cut -d "_" -f 2`
+#Dec=`echo $field_name | cut -d "_" -f 3`
+#
+#### MegaPipe name (intergers) ###
+#y_MP=`echo $Dec | awk '{printf "%3i\n", ($1+90)*2}'`
+#Dec_mid_MP=`echo $y_MP | awk '{print $1/2-90}'`
+#x_MP=`echo $RA $Dec_mid_MP | awk '{printf "%3i\n", $1*cos($2/180*3.141)*2}'`
+#MegaPipe_name=$x_MP.$y_MP
 
-### MegaPipe name (intergers) ###
-y_MP=`echo $Dec | awk '{printf "%i\n", ($1+90)*2}'`
-Dec_mid_MP=`echo $y_MP | awk '{print $1/2-90}'`
-x_MP=`echo $RA $Dec_mid_MP | awk '{printf "%i\n", $1*cos($2/180*3.141)*2}'`
-MegaPipe_name=$x_MP.$y_MP
+### Read MP xxx yyy from field name
+xxx=`echo $field_name|cut -d "." -f 2`
+yyy=`echo $field_name|cut -d "." -f 3`
 
-### Paths to the photometric, lensfit, and star catalogues.
-phot_cat=${cats_dir}/${field_name}_r.MP9602_final_psfs0.cat
+### THELI name
+THELI_name=`python @RUNROOT@/@SCRIPTPATH@/translate_THELI2MP.py $xxx.$yyy`
+
+### Paths to the photometric catalogues.
+phot_cat=${cats_dir}/CFIS.${xxx}.${yyy}.r.cat
 
 #### Count the number of objects in the photometric and star catalogues.
 #if [ -f $phot_cat ]
@@ -113,6 +120,22 @@ phot_cat=${cats_dir}/${field_name}_r.MP9602_final_psfs0.cat
 ##################################
 ### Here the real work starts. ###
 ##################################
+
+### Convert MegaPipe ASCII catalogue into 
+for mode in ${MODE}
+do
+    if [ "${mode}" = "CONVERT" ]; then
+	cat_ASCII=$image_dir/catalogues_MP/CFIS.${xxx}.${yyy}.r.cat
+	cat_LDAC=$image_dir/catalogues_MP/CFIS.${xxx}.${yyy}.r.ldac.cat
+	if [ -f $cat_ASCII ] && [ ! -f $cat_LDAC ]
+	then
+	    echo asctoldac_theli \
+		 -a $cat_ASCII \
+		 -o $cat_LDAC \
+		 -c @RUNROOT@/@CONFIGPATH@/asctoldac_MP.conf
+	fi
+    fi
+done
 
 ### Prepare images and directories.
 for mode in ${MODE}
@@ -130,30 +153,45 @@ do
 	for filter in u r
 	do
     	    prefix=CFIS
-    	    base=$image_dir/${filter}/${prefix}.${MegaPipe_name}.${filter}
-    	    ln -sf $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits
-	    echo -n funpack $base.weight.fits.fz $base.weight.fits \;
+    	    base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
+	    if [ -f $base.fits ]
+	    then
+    		ln -sf $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits
+	    fi
+	    if [ -f $base.weight.fits.fz ] && [ ! -f $base.weight.fits ]
+	    then
+		echo -n funpack $base.weight.fits.fz -O $base.weight.fits \;
+	    fi
     	    test -f $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
-		 && rm $md/$field_name/$filter/${field_name}_${filter}.weight.fits
-    	    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
-    		 $base.weight.fits \
-    		 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		&& rm $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+	    if [ -f $base.weight.fits ]
+	    then
+    		echo -n python @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
+    		     $base.weight.fits \
+    		     $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	    fi
 	done
 	
 	# PanSTARRS i-band
 	filter=i
 	prefix=PS-DR3
-	base=$image_dir/${filter}/${prefix}.${MegaPipe_name}.${filter}
-	ln -sf $base.fits        $md/$field_name/$filter/${field_name}_${filter}.fits
-	ln -sf $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+	base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
+	if [ -f $base.fits ]
+	then
+	    ln -sf $base.fits        $md/$field_name/$filter/${field_name}_${filter}.fits
+	    ln -sf $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+	fi
 	
 	# HSC g-band
 	filter=g
-	prefix=calexp-
-	base=$image_dir/${filter}/${prefix}${field_name}.fits
-	echo python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
-    	     $base \
-    	     $md/$field_name/$filter/${field_name}_${filter}
+	prefix=calexp-CFIS_
+	base=$image_dir/${filter}/${prefix}${THELI_name}
+	if [ -f $base.fits ]
+	then
+	    echo python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
+    		 $base.fits \
+    		 $md/$field_name/$filter/${field_name}_${filter}
+	fi
     fi
 done
 

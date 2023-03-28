@@ -21,15 +21,15 @@ NOCONFIG=0
 #Package directory (default: `pwd`)
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
-RUNROOT=/net/home/fohlen13/hendrik/UNIONS/PhotoPipe/
+RUNROOT=/net/home/fohlen14/hendrik/UNIONS/PhotoPipe/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
 SURVEY=UNIONS2000
-#Directory of the lensfit catalogues
-CATDIR=/net/home/fohlen13/hendrik/UNIONS/UNIONS2000/catalogues/
+#Directory of the MegaPipe catalogues
+CATDIR=/net/home/fohlen14/hendrik/UNIONS/UNIONS2000/catalogues_MP/
 #Directory of the images
-IMDIR=/net/home/fohlen13/hendrik/UNIONS/UNIONS2000/
+IMDIR=/net/home/fohlen14/hendrik/UNIONS/UNIONS2000/
 #Username (default: `whoami`) 
 USER=`whoami`
 #Directory for work
@@ -41,7 +41,8 @@ SCRIPTPATH=RUNTIME/scripts/
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
-POINTINGLIST=ugri_tiles.txt #UNIONS2000_pointings.txt
+POINTINGLIST=ugri_tiles.txt
+#POINTINGLIST=UNIONS2000_pointings.txt
 #File containing Deep Spec-z for photo-z comparison 
 DEEPZCAT=/net/home/fohlen13/awright/KiDS/KiDS_calib.11_02_2021.cat
 #Machine type
