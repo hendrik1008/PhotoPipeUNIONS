@@ -66,22 +66,20 @@ Decmax=`dmstodecimal $Decmax_dms | gawk '{print $1}'`
 ### New star catalogue based on the image itself ###
 # saturation levels
 case $band in
-    "u")  sat_level=70000;;
-    "g")  sat_level=70000;;
-    "r")  sat_level=70000;;
-    "i")  sat_level=70000;;
-    "Z")  sat_level=70000;;
-    "Y")  sat_level=220000;;
-    "J")  sat_level=100000;;
-    "H")  sat_level=80000;;
-    "Ks") sat_level=100000;;
+    "u")  sat_level=`dfits_theli $measurement_image | fitsort_theli -d SATURATE|awk '{print $2}'`; ZP=30;;
+    "g")  sat_level=45000; ZP=27;;
+    "r")  sat_level=`dfits_theli $measurement_image | fitsort_theli -d SATURATE|awk '{print $2}'`; ZP=30;;
+    "i")  sat_level=`dfits_theli $measurement_image | fitsort_theli -d SATURATE|awk '{print $2*100}'`; ZP=30;; # HACK: not sure about the saturation level
 esac
 
 if [ ! -f $wd/${measurement_image_base}_smart_ggpsf.fits ]
 then
-   sex $measurement_image \
-   	 -CATALOG_NAME $wd/${measurement_image_base}_cat.asc \
-   	 -DETECT_THRESH 10 -SATUR_LEVEL $sat_level -SATUR_KEY DUMMY
+    sex $measurement_image \
+	-WEIGHT_IMAGE $measurement_image_weight \
+	-WEIGHT_TYPE MAP_WEIGHT\
+   	-CATALOG_NAME $wd/${measurement_image_base}_cat.asc \
+   	-DETECT_THRESH 10 -SATUR_LEVEL $sat_level \
+	-MAG_ZEROPOINT $ZP
    
    rm $wd/default.*
    
@@ -89,7 +87,8 @@ then
    rad1=`awk '{if ($3>'$fmax'/30. && $10==0) print $5}' $wd/${measurement_image_base}_cat.asc|$gaap_dir/kk/mode | awk '{printf "%f\n",$1}'`
    fmax=`awk '{if ($10==0 && $5<'$rad1'+0.5) print $3}' $wd/${measurement_image_base}_cat.asc | sort -gr |head -1`
    rad2=`awk '{if ($3>'$fmax'/30. && $5<'$rad1'+0.5 && $10==0) print $5}' $wd/${measurement_image_base}_cat.asc|$gaap_dir/kk/mode | awk '{printf "%f\n",$1}'`
-   awk '{if ($3>'$fmax'/30. && $5<'$rad2'+0.3 && $5>'$rad2'-0.3 && $10==0) print $0}' $wd/${measurement_image_base}_cat.asc > $wd/${measurement_image_base}_star_cat_GAaP.asc
+   #awk '{if ($3>'$fmax'/30. && $5<'$rad2'+0.3 && $5>'$rad2'-0.3 && $10==0) print $0}' $wd/${measurement_image_base}_cat.asc > $wd/${measurement_image_base}_star_cat_GAaP.asc
+   awk '{if ($3>'$fmax'/30. && $5<'$rad2'+0.3 && $5>'$rad2'/2.0 && $10==0) print $0}' $wd/${measurement_image_base}_cat.asc > $wd/${measurement_image_base}_star_cat_GAaP.asc
    echo $rad1 $rad2 $fmax `wc -l $wd/${measurement_image_base}_star_cat_GAaP.asc`
    
    ### Start the GaAP processing
