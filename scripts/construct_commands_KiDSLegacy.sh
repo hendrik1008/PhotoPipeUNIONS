@@ -265,51 +265,6 @@ do
   fi
 done
 
-#### Combine flux measurements of all chips per tile.
-#for mode in ${MODE}
-#do
-#  if [ "${mode}" = "COMBINETILE" ]; then
-#    ### Loop over all VISTA bands.
-#    for ending in "" _minaper1p0 _stars _stars0p7
-#    do
-#      home=`pwd`
-#      for band in Z Y J H Ks
-#      do
-#        wdband=${mdfield}/${band}
-#        cd ${wdband}
-#        if [ ! -f @VIKINGBADQCFILE@ ]
-#        then 
-#          ### If there is no individual VISTA chip QC ###
-#          >&2 echo "WARNING: File  @VIKINGBADQCFILE@ does not exist!"
-#          gaap_input_files=v*/v*_bsub/v*_bsub_r_smart$ending.gaap
-#        else 
-#          gaap_input_files=`ls v*/v*_bsub/v*_bsub_r_smart$ending.gaap | grep -Fvf @VIKINGBADQCFILE@ `
-#        fi 
-#        num_input_files=( $gaap_input_files )
-#        num_input_files=${#num_input_files[@]}
-#        ### Combine flux measurements for photometric catalogue.
-#        if [ ${num_input_files} -le 1 ]
-#        then
-#          >&2 echo "ERROR: Directory ${wdband} contains no VISTA chips?!"
-#        else
-#          echo -n "cd ${wdband} ; "
-#          echo -n python @RUNROOT@/@SCRIPTPATH@/average_fluxes_list.py \
-#            $no_obj_phot_cat \
-#            ${wdband}/${band}_smart$ending.gaap \
-#            $gaap_input_files \;\  
-#          echo bash @RUNROOT@/@SCRIPTPATH@/convert_gaap_fluxes.sh \
-#            ${wdband}/${band}_smart$ending.gaap \
-#            $phot_cat \
-#            ${wdband}/${band}_smart$ending.cat \
-#            ${band} 30 \
-#            RAJ2000 DECJ2000
-#        fi 
-#        cd ${home}
-#      done
-#    done
-#  fi
-#done
-
 ### Preparation of SDSS catalogue.
 for mode in ${MODE}
 do
