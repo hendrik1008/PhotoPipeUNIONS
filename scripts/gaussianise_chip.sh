@@ -149,6 +149,34 @@ then
 fi 
 
 ###############
+
+awk 'BEGIN{minx=10000;maxx=0;miny=10000;maxy=0}
+    !/#/{
+    if ($1>maxx) maxx=$1
+    if ($1<minx) minx=$1
+    if ($2>maxy) maxy=$2
+    if ($2<miny) miny=$2
+    }
+    END{
+    print "#minx, maxx, miny, maxy"
+    print minx, maxx, miny, maxy
+    }' $wd/${measurement_image_base}_cat.asc \
+	> $wd/${measurement_image_base}_cat_stats.txt
+
+awk 'BEGIN{minx=10000;maxx=0;miny=10000;maxy=0}
+    !/#/{
+    if ($1>maxx) maxx=$1
+    if ($1<minx) minx=$1
+    if ($2>maxy) maxy=$2
+    if ($2<miny) miny=$2
+    }
+    END{
+    print "#minx, maxx, miny, maxy"
+    print minx, maxx, miny, maxy
+    }' $wd/${measurement_image_base}_star_cat_GAaP.asc \
+	> $wd/${measurement_image_base}_star_cat_GAaP_stats.txt
+
+###############
 ###############
 
 ln -sf $wd/${measurement_image_base}_ker.in gpsfsig.dat
