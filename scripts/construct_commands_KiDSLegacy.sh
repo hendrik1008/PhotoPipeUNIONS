@@ -86,22 +86,14 @@ mdfield=$md/${field_name}
 
 test ! -d ${mdfield} && mkdir ${mdfield}
 
-#### Read RA and Dec from KiDS field name.
-#RA=`echo $field_name | cut -d "_" -f 2`
-#Dec=`echo $field_name | cut -d "_" -f 3`
-#
-#### MegaPipe name (intergers) ###
-#y_MP=`echo $Dec | awk '{printf "%3i\n", ($1+90)*2}'`
-#Dec_mid_MP=`echo $y_MP | awk '{print $1/2-90}'`
-#x_MP=`echo $RA $Dec_mid_MP | awk '{printf "%3i\n", $1*cos($2/180*3.141)*2}'`
-#MegaPipe_name=$x_MP.$y_MP
-
 ### Read MP xxx yyy from field name
 xxx=`echo $field_name|cut -d "." -f 2`
 yyy=`echo $field_name|cut -d "." -f 3`
 
 ### THELI name
 THELI_name=`python @RUNROOT@/@SCRIPTPATH@/translate_THELI2MP.py $xxx.$yyy`
+RA=`echo  $THELI_name | cut -d "_" -f 2 | sed 's/p/\./g'`
+Dec=`echo $THELI_name | cut -d "_" -f 3 | sed 's/p/\./g'`
 
 ### Paths to the photometric catalogues.
 phot_cat=${cats_dir}/CFIS.${xxx}.${yyy}.r.cat
@@ -269,20 +261,8 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "SDSSPREP" ]; then
-    if [ "$RA" == "" ]
-    then 
-      >&2 echo "WARNING: Central RA/Dec is approximated from file name (no mask created yet)"
-      RA=` echo $KiDS_field | cut -d '_' -f 2 | sed 's/p/\./g'`
-      Dec=`echo $KiDS_field | cut -d '_' -f 3 | sed 's/p/\./g' | sed 's/m/-/g'`
-    fi 
-    continue=`echo $Dec | awk '{if ($1>-10) print 1; else print 0}'`
-    if [ $continue -eq 1 ]
-    then
       echo -n mkdir ${mdfield}/SDSS \;\ 
-      echo -n bash @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $KiDS_field $RA $Dec \;\ 
-    else 
-      echo "echo 'Field is in the South'"
-    fi
+      echo -n bash @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $field_name $RA $Dec \;\ 
   fi
 done
 
