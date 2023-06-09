@@ -49,7 +49,7 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_
 
 #Check for the MODE specification {{{
 ALLMODES=`echo CONVERT PREPARE GAUSSIANISE GAAP COMBINETILE SDSSPREP \
-               COMPTILE MERGE BPZ COMPTILEZ`
+               COMPTILE MERGE BPZ COMPTILEZ COMPTILEDEEPZ`
 MODELIST=""
 while [ $# -gt 0 ]
 do 
@@ -210,7 +210,7 @@ do
     #if [ -f @ASTROWISEPATH@/${field}_@THELIFILTER@.@THELIVERSION@_@AWSURVEYNAME@_GAaP_@REFERENCE@.fits ]
     #then
       #Construct the executable list {{{
-  	  bash @SCRIPTPATH@/construct_commands_KiDSLegacy.sh \
+  	  bash -xv @SCRIPTPATH@/construct_commands_KiDSLegacy.sh \
            -md @RUNROOT@/@WORKINGDIR@/ \
            -cd @CATDIR@/ \
            -id @IMDIR@/ \

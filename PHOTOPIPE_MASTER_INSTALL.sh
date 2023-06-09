@@ -41,10 +41,10 @@ SCRIPTPATH=RUNTIME/scripts/
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
-POINTINGLIST=ugri_tiles.txt
+POINTINGLIST=W3_testtiles_new.txt1
 #POINTINGLIST=UNIONS2000_pointings.txt
 #File containing Deep Spec-z for photo-z comparison 
-DEEPZCAT=/net/home/fohlen13/awright/KiDS/KiDS_calib.11_02_2021.cat
+DEEPZCAT=/net/home/fohlen11/hendrik/data/DEEP2/DEEP2_specz.cat
 #Machine type
 MACHINE=Linux_64 # can be seen using `uname`
 #THELI Path 

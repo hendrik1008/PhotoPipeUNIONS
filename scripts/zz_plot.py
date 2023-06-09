@@ -38,9 +38,15 @@ bias_zgt1 = "%1.3f" % np.average(Delta_z_scaled_zgt1)
 scatter_zgt1 = "%1.3f" % np.std(Delta_z_scaled_zgt1)
 NMAD_zgt1 = "%1.3f" % astropy.stats.mad_std(Delta_z_scaled_zgt1)
 outlier015_zgt1 = np.greater(np.abs(Delta_z_scaled_zgt1),0.15)
-outlier_rate015_zgt1 = "%2.1f" % (float(np.sum(outlier015_zgt1)) / float(outlier015_zgt1.shape[0]) * 100.)
+if float(outlier015_zgt1.shape[0]) > 0:
+    outlier_rate015_zgt1 = "%2.1f" % (float(np.sum(outlier015_zgt1)) / float(outlier015_zgt1.shape[0]) * 100.)
+else:
+    outlier_rate015_zgt1 = 0.
 outlier025_zgt1 = np.greater(np.abs(Delta_z_scaled_zgt1),0.25)
-outlier_rate025_zgt1 = "%2.1f" % (float(np.sum(outlier025_zgt1)) / float(outlier025_zgt1.shape[0]) * 100.)
+if float(outlier025_zgt1.shape[0]) > 0:
+    outlier_rate025_zgt1 = "%2.1f" % (float(np.sum(outlier025_zgt1)) / float(outlier025_zgt1.shape[0]) * 100.)
+else:
+    outlier_rate025_zgt1 = 0.
 
 # build a rectangle in axes coords
 left, width = .25, .9

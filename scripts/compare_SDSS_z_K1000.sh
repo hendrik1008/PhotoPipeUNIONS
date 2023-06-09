@@ -41,7 +41,7 @@ ldacaddkey -i $cat \
 
 associate -i ${cat}_tmp_$$ ${SDSS_cat} \
                -o $wd/tmp1.cat_$$ $wd/tmp2.cat_$$ \
-               -c @RUNROOT@/@CONFIGPATH@/associate_K1000.conf
+               -c @RUNROOT@/@CONFIGPATH@/associate_UNIONS.conf
 
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \

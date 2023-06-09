@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """>> sqlcl << command line query tool by Tamas Budavari <budavari@jhu.edu>
 Usage: sqlcl [options] sqlfile(s)
 
@@ -23,9 +21,9 @@ default_fmt='csv'
 
 def usage(status, msg=''):
     "Error message and usage"
-    print __doc__
+    print(__doc__)
     if msg:
-        print '-- ERROR: %s' % msg
+        print('-- ERROR: %s' % msg)
     sys.exit(status)
 
 def filtercomment(sql):
@@ -38,10 +36,12 @@ def filtercomment(sql):
 
 def query(sql,url,fmt=default_fmt):
     "Run query and return file object"
+    import certifi
     import urllib
+    import urllib.request
     fsql = filtercomment(sql)
-    params = urllib.urlencode({'cmd': fsql, 'format': fmt})
-    return urllib.urlopen(url+'?%s' % params)    
+    params = urllib.parse.urlencode({'cmd': fsql, 'format': fmt})
+    return urllib.request.urlopen(url+'?%s' % params)    
 
 def write_header(ofp,pre,url,qry):
     import  time
@@ -64,7 +64,7 @@ def main(argv):
     # Parse command line
     try:
         optlist, args = getopt.getopt(argv[1:],'s:f:q:vlh?')
-    except getopt.error, e:
+    except getopt.error as e:
         usage(1,e)
         
     for o,a in optlist:
@@ -82,7 +82,7 @@ def main(argv):
     for fname in args:
         try:
             queries.append(open(fname).read())
-        except IOError, e:
+        except IOError as e:
             usage(1,e)
 
     # Run all queries sequentially

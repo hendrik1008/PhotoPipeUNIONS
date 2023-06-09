@@ -11,16 +11,16 @@ import os
 
 catname = sys.argv[1]
 outcat = sys.argv[2]
-u_offset_0p7 = float(sys.argv[3])
-u_offset_1p0 = float(sys.argv[4])
-g_offset_0p7 = float(sys.argv[5])
-g_offset_1p0 = float(sys.argv[6])
-r_offset_0p7 = float(sys.argv[7])
-r_offset_1p0 = float(sys.argv[8])
-i1_offset_0p7 = float(sys.argv[9])
-i1_offset_1p0 = float(sys.argv[10])
-i2_offset_0p7 = float(sys.argv[11])
-i2_offset_1p0 = float(sys.argv[12])
+u_offset_0p7 =  0. #float(sys.argv[3])
+u_offset_1p0 =  0. #float(sys.argv[4])
+g_offset_0p7 =  0. #float(sys.argv[5])
+g_offset_1p0 =  0. #float(sys.argv[6])
+r_offset_0p7 =  0. #float(sys.argv[7])
+r_offset_1p0 =  0. #float(sys.argv[8])
+i1_offset_0p7 = 0. #float(sys.argv[9])
+i1_offset_1p0 = 0. #float(sys.argv[10])
+i2_offset_0p7 = 0. #float(sys.argv[11])
+i2_offset_1p0 = 0. #float(sys.argv[12])
 
 ### read the input catalogue
 
@@ -32,66 +32,18 @@ nobj = np.shape(ldac_table['SeqNr'])[0]
 
 for aperture in ('0p7', '1p0'):
     aperture2 = aperture.replace("p", ".")
-    for band in ('u', 'g', 'r', 'i1', 'i2'):
+    for band in ('u', 'g', 'r', 'i'):
         band_cap = band.capitalize()[0]
-        # read the SLR+Gaia calibration from the header
-        if aperture == '0p7':
-            if band_cap == "I":
-                band_num = band.capitalize()[1]
-                SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i"+band_num]
-                if SLR_Gaia_offset < -98.:
-                    SLR_Gaia_offset = 0.
-            else:
-                if ldac_cat.header['DMAG_'+band_cap+"_07_i1"] > -98. and ldac_cat.header['DMAG_'+band_cap+"_07_i2"] > -98.:
-                    SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+"_07_i1"]+ldac_cat.header['DMAG_'+band_cap+"_07_i2"])/2.0
-                elif ldac_cat.header['DMAG_'+band_cap+"_07_i1"] > -98.:
-                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i1"]
-                elif ldac_cat.header['DMAG_'+band_cap+"_07_i2"] > -98.:
-                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_07_i2"]
-                else:
-                    SLR_Gaia_offset = 0.                
-            if band == "u":
-                SLR_Gaia_offset -= u_offset_0p7
-            elif band == "g":
-                SLR_Gaia_offset -= g_offset_0p7
-            elif band == "r":
-                SLR_Gaia_offset -= r_offset_0p7
-            elif band == "i1":
-                SLR_Gaia_offset -= i1_offset_0p7
-            elif band == "i2":
-                SLR_Gaia_offset -= i2_offset_0p7
-        if aperture == '1p0':
-            if band_cap == "I":
-                band_num = band.capitalize()[1]
-                SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+'_10_i'+band_num]
-                if SLR_Gaia_offset < -98.:
-                    SLR_Gaia_offset = 0.
-            else: 
-                if ldac_cat.header['DMAG_'+band_cap+"_10_i1"] > -98. and ldac_cat.header['DMAG_'+band_cap+"_10_i2"] > -98.:
-                    SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+'_10_i1']+ldac_cat.header['DMAG_'+band_cap+"_10_i2"])/2.0
-                elif ldac_cat.header['DMAG_'+band_cap+"_10_i1"] > -98.:
-                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_10_i1"]
-                elif ldac_cat.header['DMAG_'+band_cap+"_10_i2"] > -98.:
-                    SLR_Gaia_offset = ldac_cat.header['DMAG_'+band_cap+"_10_i2"]
-                else:
-                    SLR_Gaia_offset = 0.                
-            if band == "u":
-                SLR_Gaia_offset -= u_offset_1p0
-            elif band == "g":
-                SLR_Gaia_offset -= g_offset_1p0
-            elif band == "r":
-                SLR_Gaia_offset -= r_offset_1p0
-            elif band == "i1":
-                SLR_Gaia_offset -= i1_offset_1p0
-            elif band == "i2":
-                SLR_Gaia_offset -= i2_offset_1p0
+        MAGZP = 30.
+        if band == "g":
+            MAGZP = 27.
             
         flag = ldac_table['FLAG_GAAP_'+aperture+'_'+band]
         flux = ldac_table['FLUX_GAAP_'+aperture+'_'+band]
         fluxerr = ldac_table['FLUXERR_GAAP_'+aperture+'_'+band]
         
         # convert flux -> mag adding the calibration
-        mag = -2.5 * np.log10(flux) + SLR_Gaia_offset
+        mag = -2.5 * np.log10(flux) + MAGZP
 
         # convert fluxerr -> magerr
         magerr = 2.5 / np.log(10.) * np.sqrt((fluxerr / flux)**2)
@@ -138,7 +90,7 @@ for aperture in ('0p7', '1p0'):
 
 R = np.zeros((nobj,10))
 i=0
-for band in ('u', 'g', 'r', 'i1', 'i2', 'Z', 'Y', 'J', 'H', 'Ks'):
+for band in ('u', 'g', 'r', 'i'):
     # first assign the smaller apertures throughout
     ldac_table['MAG_GAAP_'+band] = ldac_table['MAG_GAAP_0p7_'+band]
     ldac_table.set_comment('MAG_GAAP_'+band, band+'-band GAaP magnitude optimal min_aper')
@@ -167,19 +119,19 @@ for band in ('u', 'g', 'r', 'i1', 'i2', 'Z', 'Y', 'J', 'H', 'Ks'):
     R[:,i][fluxerr1==-1] = 1.
     i=i+1
 
-# Same for the semi-major and -minor axes
-ldac_table['Agaper'] = ldac_table['Agaper_0p7']
-ldac_table.set_comment('Agaper', 'Major axis of GAaP aperture optimal min_aper (arcsec)')
-ldac_table.set_unit('Agaper', 'arcsec')
-ldac_table['Bgaper'] = ldac_table['Bgaper_0p7']
-ldac_table.set_comment('Bgaper', 'Minor axis of GAaP aperture optimal min_aper (arcsec)')
-ldac_table.set_unit('Bgaper', 'arcsec')
+## Same for the semi-major and -minor axes
+#ldac_table['Agaper'] = ldac_table['Agaper_0p7']
+#ldac_table.set_comment('Agaper', 'Major axis of GAaP aperture optimal min_aper (arcsec)')
+#ldac_table.set_unit('Agaper', 'arcsec')
+#ldac_table['Bgaper'] = ldac_table['Bgaper_0p7']
+#ldac_table.set_comment('Bgaper', 'Minor axis of GAaP aperture optimal min_aper (arcsec)')
+#ldac_table.set_unit('Bgaper', 'arcsec')
     
 # decide whether the larger aperture should be used
 large_aper = ( np.min(R, axis=1) < 1./np.max(R, axis=1)   )     |     ( np.max(R,axis=1) < 0  )
 
 # assign the larger aperture to the objects where large_aper==True
-for band in ('u', 'g', 'r', 'i1', 'i2', 'Z', 'Y', 'J', 'H', 'Ks'):
+for band in ('u', 'g', 'r', 'i'):
     ldac_table['MAG_GAAP_'+band][large_aper] = ldac_table['MAG_GAAP_1p0_'+band][large_aper]
     ldac_table['MAGERR_GAAP_'+band][large_aper] = ldac_table['MAGERR_GAAP_1p0_'+band][large_aper]
     ldac_table['FLUX_GAAP_'+band][large_aper] = ldac_table['FLUX_GAAP_1p0_'+band][large_aper]
@@ -189,8 +141,8 @@ for band in ('u', 'g', 'r', 'i1', 'i2', 'Z', 'Y', 'J', 'H', 'Ks'):
         ldac_table['GAAP_nexp_'+band][large_aper] = ldac_table['GAAP_nexp_1p0_'+band][large_aper]
         ldac_table['GAAP_chi_sq_dof_'+band][large_aper] = ldac_table['GAAP_chi_sq_dof_1p0_'+band][large_aper]
 
-ldac_table['Agaper'][large_aper] = ldac_table['Agaper_1p0'][large_aper]
-ldac_table['Bgaper'][large_aper] = ldac_table['Bgaper_1p0'][large_aper]
+#ldac_table['Agaper'][large_aper] = ldac_table['Agaper_1p0'][large_aper]
+#ldac_table['Bgaper'][large_aper] = ldac_table['Bgaper_1p0'][large_aper]
 
 ### save the catalogue
 

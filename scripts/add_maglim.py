@@ -22,18 +22,11 @@ nobj = np.shape(ldac_table['SeqNr'])[0]
 
 for aperture in ('0p7', '1p0'):
     aperture2 = aperture.replace("p", ".")
-    for band in ('u', 'g', 'r', 'i1', 'i2', 'Z', 'Y', 'J', 'H', 'Ks'):
-        if band == "u" or band == "g" or band == "r" or band == "i1" or band == "i2":
-            band_cap = band.capitalize()[0]
-            ZP = 0.
-            # read the SLR+Gaia calibration from the header
-            if aperture == '0p7':
-                SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+"_07_i1"]+ldac_cat.header['DMAG_'+band_cap+"_07_i2"])/2.0
-            if aperture == '1p0':
-                SLR_Gaia_offset = (ldac_cat.header['DMAG_'+band_cap+'_10_i1']+ldac_cat.header['DMAG_'+band_cap+"_10_i2"])/2.0
-        else:
-            SLR_Gaia_offset = 0.0
-            ZP = 30.
+    for band in ('u', 'g', 'r', 'i'):
+        SLR_Gaia_offset = 0.0
+        ZP = 30.
+        if band == "g":
+            ZP = 27.
         
         flux = ldac_table['FLUX_GAAP_'+aperture+'_'+band]
         fluxerr = ldac_table['FLUXERR_GAAP_'+aperture+'_'+band]
@@ -55,7 +48,7 @@ for aperture in ('0p7', '1p0'):
 
 R = np.zeros((nobj,10))
 i=0
-for band in ('u', 'g', 'r', 'i1', 'i2', 'Z', 'Y', 'J', 'H', 'Ks'):
+for band in ('u', 'g', 'r', 'i'):
     # first assign the smaller apertures throughout
     ldac_table['MAG_LIM_'+band] = ldac_table['MAG_LIM_0p7_'+band]
     ldac_table.set_comment('MAG_LIM_'+band, band+'-band limiting magnitude optimal min_aper')
@@ -72,7 +65,7 @@ for band in ('u', 'g', 'r', 'i1', 'i2', 'Z', 'Y', 'J', 'H', 'Ks'):
 large_aper = ( np.min(R, axis=1) < 1./np.max(R, axis=1)   )     |     ( np.max(R,axis=1) < 0  )
 
 # assign the larger aperture to the objects where large_aper==True
-for band in ('u', 'g', 'r', 'i1', 'i2', 'Z', 'Y', 'J', 'H', 'Ks'):
+for band in ('u', 'g', 'r', 'i'):
     ldac_table['MAG_LIM_'+band][large_aper] = ldac_table['MAG_LIM_1p0_'+band][large_aper]
 
 ### save the catalogue

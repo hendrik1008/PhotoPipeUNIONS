@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # script to retrieve SDSS sources directly from the SDSS
 # databases.
 
@@ -64,7 +62,7 @@ import sqlcl
 
 # sanity check on the number of command line arguments:
 if len(sys.argv) != 7:
-    print __doc__
+    print(__doc__)
     sys.exit(1)
 
 catalog = sys.argv[1]
@@ -75,13 +73,15 @@ decmin = float(sys.argv[5])
 decmax = float(sys.argv[6])
 
 if catalog == "SDSSDR8":
-    public_url='http://skyserver.sdss3.org/dr8/en/tools/search/x_sql.asp'
+    public_url='https://skyserver.sdss3.org/dr8/en/tools/search/x_sql.asp'
 elif catalog == "SDSSDR9":
-    public_url='http://skyserver.sdss3.org/dr9/en/tools/search/x_sql.asp'
+    public_url='https://skyserver.sdss3.org/dr9/en/tools/search/x_sql.asp'
 elif catalog == "SDSSDR10":
-    public_url='http://skyserver.sdss3.org/dr10/en/tools/search/x_sql.aspx'
+    public_url='https://skyserver.sdss.org/dr10/en/tools/search/x_sql.aspx'
+elif catalog == "SDSSDR18":
+    public_url='https://skyserver.sdss3.org/public/en/tools/search/x_sql.aspx'
 elif catalog == "STRIPE82":
-    public_url='http://cas.sdss.org/public/en/tools/search/x_sql.asp'
+    public_url='https://cas.sdss.org/public/en/tools/search/x_sql.asp'
 
 
 # define the SQL query string for the SDSS database; dependent
@@ -134,80 +134,82 @@ if objects_mode == "GALPHOT" :
 # query the SDSS database:
 lines = sqlcl.query(query,public_url).readlines()
 if len(lines) == 8:
-    print "An error occured during your request; probably"
-    print "the selected area is too large"
+    print("An error occured during your request; probably")
+    print("the selected area is too large")
     sys.exit(1)
 
 # This became necessary due to a change in SDSS!
 if catalog == "SDSSDR10":
 	START=2
-	columns = lines[1][:-1].split(',')
+	columns = str(lines[1])[:-1].split(',')
 else:
 	START=1
-	columns = lines[0][:-1].split(',')
+	columns = str(lines[0])[:-1].split(',')
+    
+columns[0] = columns[0].replace('b\'','')
 
 data = []
 
 # print query results:
-print "# script call: %s %s %s %s %s %s" % (sys.argv[0], sys.argv[1],
+print("# script call: %s %s %s %s %s %s" % (sys.argv[0], sys.argv[1],
                                             sys.argv[2], sys.argv[3],
-                                            sys.argv[4], sys.argv[5])
-print "#"
-
+                                            sys.argv[4], sys.argv[5]))
+print("#")
 
 
 for line in range(START,len(lines[1:])+1):
     dt0 = {}
-    for j in range(len(lines[line][:-1].split(','))):
-        dt0[columns[j]] = lines[line][:-1].split(',')[j]
-    if string.find(lines[line][:-1],'font') == -1:
-        data.append(dt0)
+    for j in range(len(str(lines[line])[:-1].split(','))):
+        dt0[columns[j]] = str(lines[line])[:-1].split(',')[j]
+    #if string.find(str(lines[line])[:-1],'font') == -1:
+    dt0[columns[0]] = dt0[columns[0]].replace('b\'','')
+    data.append(dt0)
 
 for i in range(0, len(data)):
     if objects_mode == "STARS" :
         if i == 0:
-            print "# catalogue contents: SDSS_ID Ra Dec RaErr DecErr "+\
+            print("# catalogue contents: SDSS_ID Ra Dec RaErr DecErr "+\
                   "psfMag_u psfMagErr_u " +\
                   "psfMag_g psfMagErr_g " +\
                   "psfMag_r psfMagErr_r " +\
                   "psfMag_i psfMagErr_i " +\
-                  "psfMag_z psfMagErr_z"            
-        print data[i]['objID'], data[i]['ra'], data[i]['dec'], \
+                  "psfMag_z psfMagErr_z")
+        print(data[i]['objID'], data[i]['ra'], data[i]['dec'], \
               data[i]['raErr'], data[i]['decErr'], \
               data[i]['psfMag_u'], data[i]['psfMagErr_u'], \
               data[i]['psfMag_g'], data[i]['psfMagErr_g'], \
               data[i]['psfMag_r'], data[i]['psfMagErr_r'], \
               data[i]['psfMag_i'], data[i]['psfMagErr_i'], \
-              data[i]['psfMag_z'], data[i]['psfMagErr_z']
+              data[i]['psfMag_z'], data[i]['psfMagErr_z'])
 
     if objects_mode == "GALPHOT" :
         if i == 0:
-            print "# catalogue contents: SDSS_ID Ra Dec RaErr DecErr "+\
+            print("# catalogue contents: SDSS_ID Ra Dec RaErr DecErr "+\
                   "modelMag_u modelMagErr_u " +\
                   "modelMag_g modelMagErr_g " +\
                   "modelMag_r modelMagErr_r " +\
                   "modelMag_i modelMagErr_i " +\
-                  "modelMag_z modelMagErr_z"        
-        print data[i]['objID'], data[i]['ra'], data[i]['dec'], \
+                  "modelMag_z modelMagErr_z")
+        print(data[i]['objID'], data[i]['ra'], data[i]['dec'], \
               data[i]['raErr'], data[i]['decErr'], \
               data[i]['modelMag_u'], data[i]['modelMagErr_u'], \
               data[i]['modelMag_g'], data[i]['modelMagErr_g'], \
               data[i]['modelMag_r'], data[i]['modelMagErr_r'], \
               data[i]['modelMag_i'], data[i]['modelMagErr_i'], \
-              data[i]['modelMag_z'], data[i]['modelMagErr_z']
+              data[i]['modelMag_z'], data[i]['modelMagErr_z'])
 
     if objects_mode == "GALZ" :
         if i == 0:
-            print "# catalogue contents: SDSS_ID Ra Dec " +\
+            print("# catalogue contents: SDSS_ID Ra Dec " +\
                   "modelMag_u modelMagErr_u " +\
                   "modelMag_g modelMagErr_g " +\
                   "modelMag_r modelMagErr_r " +\
                   "modelMag_i modelMagErr_i " +\
-                  "modelMag_z modelMagErr_z, z, zErr, zWarning"            
-        print data[i]['objID'], data[i]['ra'], data[i]['dec'], \
+                  "modelMag_z modelMagErr_z, z, zErr, zWarning")
+        print(data[i]['BestObjID'], data[i]['ra'], data[i]['dec'], \
               data[i]['modelMag_u'], data[i]['modelMagErr_u'], \
               data[i]['modelMag_g'], data[i]['modelMagErr_g'], \
               data[i]['modelMag_r'], data[i]['modelMagErr_r'], \
               data[i]['modelMag_i'], data[i]['modelMagErr_i'], \
               data[i]['modelMag_z'], data[i]['modelMagErr_z'], \
-              data[i]['z'], data[i]['zErr'], data[i]['zWarning']
+              data[i]['z'], data[i]['zErr'], data[i]['zWarning'])
