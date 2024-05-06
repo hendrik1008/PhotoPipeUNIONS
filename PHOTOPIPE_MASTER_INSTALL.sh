@@ -25,9 +25,9 @@ RUNROOT=/net/home/fohlen14/hendrik/UNIONS/PhotoPipe/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
-SURVEY=UNIONS2000
+SURVEY=UNIONS5000
 #Directory of the MegaPipe catalogues
-CATDIR=/net/home/fohlen14/hendrik/UNIONS/UNIONS2000/catalogues_MP/
+CATDIR=/net/home/fohlen14/hendrik/UNIONS/UNIONS2000/catalogues_MP_DR5/
 #Directory of the images
 IMDIR=/net/home/fohlen14/hendrik/UNIONS/UNIONS2000/
 #Username (default: `whoami`) 
@@ -41,10 +41,14 @@ SCRIPTPATH=RUNTIME/scripts/
 #Do we want to do a DRYRUN (!=0 := YES)
 DRYRUN=0
 #Define the Pointing Filelist 
-POINTINGLIST=W3_testtiles_new.txt1
-#POINTINGLIST=UNIONS2000_pointings.txt
+#POINTINGLIST=W3_testtiles_new.txt
+#POINTINGLIST=ugriz_tiles.txt1
+#POINTINGLIST=specz_testtile.txt
+POINTINGLIST=r_tiles.txt1
 #File containing Deep Spec-z for photo-z comparison 
 DEEPZCAT=/net/home/fohlen11/hendrik/data/DEEP2/DEEP2_specz.cat
+#File containing Seb's spec-z for photo-z comparison 
+ZCAT=/net/home/fohlen14/hendrik/UNIONS/redshifts-2024-01-04/redshifts-2024-01-04.asc 
 #Machine type
 MACHINE=Linux_64 # can be seen using `uname`
 #THELI Path 
@@ -64,7 +68,7 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY USER \
   POINTINGLIST POINTINGLIMITSFILE \
   THELIPATH NTHREAD \
   REFRESHRATE LOGFILE \
-  MACHINE DEEPZCAT \
+  MACHINE DEEPZCAT ZCAT \
   CATDIR IMDIR"
 #}}}
 
@@ -186,7 +190,7 @@ then
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Installing cfitsio, pgplot, gfortran, libxcb, tcsh \033[0m" 
   conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64=9.3.0 \
-    libxcb astromatic-swarp >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+    libxcb astromatic-swarp imagemagick >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
   #}}}
   #Install THELI LDAC tools {{{
@@ -316,6 +320,7 @@ cp ${PACKROOT}/config/* ${RUNROOT}/${CONFIGPATH}/
 for OPT in $OPTLIST
 do 
   sed -i "s#\@${OPT}\@#${!OPT}#g" ${RUNROOT}/run_PhotoPipe.sh ${RUNROOT}/${SCRIPTPATH}/*.*
+  sed -i "s#\@${OPT}\@#${!OPT}#g" ${RUNROOT}/run_PhotoPipe.sh ${RUNROOT}/${SCRIPTPATH}/QC/*.*
 done 
 echo -e "\033[0;31m - Done! \033[0m" 
 #}}}

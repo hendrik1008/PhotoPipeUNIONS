@@ -97,7 +97,7 @@ Dec=`echo $THELI_name | cut -d "_" -f 2 | sed 's/p/\./g'`
 
 ### Paths to the photometric catalogues.
 phot_cat=${cats_dir}/CFIS.${xxx}.${yyy}.r.cat
-cat_LDAC=$image_dir/catalogues_MP/CFIS.${xxx}.${yyy}.r.ldac.cat
+cat_LDAC=${cats_dir}/CFIS.${xxx}.${yyy}.r.ldac.cat
 
 ##################################
 ### Here the real work starts. ###
@@ -107,7 +107,7 @@ cat_LDAC=$image_dir/catalogues_MP/CFIS.${xxx}.${yyy}.r.ldac.cat
 for mode in ${MODE}
 do
     if [ "${mode}" = "CONVERT" ]; then
-	if [ -f $cat_ASCII ] && [ ! -f $cat_LDAC ]
+	if [ -e $cat_ASCII ] && [ ! -e $cat_LDAC ]
 	then
 	    echo asctoldac_theli \
 		 -a $phot_cat \
@@ -123,65 +123,131 @@ do
     if [ "${mode}" = "PREPARE" ]; then
 	
 	### Loop over all VISTA bands.
-	for band in u g r i
+	for band in u g r i z
 	do
 	    ### Create band directory.
 	    wdband=${mdfield}/${band}
 	    test ! -d ${wdband} && mkdir ${wdband}
 	done
+	
 	# MegaPipe u- and r-bands
 	for filter in u r
 	do
     	    prefix=CFIS
     	    base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
-	    if [ -f $base.fits ]
+	    if [ -e $base.fits ]
 	    then
     		ln -sf $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits
 	    fi
-	    if [ -f $base.weight.fits.fz ] && [ ! -f $base.weight.fits ]
+	    if [ -e $base.weight.fits.fz ] && [ ! -e $base.weight.fits ]
 	    then
-		echo -n funpack $base.weight.fits.fz -O $base.weight.fits \;
+		echo -n funpack -O $base.weight.fits $base.weight.fits.fz \;
 	    fi
-    	    test -f $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
+    	    test -e $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
 		&& rm $md/$field_name/$filter/${field_name}_${filter}.weight.fits
-	    if [ -f $base.weight.fits ]
+    	    echo -n python @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
+    		 $base.weight.fits \
+    		 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	    if [ -e $base.weight.fits.fz ]
 	    then
-    		echo -n python @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
-    		     $base.weight.fits \
-    		     $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		echo -n rm $base.weight.fits \;
 	    fi
 	done
 	
 	# PanSTARRS i-band
 	filter=i
-	prefix=PS-DR3
+	prefix=PS-DR4 #???
 	base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
-	if [ -f $base.fits ]
+	if [ -e $base.fits ]
 	then
 	    ln -sf $base.fits        $md/$field_name/$filter/${field_name}_${filter}.fits
-	    ln -sf $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+	    if [ -e $base.weight.fits ]
+	    then
+		ln -sf $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+	    elif [ -e $base.weight.fits.fz ]
+	    then
+		echo -n funpack -O $md/$field_name/$filter/${field_name}_$filter.weight.fits $base.weight.fits.fz \;
+	    fi
+	    echo -n replacekey_theli \
+		 $md/$field_name/$filter/${field_name}_${filter}.fits \
+		 \"CRPIX1\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
+		 CRPIX1 \
+		 \"CRPIX2\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
+		 CRPIX2 \;
+	    echo -n replacekey_theli \
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
+		 \"CRPIX1\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
+		 CRPIX1 \
+		 \"CRPIX2\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
+		 CRPIX2 \;
 	fi
 	
 	# HSC g-band
 	filter=g
 	prefix=calexp-CFIS_
-	base=$image_dir/${filter}/${prefix}${THELI_name}
-	if [ -f $base.fits ]
+	HSC_field_name=`echo ${xxx} ${yyy}|awk '{printf "%i_%i\n",$1,$2}'`
+	base=$image_dir/${filter}/${prefix}${HSC_field_name}
+	if [ -e $base.fits ]
 	then
-	    echo python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
+	    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
     		 $base.fits \
-    		 $md/$field_name/$filter/${field_name}_${filter}
+    		 $md/$field_name/$filter/${field_name}_${filter} \
+		 EXTNAME \;
+	    echo -n ic \'0 1 %1 259 \> \?\' \
+		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \
+		 \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
+	    echo -n ic \'%1 %2 \*\' \
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
+		 $md/$field_name/$filter/${field_name}_${filter}.01.fits \
+		 \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	    echo -n rm $md/$field_name/$filter/${field_name}_${filter}.01.fits \
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
+		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \;
 	fi
+	
+	# HSC z-band
+	filter=z
+	prefix=WISHES
+	base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
+	if [ -e $base.fits ]
+	then
+	    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
+    		 $base.fits \
+    		 $md/$field_name/$filter/${field_name}_${filter} \
+		 EXTTYPE \;
+	    echo -n ic \'0 1 %1 259 \> \?\' \
+		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \
+		 \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
+	    echo -n ic \'%1 %2 \*\' \
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
+		 $md/$field_name/$filter/${field_name}_${filter}.01.fits \
+		 \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	    echo -n rm $md/$field_name/$filter/${field_name}_${filter}.01.fits \
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
+		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \;
+	fi
+	
+	echo
     fi
 done
 
-### Gaussianise the VIKING Chips
+### Preparation of Gaia catalogue.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "GAIAPREP" ]; then
+      echo -n mkdir ${mdfield}/Gaia \;
+      echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/prepare_gaia.sh ${mdfield}/Gaia/ $field_name $RA $Dec \;
+      echo
+  fi
+done
+
+### Gaussianise the images
 for mode in ${MODE}
 do
   if [ "${mode}" = "GAUSSIANISE" ]; then
 
-    ### Loop over all VISTA bands.
-    for band in u g r i
+    ### Loop over all bands.
+    for band in u g r i z
     do
       ### band directory.
       wdband=${mdfield}/${band}
@@ -190,7 +256,7 @@ do
       base=`basename $image .fits`
       gaussianised_image=${wdband}/${base}_smart_ggpsf.fits
       # Check for gaussianised images 
-      if [ ! -f ${gaussianised_image} ]
+      if [ -e $image ] #&& [ ! -e ${gaussianised_image} ]
       then 
 	  echo -n "echo $base ; "
 	  echo -n "cd $wdband ; "
@@ -198,7 +264,8 @@ do
                $wdband/ \
                $image \
                @RUNROOT@/INSTALL/gapphot_TE/ \
-               ${band} 
+               ${band} \
+	       ${field_name}
       fi
     done
   fi
@@ -208,11 +275,8 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "GAAP" ]; then
-
-    cat_LDAC=$image_dir/catalogues_MP/CFIS.${xxx}.${yyy}.r.ldac.cat
-
     ### Count the number of objects in the photometric and star catalogues.
-    if [ -f $cat_LDAC ]
+    if [ -e $cat_LDAC ]
     then 
 	no_obj_phot_cat=`ldacdesc -i $cat_LDAC | \
 	    grep elements | awk '{if (NR==1) print $0}' | \
@@ -223,7 +287,7 @@ do
     fi 
 
     ### Loop over all bands.
-    for band in u g r i
+    for band in u g r i z
     do
       ### band directory.
       wdband=${mdfield}/${band}
@@ -232,46 +296,49 @@ do
       base=`basename $image .fits`
       gaussianised_image=${wdband}/${base}_smart_ggpsf.fits
       # Check for gaussianised images 
-      if [ ! -f ${gaussianised_image} ]
+      if [ ! -e ${gaussianised_image} ]
       then 
           >&2 echo WARNING: Gaussianised image does not exist ${gaussianised_image}
           #exit 1
-      else 
-	  ####################################
-	  ### This is the main work script ###
-	  ####################################
-	  echo -n bash @RUNROOT@/@SCRIPTPATH@/dogauss_smart_VIKING_KiDSLegacy.sh \
-               $wdband \
-               $image \
-               $gaussianised_image \
-               $cat_LDAC \
-               ALPHA_J2000 \
-               DELTA_J2000 \
-               @RUNROOT@/INSTALL/gapphot_TE/ \
-               ${band} \;\ 
-	  echo -n ls -l $wd/*.gaap \>\> $LOGFILE \;\ 
-	  ####################################
-	  MAGZP=30
-	  if [ $band = "g" ]
+      else
+	  if [ ! -s ${wdband}/${base}_smart_stars0p7.gaap ]
 	  then
-	      MAGZP=27
-	  fi
-	  for ending in "" "_minaper1p0" "_stars" "_stars0p7"
-	  do
-	      echo -n python @RUNROOT@/@SCRIPTPATH@/average_fluxes_list.py \
-		     $no_obj_phot_cat \
-		     $wdband/${base}_smart${ending}_full.gaap \
-		     $wdband/${base}_smart${ending}.gaap \;\ 
-	      echo -n bash @RUNROOT@/@SCRIPTPATH@/convert_gaap_fluxes.sh \
-		   $wdband/${base}_smart${ending}_full.gaap \
+	      ####################################
+	      ### This is the main work script ###
+	      ####################################
+	      echo -n bash @RUNROOT@/@SCRIPTPATH@/dogauss_smart_VIKING_KiDSLegacy.sh \
+		   $wdband \
+		   $image \
+		   $gaussianised_image \
 		   $cat_LDAC \
-		   $wdband/${base}_smart${ending}.cat \
-		   $band \
-		   $MAGZP \
 		   ALPHA_J2000 \
-		   DELTA_J2000 \;\ 
-	  done
-	  echo
+		   DELTA_J2000 \
+		   @RUNROOT@/INSTALL/gapphot_TE/ \
+		   ${band} \;
+	      echo -n ls -l $wdband/*.gaap \>\> $LOGFILE \;
+	      ####################################
+	      MAGZP=30
+	      if [ $band = "g" ] || [ $band = "z" ]
+	      then
+		  MAGZP=27
+	      fi
+	      for ending in "" "_minaper1p0" "_stars" "_stars0p7"
+	      do
+		  echo -n python @RUNROOT@/@SCRIPTPATH@/average_fluxes_list.py \
+		       $no_obj_phot_cat \
+		       $wdband/${base}_smart${ending}_full.gaap \
+		       $wdband/${base}_smart${ending}.gaap \;
+		  echo -n bash @RUNROOT@/@SCRIPTPATH@/convert_gaap_fluxes.sh \
+		       $wdband/${base}_smart${ending}_full.gaap \
+		       $cat_LDAC \
+		       $wdband/${base}_smart${ending}.cat \
+		       $band \
+		       $MAGZP \
+		       ALPHA_J2000 \
+		       DELTA_J2000 \;
+	      done	      
+	      echo
+	  fi
       fi 
     done
   fi
@@ -281,8 +348,19 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "SDSSPREP" ]; then
-      echo -n mkdir ${mdfield}/SDSS \;\ 
-      echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $field_name $RA $Dec \;\ 
+      echo -n mkdir ${mdfield}/SDSS \;
+      echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $field_name $RA $Dec \;
+      echo
+  fi
+done
+
+### Preparation of Seb's redshift catalogue.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "ZPREP" ]; then
+      echo -n mkdir ${mdfield}/specz \;
+      echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/prepare_specz.sh ${mdfield}/specz/ $field_name $RA $Dec \;
+      echo
   fi
 done
 
@@ -295,7 +373,7 @@ do
     ### Loop over all VISTA bands.
     for ending in "" _minaper1p0 _stars _stars0p7
     do
-      for band in u g r i
+      for band in u g r i z
       do
         wdband=${mdfield}/${band}
         echo bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_K1000.sh \
@@ -314,15 +392,15 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "MERGE" ]; then
 
-    echo -n set -e \;\ 
-    echo -n cp $cat_LDAC ${mdfield}/${field_name}_ugri.cat_tmp0_$$ \;\ 
+    echo -n set -e \;
+    echo -n cp $cat_LDAC ${mdfield}/${field_name}_ugri.cat_tmp0_$$ \;
 
     i=0
 
     ### Loop over all VISTA bands.
     for band in u g r i
     do
-      if [ -f ${mdfield}/${band}/${field_name}_${band}_smart_full.cat ]
+      if [ -e ${mdfield}/${band}/${field_name}_${band}_smart_full.cat ]
       then
         echo -n ldacrenkey -i ${mdfield}/${band}/${field_name}_${band}_smart_full.cat \
           -o ${mdfield}/${band}/${field_name}_${band}_smart_full_rename.cat_$$ \
@@ -333,7 +411,7 @@ do
           MAGERR_GAAP_${band} MAGERR_GAAP_0p7_${band} \
           FLAG_GAAP FLAG_GAAP_0p7_${band} \
           GAAP_nexp GAAP_nexp_0p7_${band} \
-          GAAP_chi_sq_dof GAAP_chi_sq_dof_0p7_${band} \;\ 
+          GAAP_chi_sq_dof GAAP_chi_sq_dof_0p7_${band} \;
         echo -n ldacjoinkey -o ${mdfield}/${field_name}_ugri.cat_tmp$[$i+1]_$$ \
           -i ${mdfield}/${field_name}_ugri.cat_tmp${i}_$$ \
           -p ${mdfield}/${band}/${field_name}_${band}_smart_full_rename.cat_$$ \
@@ -341,7 +419,7 @@ do
           -k MAG_GAAP_0p7_${band} MAGERR_GAAP_0p7_${band} FLUX_GAAP_0p7_${band} \
           FLUXERR_GAAP_0p7_${band} FLAG_GAAP_0p7_${band} GAAP_nexp_0p7_${band} \
           GAAP_chi_sq_dof_0p7_${band} \
-          \;\ 
+          \;
       else
         echo -n ldacaddkey -o ${mdfield}/${field_name}_ugri.cat_tmp$[$i+1]_$$ \
           -i ${mdfield}/${field_name}_ugri.cat_tmp${i}_$$ \
@@ -353,10 +431,10 @@ do
           FLUXERR_GAAP_0p7_${band} -99.0 FLOAT \"${band} flux error\" \
           FLAG_GAAP_0p7_${band} 1 SHORT \"GAAP photometry Flag\" \
           GAAP_nexp_0p7_${band} 0 SHORT \"GAAP number of exposures\" \
-          GAAP_chi_sq_dof_0p7_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \;\ 
+          GAAP_chi_sq_dof_0p7_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \;
       fi
       i=$[$i+1]
-      if [ -f ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full.cat ]
+      if [ -e ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full.cat ]
       then
         echo -n ldacrenkey -i ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full.cat \
           -o ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full_rename.cat_$$ \
@@ -367,15 +445,15 @@ do
           MAGERR_GAAP_${band} MAGERR_GAAP_1p0_${band} \
           FLAG_GAAP FLAG_GAAP_1p0_${band} \
           GAAP_nexp GAAP_nexp_1p0_${band} \
-          GAAP_chi_sq_dof GAAP_chi_sq_dof_1p0_${band} \;\ 
+          GAAP_chi_sq_dof GAAP_chi_sq_dof_1p0_${band} \;
         echo -n ldacjoinkey -o ${mdfield}/${field_name}_ugri.cat_tmp$[$i+1]_$$ \
           -i ${mdfield}/${field_name}_ugri.cat_tmp${i}_$$ \
           -p ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full_rename.cat_$$ \
           -t OBJECTS \
           -k MAG_GAAP_1p0_${band} MAGERR_GAAP_1p0_${band} FLUX_GAAP_1p0_${band} \
           FLUXERR_GAAP_1p0_${band} FLAG_GAAP_1p0_${band} GAAP_nexp_1p0_${band} \
-          GAAP_chi_sq_dof_1p0_${band} \;\  
-        echo -n rm ${mdfield}/${band}/*_$$ \;\ 
+          GAAP_chi_sq_dof_1p0_${band} \; 
+        echo -n rm ${mdfield}/${band}/*_$$ \;
       else
         echo -n ldacaddkey -o ${mdfield}/${field_name}_ugri.cat_tmp$[$i+1]_$$ \
           -i ${mdfield}/${field_name}_ugri.cat_tmp${i}_$$ \
@@ -387,7 +465,7 @@ do
           FLUXERR_GAAP_1p0_${band} -99.0 FLOAT \"${band} flux error\" \
           FLAG_GAAP_1p0_${band} 1 SHORT \"GAAP photometry Flag\" \
           GAAP_nexp_1p0_${band} 0 SHORT \"GAAP number of exposures\" \
-          GAAP_chi_sq_dof_1p0_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \;\  
+          GAAP_chi_sq_dof_1p0_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \; 
       fi
       i=$[$i+1]
     done
@@ -395,7 +473,7 @@ do
     echo -n bash @RUNROOT@/@SCRIPTPATH@/add_extinction.sh \
 	 ${mdfield} \
 	 ${mdfield}/${field_name}_ugri.cat_tmp${i}_$$ \
-	 ${mdfield}/${field_name}_ugri.cat_tmp$[$i+1]_$$ \;\ 
+	 ${mdfield}/${field_name}_ugri.cat_tmp$[$i+1]_$$ \;
 
     i=$[$i+1]
 
@@ -413,15 +491,133 @@ do
       -o ${mdfield}/${field_name}_ugri.cat_tmp \
       -t OBJECTS -k \
       MP_NAME \"${field_name}\" STRING \"Name of the pointing in MegaPipe convention\" \
-      THELI_NAME \"$THELI_name\" STRING \"Name of the pointing in THELI convention\" \;\  
+      THELI_NAME \"$THELI_name\" STRING \"Name of the pointing in THELI convention\" \; 
 
-    echo -n rm ${mdfield}/*_$$ \;\ 
+    echo -n rm ${mdfield}/*_$$ \;
 
     echo -n python @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes.py \
       ${mdfield}/${field_name}_ugri.cat_tmp \
-      ${mdfield}/${field_name}_ugri.cat \;\ 
+      ${mdfield}/${field_name}_ugri.cat \;
 
     echo rm ${mdfield}/${field_name}_ugri.cat_tmp
+  fi
+done
+
+### Paste the measurements from individual bands
+### into a full 9-band catalogue
+for mode in ${MODE}
+do
+  if [ "${mode}" = "MERGE5" ]; then
+
+    echo -n set -e \;
+    echo -n cp $cat_LDAC ${mdfield}/${field_name}_ugriz.cat_tmp0_$$ \;
+
+    i=0
+
+    ### Loop over all VISTA bands.
+    for band in u g r i z
+    do
+      if [ -e ${mdfield}/${band}/${field_name}_${band}_smart_full.cat ]
+      then
+        echo -n ldacrenkey -i ${mdfield}/${band}/${field_name}_${band}_smart_full.cat \
+          -o ${mdfield}/${band}/${field_name}_${band}_smart_full_rename.cat_$$ \
+          -t OBJECTS -k \
+          FLUX_GAAP_${band} FLUX_GAAP_0p7_${band} \
+          FLUXERR_GAAP_${band} FLUXERR_GAAP_0p7_${band} \
+          MAG_GAAP_${band} MAG_GAAP_0p7_${band} \
+          MAGERR_GAAP_${band} MAGERR_GAAP_0p7_${band} \
+          FLAG_GAAP FLAG_GAAP_0p7_${band} \
+          GAAP_nexp GAAP_nexp_0p7_${band} \
+          GAAP_chi_sq_dof GAAP_chi_sq_dof_0p7_${band} \;
+        echo -n ldacjoinkey -o ${mdfield}/${field_name}_ugriz.cat_tmp$[$i+1]_$$ \
+          -i ${mdfield}/${field_name}_ugriz.cat_tmp${i}_$$ \
+          -p ${mdfield}/${band}/${field_name}_${band}_smart_full_rename.cat_$$ \
+          -t OBJECTS \
+          -k MAG_GAAP_0p7_${band} MAGERR_GAAP_0p7_${band} FLUX_GAAP_0p7_${band} \
+          FLUXERR_GAAP_0p7_${band} FLAG_GAAP_0p7_${band} GAAP_nexp_0p7_${band} \
+          GAAP_chi_sq_dof_0p7_${band} \
+          \;
+      else
+        echo -n ldacaddkey -o ${mdfield}/${field_name}_ugriz.cat_tmp$[$i+1]_$$ \
+          -i ${mdfield}/${field_name}_ugriz.cat_tmp${i}_$$ \
+          -t OBJECTS \
+          -k \
+          MAG_GAAP_0p7_${band} -99.0 FLOAT \"${band} magnitude\" \
+          MAGERR_GAAP_0p7_${band} -99.0 FLOAT \"${band} magnitude error\" \
+          FLUX_GAAP_0p7_${band} -99.0 FLOAT \"${band} flux\" \
+          FLUXERR_GAAP_0p7_${band} -99.0 FLOAT \"${band} flux error\" \
+          FLAG_GAAP_0p7_${band} 1 SHORT \"GAAP photometry Flag\" \
+          GAAP_nexp_0p7_${band} 0 SHORT \"GAAP number of exposures\" \
+          GAAP_chi_sq_dof_0p7_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \;
+      fi
+      i=$[$i+1]
+      if [ -e ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full.cat ]
+      then
+        echo -n ldacrenkey -i ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full.cat \
+          -o ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full_rename.cat_$$ \
+          -t OBJECTS -k \
+          FLUX_GAAP_${band} FLUX_GAAP_1p0_${band} \
+          FLUXERR_GAAP_${band} FLUXERR_GAAP_1p0_${band} \
+          MAG_GAAP_${band} MAG_GAAP_1p0_${band} \
+          MAGERR_GAAP_${band} MAGERR_GAAP_1p0_${band} \
+          FLAG_GAAP FLAG_GAAP_1p0_${band} \
+          GAAP_nexp GAAP_nexp_1p0_${band} \
+          GAAP_chi_sq_dof GAAP_chi_sq_dof_1p0_${band} \;
+        echo -n ldacjoinkey -o ${mdfield}/${field_name}_ugriz.cat_tmp$[$i+1]_$$ \
+          -i ${mdfield}/${field_name}_ugriz.cat_tmp${i}_$$ \
+          -p ${mdfield}/${band}/${field_name}_${band}_smart_minaper1p0_full_rename.cat_$$ \
+          -t OBJECTS \
+          -k MAG_GAAP_1p0_${band} MAGERR_GAAP_1p0_${band} FLUX_GAAP_1p0_${band} \
+          FLUXERR_GAAP_1p0_${band} FLAG_GAAP_1p0_${band} GAAP_nexp_1p0_${band} \
+          GAAP_chi_sq_dof_1p0_${band} \; 
+        echo -n rm ${mdfield}/${band}/*_$$ \;
+      else
+        echo -n ldacaddkey -o ${mdfield}/${field_name}_ugriz.cat_tmp$[$i+1]_$$ \
+          -i ${mdfield}/${field_name}_ugriz.cat_tmp${i}_$$ \
+          -t OBJECTS \
+          -k \
+          MAG_GAAP_1p0_${band} -99.0 FLOAT \"${band} magnitude\" \
+          MAGERR_GAAP_1p0_${band} -99.0 FLOAT \"${band} magnitude error\" \
+          FLUX_GAAP_1p0_${band} -99.0 FLOAT \"${band} flux\" \
+          FLUXERR_GAAP_1p0_${band} -99.0 FLOAT \"${band} flux error\" \
+          FLAG_GAAP_1p0_${band} 1 SHORT \"GAAP photometry Flag\" \
+          GAAP_nexp_1p0_${band} 0 SHORT \"GAAP number of exposures\" \
+          GAAP_chi_sq_dof_1p0_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \; 
+      fi
+      i=$[$i+1]
+    done
+
+    echo -n bash @RUNROOT@/@SCRIPTPATH@/add_extinction.sh \
+	 ${mdfield} \
+	 ${mdfield}/${field_name}_ugriz.cat_tmp${i}_$$ \
+	 ${mdfield}/${field_name}_ugriz.cat_tmp$[$i+1]_$$ \;
+
+    i=$[$i+1]
+
+    echo -n ldaccalc -i ${mdfield}/${field_name}_ugriz.cat_tmp${i}_$$ \
+      -o ${mdfield}/${field_name}_ugriz.cat_tmp$[$i+1]_$$ \
+      -t OBJECTS \
+      -c \"EXTINCTION\*4.239\;\" -n EXTINCTION_u  \"Galactic extinction in the u band \(mag\)\" -k FLOAT \
+      -c \"EXTINCTION\*3.303\;\" -n EXTINCTION_g  \"Galactic extinction in the g band \(mag\)\" -k FLOAT \
+      -c \"EXTINCTION\*2.285\;\" -n EXTINCTION_r  \"Galactic extinction in the r band \(mag\)\" -k FLOAT \
+      -c \"EXTINCTION\*1.698\;\" -n EXTINCTION_i  \"Galactic extinction in the i band \(mag\)\" -k FLOAT \
+      -c \"EXTINCTION\*1.263\;\" -n EXTINCTION_z  \"Galactic extinction in the z band \(mag\)\" -k FLOAT \;\
+
+    i=$[$i+1]
+
+    echo -n ldacaddkey -i ${mdfield}/${field_name}_ugriz.cat_tmp${i}_$$ \
+      -o ${mdfield}/${field_name}_ugriz.cat_tmp \
+      -t OBJECTS -k \
+      MP_NAME \"${field_name}\" STRING \"Name of the pointing in MegaPipe convention\" \
+      THELI_NAME \"$THELI_name\" STRING \"Name of the pointing in THELI convention\" \; 
+
+    echo -n rm ${mdfield}/*_$$ \;
+
+    echo -n python @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes5.py \
+      ${mdfield}/${field_name}_ugriz.cat_tmp \
+      ${mdfield}/${field_name}_ugriz.cat \;
+
+    echo rm ${mdfield}/${field_name}_ugriz.cat_tmp
   fi
 done
 
@@ -431,26 +627,26 @@ do
   if [ "${mode}" = "BPZ" ]; then
     echo -n "set -e ; "
     echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
-      ${mdfield}/${field_name}_ugri_maglim.cat \;\ 
+      ${mdfield}/${field_name}_ugri_maglim.cat \;
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
       ${mdfield}\
       ${field_name}_ugri_maglim.cat \
       \"u g r i\" \
       MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
-      0.01 \;\ 
+      0.01 \;
     echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
       ${mdfield}/${field_name}_ugri_maglim_photoz.cat \
-      ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp_$$ \;\ 
+      ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp_$$ \;
     echo -n ldacaddtab -i ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp_$$ \
       -o ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp2_$$ \
       -p ${mdfield}/${field_name}_ugri_maglim_photoz.cat \
-      -t FIELDS \;\ 
+      -t FIELDS \;
     echo -n ldacdelkey -i ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp2_$$ \
       -o ${mdfield}/${field_name}_ugri_photoz_ext.cat \
       -t OBJECTS \
       -k  \
       MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i \
-      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;\ 
+      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;
     echo rm ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp_$$ \
       ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp2_$$ \
       ${mdfield}/${field_name}_ugri_maglim.cat \
@@ -459,23 +655,340 @@ do
   fi
 done
 
-### Comparison to SDSS redshifts.
-### Full tile.
+### Run BPZ
 for mode in ${MODE}
 do
-  if [ "${mode}" = "COMPTILEZ" ]; then
-      SDSS_cat=${mdfield}/SDSS/${field_name}_sdssdr10_galz.cat      
-      #### Comparison to SDSS.
-      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_z_K1000.sh \
-        ${mdfield} \
-        $SDSS_cat \
-        ${mdfield}/${field_name}_ugri_photoz_ext.cat \
-        ${field_name} \;\ 
-      echo
+    if [ "${mode}" = "BPZRECALIB" ]; then
+	if [ -s ${mdfield}/u/${field_name}_u_smart_full_SDSS_u_offset.asc ] && \
+	   [ -s ${mdfield}/g/${field_name}_g_smart_full_SDSS_g_offset.asc ] && \
+	   [ -s ${mdfield}/r/${field_name}_r_smart_full_SDSS_r_offset.asc ] && \
+	   [ -s ${mdfield}/i/${field_name}_i_smart_full_SDSS_i_offset.asc ]
+	then
+	    for filter in u g r i
+	    do
+		awk '{printf "'$filter' %f\n",-$1}' \
+		    ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
+	    done > $mdfield/${field_name}_ugri_offsets.asc
+	    #echo -n "set -e ; "
+	    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
+		 ${mdfield}/${field_name}_ugri_maglim.cat \;
+	    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+		 ${mdfield}\
+		 ${field_name}_ugri_maglim.cat \
+		 \"u g r i\" \
+		 MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+		 0.01 \
+		 $mdfield/${field_name}_ugri_offsets.asc \
+		 _recalib \;
+	    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
+		 ${mdfield}/${field_name}_ugri_maglim_photoz_recalib.cat \
+		 ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat_tmp_$$ \;
+	    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat_tmp_$$ \
+		 -o ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat_tmp2_$$ \
+		 -p ${mdfield}/${field_name}_ugri_maglim_photoz_recalib.cat \
+		 -t FIELDS \;
+	    echo -n ldacdelkey -i ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat_tmp2_$$ \
+		 -o ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat \
+		 -t OBJECTS \
+		 -k  \
+		 MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i \
+		 MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;
+	    echo rm ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat_tmp_$$ \
+		 ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat_tmp2_$$ \
+		 ${mdfield}/${field_name}_ugri_maglim.cat \
+		 ${mdfield}/BPZ_photoz_recalib/${field_name}_ugri_maglim_photoz_recalib.probs \
+		 ${mdfield}/BPZ_photoz_recalib/${field_name}_ugri_maglim_photoz_recalib.flux_comparison
+	fi
+    fi
+done
+
+### Run BPZ
+for mode in ${MODE}
+do
+    if [ "${mode}" = "BPZRECALIBPLUS" ]; then
+	if [ -s ${mdfield}/u/${field_name}_u_smart_full_SDSS_u_offset.asc ] && \
+	   [ -s ${mdfield}/g/${field_name}_g_smart_full_SDSS_g_offset.asc ] && \
+	   [ -s ${mdfield}/r/${field_name}_r_smart_full_SDSS_r_offset.asc ] && \
+	   [ -s ${mdfield}/i/${field_name}_i_smart_full_SDSS_i_offset.asc ]
+	then
+	    for filter in u g r i
+	    do
+		awk '{printf "'$filter' %f\n",$1}' \
+		    ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
+	    done > $mdfield/${field_name}_ugri_offsetsplus.asc
+	    #echo -n "set -e ; "
+	    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
+		 ${mdfield}/${field_name}_ugri_maglim.cat \;
+	    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+		 ${mdfield}\
+		 ${field_name}_ugri_maglim.cat \
+		 \"u g r i\" \
+		 MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+		 0.01 \
+		 $mdfield/${field_name}_ugri_offsetsplus.asc \
+		 _recalibplus \;
+	    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
+		 ${mdfield}/${field_name}_ugri_maglim_photoz_recalibplus.cat \
+		 ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat_tmp_$$ \;
+	    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat_tmp_$$ \
+		 -o ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat_tmp2_$$ \
+		 -p ${mdfield}/${field_name}_ugri_maglim_photoz_recalibplus.cat \
+		 -t FIELDS \;
+	    echo -n ldacdelkey -i ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat_tmp2_$$ \
+		 -o ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat \
+		 -t OBJECTS \
+		 -k  \
+		 MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i \
+		 MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;
+	    echo rm ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat_tmp_$$ \
+		 ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat_tmp2_$$ \
+		 ${mdfield}/${field_name}_ugri_maglim.cat \
+		 ${mdfield}/BPZ_photoz_recalibplus/${field_name}_ugri_maglim_photoz_recalibplus.probs \
+		 ${mdfield}/BPZ_photoz_recalibplus/${field_name}_ugri_maglim_photoz_recalibplus.flux_comparison
+	fi
+    fi
+done
+
+### Run BPZ
+for mode in ${MODE}
+do
+  if [ "${mode}" = "BPZ5" ]; then
+    echo -n "set -e ; "
+    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
+      ${mdfield}/${field_name}_ugriz_maglim.cat \;
+    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+      ${mdfield}\
+      ${field_name}_ugriz_maglim.cat \
+      \"u g r i z\" \
+      MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+      0.01 \;
+    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+      ${mdfield}/${field_name}_ugriz_maglim_photoz.cat \
+      ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp_$$ \;
+    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp_$$ \
+      -o ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp2_$$ \
+      -p ${mdfield}/${field_name}_ugriz_maglim_photoz.cat \
+      -t FIELDS \;
+    echo -n ldacdelkey -i ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp2_$$ \
+      -o ${mdfield}/${field_name}_ugriz_photoz_ext.cat \
+      -t OBJECTS \
+      -k  \
+      MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i \
+      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;
+    echo rm ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp_$$ \
+      ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp2_$$ \
+      ${mdfield}/${field_name}_ugriz_maglim.cat \
+      ${mdfield}/BPZ_photoz/${field_name}_ugriz_maglim_photoz.probs \
+      ${mdfield}/BPZ_photoz/${field_name}_ugriz_maglim_photoz.flux_comparison
+  fi
+done
+
+### Run BPZ
+for mode in ${MODE}
+do
+    if [ "${mode}" = "BPZ5RECALIB" ]; then
+	if [ -s ${mdfield}/u/${field_name}_u_smart_full_SDSS_u_offset.asc ] && \
+	   [ -s ${mdfield}/g/${field_name}_g_smart_full_SDSS_g_offset.asc ] && \
+	   [ -s ${mdfield}/r/${field_name}_r_smart_full_SDSS_r_offset.asc ] && \
+	   [ -s ${mdfield}/i/${field_name}_i_smart_full_SDSS_i_offset.asc ] && \
+	   [ -s ${mdfield}/z/${field_name}_z_smart_full_SDSS_z_offset.asc ]
+	then
+	    for filter in u g r i z
+	    do
+		awk '{printf "'$filter' %f\n",-$1}' \
+		    ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
+	    done > $mdfield/${field_name}_ugriz_offsets.asc
+	    #echo -n "set -e ; "
+	    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
+		 ${mdfield}/${field_name}_ugriz_maglim.cat \;
+	    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+		 ${mdfield}\
+		 ${field_name}_ugriz_maglim.cat \
+		 \"u g r i z\" \
+		 MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+		 0.01 \
+		 $mdfield/${field_name}_ugriz_offsets.asc \
+		 _recalib \;
+	    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+		 ${mdfield}/${field_name}_ugriz_maglim_photoz_recalib.cat \
+		 ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat_tmp_$$ \;
+	    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat_tmp_$$ \
+		 -o ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat_tmp2_$$ \
+		 -p ${mdfield}/${field_name}_ugriz_maglim_photoz_recalib.cat \
+		 -t FIELDS \;
+	    echo -n ldacdelkey -i ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat_tmp2_$$ \
+		 -o ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat \
+		 -t OBJECTS \
+		 -k  \
+		 MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i \
+		 MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;
+	    echo rm ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat_tmp_$$ \
+		 ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat_tmp2_$$ \
+		 ${mdfield}/${field_name}_ugriz_maglim.cat \
+		 ${mdfield}/BPZ_photoz_recalib/${field_name}_ugriz_maglim_photoz_recalib.probs \
+		 ${mdfield}/BPZ_photoz_recalib/${field_name}_ugriz_maglim_photoz_recalib.flux_comparison
+	fi
+    fi
+done
+
+### Run BPZ
+for mode in ${MODE}
+do
+    if [ "${mode}" = "BPZ5RECALIBPLUS" ]; then
+	if [ -s ${mdfield}/u/${field_name}_u_smart_full_SDSS_u_offset.asc ] && \
+	   [ -s ${mdfield}/g/${field_name}_g_smart_full_SDSS_g_offset.asc ] && \
+	   [ -s ${mdfield}/r/${field_name}_r_smart_full_SDSS_r_offset.asc ] && \
+	   [ -s ${mdfield}/i/${field_name}_i_smart_full_SDSS_i_offset.asc ] && \
+	   [ -s ${mdfield}/z/${field_name}_z_smart_full_SDSS_z_offset.asc ]
+	then
+	    for filter in u g r i z
+	    do
+		awk '{printf "'$filter' %f\n",$1}' \
+		    ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
+	    done > $mdfield/${field_name}_ugriz_offsetsplus.asc
+	    #echo -n "set -e ; "
+	    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
+		 ${mdfield}/${field_name}_ugriz_maglim.cat \;
+	    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+		 ${mdfield}\
+		 ${field_name}_ugriz_maglim.cat \
+		 \"u g r i z\" \
+		 MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+		 0.01 \
+		 $mdfield/${field_name}_ugriz_offsetsplus.asc \
+		 _recalibplus \;
+	    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+		 ${mdfield}/${field_name}_ugriz_maglim_photoz_recalibplus.cat \
+		 ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat_tmp_$$ \;
+	    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat_tmp_$$ \
+		 -o ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat_tmp2_$$ \
+		 -p ${mdfield}/${field_name}_ugriz_maglim_photoz_recalibplus.cat \
+		 -t FIELDS \;
+	    echo -n ldacdelkey -i ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat_tmp2_$$ \
+		 -o ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat \
+		 -t OBJECTS \
+		 -k  \
+		 MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i \
+		 MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;
+	    echo rm ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat_tmp_$$ \
+		 ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat_tmp2_$$ \
+		 ${mdfield}/${field_name}_ugriz_maglim.cat \
+		 ${mdfield}/BPZ_photoz_recalibplus/${field_name}_ugriz_maglim_photoz_recalibplus.probs \
+		 ${mdfield}/BPZ_photoz_recalibplus/${field_name}_ugriz_maglim_photoz_recalibplus.flux_comparison
+	fi
+    fi
+done
+
+### Run BPZ
+for mode in ${MODE}
+do
+  if [ "${mode}" = "BPZuri" ]; then
+    echo -n "set -e ; "
+    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
+      ${mdfield}/${field_name}_uri_maglim.cat \;
+    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+      ${mdfield}\
+      ${field_name}_uri_maglim.cat \
+      \"u g r\" \
+      MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+      0.01 \;
+    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
+      ${mdfield}/${field_name}_uri_maglim_photoz.cat \
+      ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp_$$ \;
+    echo -n ldacaddtab -i ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp_$$ \
+      -o ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp2_$$ \
+      -p ${mdfield}/${field_name}_uri_maglim_photoz.cat \
+      -t FIELDS \;
+    echo -n ldacdelkey -i ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp2_$$ \
+      -o ${mdfield}/${field_name}_uri_photoz_ext.cat \
+      -t OBJECTS \
+      -k  \
+      MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i \
+      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;
+    echo rm ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp_$$ \
+      ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp2_$$ \
+      ${mdfield}/${field_name}_uri_maglim.cat \
+      ${mdfield}/BPZ_photoz/${field_name}_uri_maglim_photoz.probs \
+      ${mdfield}/BPZ_photoz/${field_name}_uri_maglim_photoz.flux_comparison
+  fi
+done
+
+### Run BPZ
+for mode in ${MODE}
+do
+  if [ "${mode}" = "BPZgriz" ]; then
+    echo -n "set -e ; "
+    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
+      ${mdfield}/${field_name}_griz_maglim.cat \;
+    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+      ${mdfield}\
+      ${field_name}_griz_maglim.cat \
+      \"g r i z\" \
+      MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+      0.01 \;
+    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_griz.py \
+      ${mdfield}/${field_name}_griz_maglim_photoz.cat \
+      ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp_$$ \;
+    echo -n ldacaddtab -i ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp_$$ \
+      -o ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp2_$$ \
+      -p ${mdfield}/${field_name}_griz_maglim_photoz.cat \
+      -t FIELDS \;
+    echo -n ldacdelkey -i ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp2_$$ \
+      -o ${mdfield}/${field_name}_griz_photoz_ext.cat \
+      -t OBJECTS \
+      -k  \
+      MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i \
+      MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i \;
+    echo rm ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp_$$ \
+      ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp2_$$ \
+      ${mdfield}/${field_name}_griz_maglim.cat \
+      ${mdfield}/BPZ_photoz/${field_name}_griz_maglim_photoz.probs \
+      ${mdfield}/BPZ_photoz/${field_name}_griz_maglim_photoz.flux_comparison
   fi
 done
 
 ### Comparison to SDSS redshifts.
+### Full tile.
+for mode in ${MODE}
+do
+    if [ "${mode}" = "COMPTILEZ" ]; then
+	for cat in griz_photoz #\
+		       #uri_photoz \
+		       #ugri_photoz \
+		       #ugri_photoz_recalib \
+		       #ugri_photoz_recalibplus \
+		       #ugriz_photoz \
+		       #ugriz_photoz_recalib \
+		       #ugriz_photoz_recalibplus
+	do
+	    filters=`echo $cat|cut -d "_" -f 1`
+	    cat_file=${mdfield}/${field_name}_${cat}_ext.cat
+	    if [ -e $cat_file ]
+	    then
+		for label in SDSS specz
+		do
+		    case $label in
+			SDSS) specz_cat=${mdfield}/SDSS/${field_name}_sdssdr10_galz.cat;;
+			specz) specz_cat=${mdfield}/specz/${field_name}_redshifts-2024-01-04.cat;;
+		    esac
+		    if [ -e $specz_cat ]
+		    then
+			echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_z.sh \
+			     ${mdfield} \
+			     $specz_cat \
+			     ${cat_file} \
+			     ${field_name} \
+			     $label \
+			     $filters\;
+		    fi
+		done
+	    fi
+	done
+	echo
+    fi
+done
+
+### Comparison to deep redshifts.
 ### Full tile.
 for mode in ${MODE}
 do
@@ -485,7 +998,84 @@ do
         ${mdfield} \
         @DEEPZCAT@ \
         ${mdfield}/${field_name}_ugri_photoz_ext.cat \
-        ${field_name} \;\ 
+        ${field_name} \;
       echo
+  fi
+done
+
+### Comparison to deep redshifts.
+### Full tile.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "COMPTILEDEEPZ5" ]; then
+      #### Comparison to SDSS.
+      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_DEEP_z_K1000.sh \
+        ${mdfield} \
+        @DEEPZCAT@ \
+        ${mdfield}/${field_name}_ugriz_photoz_ext.cat \
+        ${field_name} \;
+      echo
+  fi
+done
+
+### Mask.
+for mode in ${MODE}
+do
+    if [ "${mode}" = "MASK" ]; then
+	if [ ! -s ${mdfield}/${field_name}_ugri.mask.fits ] && [ ! -s ${mdfield}/${field_name}_ugri.mask.fits.gz ]
+	then
+	    echo -n ic \'0 1 \%1 0 \> \? 0 2 \%2 0 \> \? \+ 0 4 \%3 0 \> \? \+ 0 8 \%4 0 \> \? \+\' \
+		 ${mdfield}/[ugri]/${field_name}_?.weight.fits \
+		 \> ${mdfield}/${field_name}_ugri.mask.fits \;
+	fi
+	if [ -s ${mdfield}/${field_name}_ugri.mask.fits ] && [ ! -s ${mdfield}/${field_name}_ugri.mask.fits.gz ]
+	then
+	    echo -n gzip -c ${mdfield}/${field_name}_ugri.mask.fits \
+		 \> ${mdfield}/${field_name}_ugri.mask.fits.gz \;
+	fi
+	if [ ! -s ${mdfield}/r/${field_name}_r_maskstars.reg ]
+	then
+	    echo -n cd /net/home/fohlen13/hendrik/src/automask/scripts/Linux_64 \;
+	    echo -n export INSTRUMENT\=MEGAPRIME \;
+	    echo -n bash ./maskstars.sh \
+	         $mdfield/r/ \
+		 ${field_name}_r.fits \
+		 ${field_name}_r.weight.fits \
+		 MEGAPRIME_mask.ini \;
+	fi
+	echo
+    fi
+done
+
+### Mask.
+for mode in ${MODE}
+do
+    if [ "${mode}" = "MASK5" ]; then
+	echo -n ic \'0 1 \%1 0 \> \? 0 2 \%2 0 \> \? \+ 0 4 \%3 0 \> \? \+ 0 8 \%4 0 \> \? \+ 0 16 \%5 0 \> \? \+\' \
+	     ${mdfield}/[ugriz]/${field_name}_?.weight.fits \
+	     \> ${mdfield}/${field_name}_ugriz.mask.fits \;
+	echo -n gzip -c ${mdfield}/${field_name}_ugriz.mask.fits \
+	     \> ${mdfield}/${field_name}_ugriz.mask.fits.gz \;
+	echo -n cd /net/home/fohlen13/hendrik/src/automask/scripts/Linux_64 \;
+	echo -n export INSTRUMENT\=MEGAPRIME \;
+	echo -n bash ./maskstars.sh \
+	          $mdfield/r/ \
+		  ${field_name}_r.fits \
+		  ${field_name}_r.weight.fits \
+		  MEGAPRIME_mask.ini \;
+	echo
+    fi
+done
+
+### QC.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "QC" ]; then
+      #### Width of stellar locus.
+      for band in u g r i
+      do
+	  echo python @RUNROOT@/@SCRIPTPATH@/width_stellar_locus.py \
+               ${mdfield}/${band}/${field_name}_${band}_star_cat_GAaP
+      done
   fi
 done

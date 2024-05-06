@@ -13,6 +13,11 @@ infile = sys.argv[2]
 band = sys.argv[3]
 field = sys.argv[4]
 
+# The following relations are based on
+# https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/megapipe/docs/filt.html (u and r)
+# https://hsc.mtk.nao.ac.jp/pipedoc/pipedoc_8_e/colorterms.html (g and z)
+# https://arxiv.org/abs/1203.0297 (for i)
+
 if band == "u":
     band1 = "u"
     band2 = "g"
@@ -39,6 +44,13 @@ elif band == "i":
     band2 = "r"
     A0 =  0.004
     A1 = -0.014
+    mag_min = 16.
+    mag_max = 19.
+elif band == "z":
+    band1 = "z"
+    band2 = "i"
+    A0 = -0.005761
+    A1 = 0.001317
     mag_min = 16.
     mag_max = 19.
 

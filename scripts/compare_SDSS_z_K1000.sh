@@ -53,7 +53,7 @@ make_ssc -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
              -c $wd/make_ssc.conf_$$
 
 ldacfilter -i $wd/merg_SDSS_comp.cat_$$ -o $wd/merg_SDSS_comp2.cat_$$ \
-		-t PSSC -c "RICHNESS>1;"
+		-t PSSC -c "((((RICHNESS>1)AND(MAG_GAAP_u>0))AND(MAG_GAAP_g>0))AND(MAG_GAAP_r>0))AND(MAG_GAAP_i>0);"
 echo
 
 ldacrentab -i $wd/merg_SDSS_comp2.cat_$$ -o $wd/${base}_SDSS.cat \

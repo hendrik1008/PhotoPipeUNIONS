@@ -3,13 +3,14 @@ import sys, os, string
 
 filename = sys.argv[1]
 base = sys.argv[2]
+extkey = sys.argv[3]
 
 hdu = fits.open(filename)
 
 for i in range(1,4):
     data = hdu[i].data
     header = hdu[i].header
-    name = header['EXTNAME']
+    name = header[extkey]
     if name == 'IMAGE':
         ending = '.fits'
         data_new = data
@@ -17,7 +18,7 @@ for i in range(1,4):
         ending = '.mask.fits'
         data_new = data
     elif name == 'VARIANCE':
-        ending = '.weight.fits'
+        ending = '.weight.tmp.fits'
         data_new = 1. / data
     outname = base+ending
     hdu_new=fits.PrimaryHDU(data_new)

@@ -48,8 +48,12 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_
 #}}}
 
 #Check for the MODE specification {{{
-ALLMODES=`echo CONVERT PREPARE GAUSSIANISE GAAP COMBINETILE SDSSPREP \
-               COMPTILE MERGE BPZ COMPTILEZ COMPTILEDEEPZ`
+ALLMODES=`echo CONVERT PREPARE GAIAPREP GAUSSIANISE GAAP COMBINETILE SDSSPREP ZPREP \
+               COMPTILE MERGE MERGE5 \
+	       BPZ BPZRECALIB BPZRECALIBPLUS BPZ5 BPZ5RECALIB BPZ5RECALIBPLUS BPZuri BPZgriz \
+	       COMPTILEZ COMPTILEZRECALIB COMPTILEZRECALIBPLUS COMPTILEZ5 COMPTILEZ5RECALIB COMPTILEZ5RECALIBPLUS \
+	       COMPTILEDEEPZ COMPTILEDEEPZ5 \
+	       MASK MASK5 QC`
 MODELIST=""
 while [ $# -gt 0 ]
 do 
@@ -246,7 +250,7 @@ do
       do
         if [ -f ${MODE}_job${i}_of_${NTHREAD}.sh ]
         then 
-          screen -L -Logfile ${MODE}_job${i}_of_${NTHREAD}.log -S ${MODE}_job${i}_of_${NTHREAD}.sh -d -m bash ${MODE}_job${i}_of_${NTHREAD}.sh
+          screen -L -Logfile ${MODE}_job${i}_of_${NTHREAD}.log -S ${MODE}_job${i}_of_${NTHREAD}.sh -d -m nice bash ${MODE}_job${i}_of_${NTHREAD}.sh
         fi 
       done
       #}}}

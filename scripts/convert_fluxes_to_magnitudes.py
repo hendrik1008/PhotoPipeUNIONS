@@ -11,16 +11,6 @@ import os
 
 catname = sys.argv[1]
 outcat = sys.argv[2]
-u_offset_0p7 =  0. #float(sys.argv[3])
-u_offset_1p0 =  0. #float(sys.argv[4])
-g_offset_0p7 =  0. #float(sys.argv[5])
-g_offset_1p0 =  0. #float(sys.argv[6])
-r_offset_0p7 =  0. #float(sys.argv[7])
-r_offset_1p0 =  0. #float(sys.argv[8])
-i1_offset_0p7 = 0. #float(sys.argv[9])
-i1_offset_1p0 = 0. #float(sys.argv[10])
-i2_offset_0p7 = 0. #float(sys.argv[11])
-i2_offset_1p0 = 0. #float(sys.argv[12])
 
 ### read the input catalogue
 
