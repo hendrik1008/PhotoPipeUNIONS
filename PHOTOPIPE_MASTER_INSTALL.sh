@@ -21,7 +21,7 @@ NOCONFIG=0
 #Package directory (default: `pwd`)
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
-RUNROOT=/net/home/fohlen14/hendrik/UNIONS/PhotoPipe/
+RUNROOT=/net/home/fohlen14/hendrik/PhotoPipeTest/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
@@ -189,6 +189,7 @@ then
   ${RUNROOT}/INSTALL/anaconda2/bin/python -m pip install tdqm numpy astroquery==0.4.0 astropy requests >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt 
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Installing cfitsio, pgplot, gfortran, libxcb, tcsh \033[0m" 
+  conda config --set ssl_verify no
   conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64=9.3.0 \
     libxcb astromatic-swarp imagemagick >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
@@ -248,7 +249,7 @@ fi
 
 #Install GAaP {{{
 #If the functions are already installed, skip {{{
-if [ ! -d ${RUNROOT}/INSTALL/gapphot_TE ] 
+if [ ! -d ${RUNROOT}/INSTALL/gapphot_TE ] || [ ! -s ${RUNROOT}/INSTALL/gapphot_TE/kk/listfitbeta ] || [ ! -s ${RUNROOT}/INSTALL/gapphot_TE/kk/bigim/pixpsfmap ]
 then 
   #Install GAAP {{{
   echo -en "   >\033[0;34m Installing GAAP \033[0m" 
@@ -259,7 +260,7 @@ then
   make clean  > ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
-  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/lib/x86_64-conda-linux-gnu/sysroot/lib64/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lXau -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
   #cp ${PACKROOT}/libgfortran.so.5.0.0 ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/
   make all >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   #compile the bigim directory 
@@ -269,7 +270,7 @@ then
   rm -f kermapm2rot 
   make >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1 || echo cleaned  >> ${RUNROOT}/INSTALL/gaap_make.log 2>&1
   sed -i "s@^F77 =@F77 = ${RUNROOT}/INSTALL/anaconda2/photopipe_env/bin/x86_64-conda_cos6-linux-gnu-gfortran \#@" makefile 
-  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
+  sed -i "s@^libs =@libs = -L ${RUNROOT}/INSTALL/anaconda2/lib/ -L ${RUNROOT}/INSTALL/anaconda2/photopipe_env/lib/ -lXau -lpgplot -lcfitsio -L. -lshape -lutil \#@" makefile 
   sed -i "s@^all: @all: set gapphot fitkermaptwk imxshmapwithtweak kermapm2rot pix2g8 pixpsfxshcpts8 psfcat2gauskerwithtweak psfcat2gauskerwithtweak_no_recentre showdxdy showpsfmaptwk kermapm2rot @" makefile 
   echo "" >> makefile 
   echo "psfcat2gauskerwithtweak_no_recentre: psfcat2gauskerwithtweak_no_recentre.o libshape.a libutil.a" >> makefile 
