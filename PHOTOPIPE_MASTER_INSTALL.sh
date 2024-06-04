@@ -21,7 +21,7 @@ NOCONFIG=0
 #Package directory (default: `pwd`)
 PACKROOT=`pwd`
 #Root directory for software & reduce folder storage (default: `pwd`)
-RUNROOT=/net/home/fohlen14/hendrik/PhotoPipeTest/
+RUNROOT=/net/home/fohlen14/hendrik/UNIONS/PhotoPipe/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
@@ -44,11 +44,11 @@ DRYRUN=0
 #POINTINGLIST=W3_testtiles_new.txt
 #POINTINGLIST=ugriz_tiles.txt1
 #POINTINGLIST=specz_testtile.txt
-POINTINGLIST=r_tiles.txt1
+POINTINGLIST=r_tiles.txt0
 #File containing Deep Spec-z for photo-z comparison 
 DEEPZCAT=/net/home/fohlen11/hendrik/data/DEEP2/DEEP2_specz.cat
 #File containing Seb's spec-z for photo-z comparison 
-ZCAT=/net/home/fohlen14/hendrik/UNIONS/redshifts-2024-01-04/redshifts-2024-01-04.asc 
+ZCAT=/net/home/fohlen14/hendrik/UNIONS/redshifts/2024-05-07/redshifts-2024-05-07.asc 
 #Machine type
 MACHINE=Linux_64 # can be seen using `uname`
 #THELI Path 

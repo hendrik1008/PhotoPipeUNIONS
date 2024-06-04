@@ -123,64 +123,64 @@ do
     if [ "${mode}" = "PREPARE" ]; then
 	
 	### Loop over all VISTA bands.
-	for band in u g r i z
+	for band in g #u g r i z
 	do
 	    ### Create band directory.
 	    wdband=${mdfield}/${band}
 	    test ! -d ${wdband} && mkdir ${wdband}
 	done
 	
-	# MegaPipe u- and r-bands
-	for filter in u r
-	do
-    	    prefix=CFIS
-    	    base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
-	    if [ -e $base.fits ]
-	    then
-    		ln -sf $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits
-	    fi
-	    if [ -e $base.weight.fits.fz ] && [ ! -e $base.weight.fits ]
-	    then
-		echo -n funpack -O $base.weight.fits $base.weight.fits.fz \;
-	    fi
-    	    test -e $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
-		&& rm $md/$field_name/$filter/${field_name}_${filter}.weight.fits
-    	    echo -n python @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
-    		 $base.weight.fits \
-    		 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-	    if [ -e $base.weight.fits.fz ]
-	    then
-		echo -n rm $base.weight.fits \;
-	    fi
-	done
-	
-	# PanSTARRS i-band
-	filter=i
-	prefix=PS-DR4 #???
-	base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
-	if [ -e $base.fits ]
-	then
-	    ln -sf $base.fits        $md/$field_name/$filter/${field_name}_${filter}.fits
-	    if [ -e $base.weight.fits ]
-	    then
-		ln -sf $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits
-	    elif [ -e $base.weight.fits.fz ]
-	    then
-		echo -n funpack -O $md/$field_name/$filter/${field_name}_$filter.weight.fits $base.weight.fits.fz \;
-	    fi
-	    echo -n replacekey_theli \
-		 $md/$field_name/$filter/${field_name}_${filter}.fits \
-		 \"CRPIX1\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
-		 CRPIX1 \
-		 \"CRPIX2\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
-		 CRPIX2 \;
-	    echo -n replacekey_theli \
-		 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
-		 \"CRPIX1\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
-		 CRPIX1 \
-		 \"CRPIX2\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
-		 CRPIX2 \;
-	fi
+	## MegaPipe u- and r-bands
+	#for filter in u r
+	#do
+    	#    prefix=CFIS
+    	#    base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
+	#    if [ -e $base.fits ]
+	#    then
+    	#	ln -sf $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits
+	#    fi
+	#    if [ -e $base.weight.fits.fz ] && [ ! -e $base.weight.fits ]
+	#    then
+	#	echo -n funpack -O $base.weight.fits $base.weight.fits.fz \;
+	#    fi
+    	#    test -e $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
+	#	&& rm $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+    	#    echo -n python @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
+    	#	 $base.weight.fits \
+    	#	 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	#    if [ -e $base.weight.fits.fz ]
+	#    then
+	#	echo -n rm $base.weight.fits \;
+	#    fi
+	#done
+	#
+	## PanSTARRS i-band
+	#filter=i
+	#prefix=PS-DR4 #???
+	#base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
+	#if [ -e $base.fits ]
+	#then
+	#    ln -sf $base.fits        $md/$field_name/$filter/${field_name}_${filter}.fits
+	#    if [ -e $base.weight.fits ]
+	#    then
+	#	ln -sf $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+	#    elif [ -e $base.weight.fits.fz ]
+	#    then
+	#	echo -n funpack -O $md/$field_name/$filter/${field_name}_$filter.weight.fits $base.weight.fits.fz \;
+	#    fi
+	#    echo -n replacekey_theli \
+	#	 $md/$field_name/$filter/${field_name}_${filter}.fits \
+	#	 \"CRPIX1\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
+	#	 CRPIX1 \
+	#	 \"CRPIX2\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
+	#	 CRPIX2 \;
+	#    echo -n replacekey_theli \
+	#	 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
+	#	 \"CRPIX1\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
+	#	 CRPIX1 \
+	#	 \"CRPIX2\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
+	#	 CRPIX2 \;
+	#fi
 	
 	# HSC g-band
 	filter=g
@@ -194,15 +194,15 @@ do
     		 $md/$field_name/$filter/${field_name}_${filter} \
 		 EXTNAME \;
 	    echo -n ic \'0 1 %1 259 \> \?\' \
-		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \
+		 $md/$field_name/$filter/${field_name}_${filter}.flag.fits \
 		 \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
 	    echo -n ic \'%1 %2 \*\' \
 		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
 		 $md/$field_name/$filter/${field_name}_${filter}.01.fits \
 		 \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    echo -n rm $md/$field_name/$filter/${field_name}_${filter}.01.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \;
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \;
+	         #$md/$field_name/$filter/${field_name}_${filter}.mask.fits \;
 	fi
 	
 	# HSC z-band
@@ -216,15 +216,15 @@ do
     		 $md/$field_name/$filter/${field_name}_${filter} \
 		 EXTTYPE \;
 	    echo -n ic \'0 1 %1 259 \> \?\' \
-		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \
+		 $md/$field_name/$filter/${field_name}_${filter}.flag.fits \
 		 \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
 	    echo -n ic \'%1 %2 \*\' \
 		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
 		 $md/$field_name/$filter/${field_name}_${filter}.01.fits \
 		 \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    echo -n rm $md/$field_name/$filter/${field_name}_${filter}.01.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \;
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \;
+		 #$md/$field_name/$filter/${field_name}_${filter}.mask.fits \;
 	fi
 	
 	echo
@@ -247,7 +247,7 @@ do
   if [ "${mode}" = "GAUSSIANISE" ]; then
 
     ### Loop over all bands.
-    for band in u g r i z
+    for band in g #u g r i z
     do
       ### band directory.
       wdband=${mdfield}/${band}
@@ -256,7 +256,7 @@ do
       base=`basename $image .fits`
       gaussianised_image=${wdband}/${base}_smart_ggpsf.fits
       # Check for gaussianised images 
-      if [ -e $image ] #&& [ ! -e ${gaussianised_image} ]
+      if [ -e $image ] && [ ! -e ${gaussianised_image} ]
       then 
 	  echo -n "echo $base ; "
 	  echo -n "cd $wdband ; "
