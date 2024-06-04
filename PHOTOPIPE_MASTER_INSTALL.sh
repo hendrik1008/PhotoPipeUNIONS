@@ -162,6 +162,7 @@ EOF`
   echo -e "\033[0;31m - Done! \033[0m" 
   echo -en "   >\033[0;34m Setting Anaconda configuration \033[0m" 
   echo step1 > python_packages.log
+  conda config --set ssl_verify no
   conda create -p ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo step3 >> python_packages.log
   source activate ${RUNROOT}/INSTALL/anaconda2/photopipe_env >> python_packages.log 2>&1
@@ -191,7 +192,7 @@ then
   echo -en "   >\033[0;34m Installing cfitsio, pgplot, gfortran, libxcb, tcsh \033[0m" 
   conda config --set ssl_verify no
   conda install -c conda-forge tcsh screen cfitsio pgplot gfortran_linux-64=9.3.0 \
-    libxcb astromatic-swarp imagemagick >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
+    libxcb astromatic-swarp imagemagick gawk >> python_packages.log 2>&1 < ${RUNROOT}/INSTALL/yesdoc.txt
   echo -e "\033[0;31m - Done! \033[0m" 
   #}}}
   #Install THELI LDAC tools {{{
