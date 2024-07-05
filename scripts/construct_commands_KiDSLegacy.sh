@@ -20,8 +20,8 @@
 export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
 export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 export NUMERIX=numpy
-export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
 export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
+export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
 export PATH=@RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/:${PATH}
 export PATH=@RUNROOT@/INSTALL/wcstools-3.9.6/bin/:${PATH}
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/:@RUNROOT@/INSTALL/anaconda2/lib/
@@ -84,20 +84,21 @@ done
 ### Create a working directory
 mdfield=$md/${field_name}
 
-test ! -d ${mdfield} && mkdir ${mdfield}
+test ! -d ${mdfield} && mkdir -p ${mdfield}
 
 ### Read MP xxx yyy from field name
 xxx=`echo $field_name|cut -d "." -f 2`
 yyy=`echo $field_name|cut -d "." -f 3`
 
 ### THELI name
-THELI_name=`python @RUNROOT@/@SCRIPTPATH@/translate_THELI2MP.py $xxx.$yyy`
+THELI_name=`@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/translate_THELI2MP.py $xxx.$yyy`
 RA=`echo  $THELI_name | cut -d "_" -f 1 | sed 's/p/\./g'`
 Dec=`echo $THELI_name | cut -d "_" -f 2 | sed 's/p/\./g'`
 
 ### Paths to the photometric catalogues.
 phot_cat=${cats_dir}/CFIS.${xxx}.${yyy}.r.cat
-cat_LDAC=${cats_dir}/CFIS.${xxx}.${yyy}.r.ldac.cat
+phot_cat_local=${mdfield}/CFIS.${xxx}.${yyy}.r.cat
+cat_LDAC=${mdfield}/CFIS.${xxx}.${yyy}.r.ldac.cat
 
 ##################################
 ### Here the real work starts. ###
@@ -109,20 +110,24 @@ do
     if [ "${mode}" = "CONVERT" ]; then
 	if [ -e $cat_ASCII ] && [ ! -e $cat_LDAC ]
 	then
+	    if [ ! -s $phot_cat_local ]
+	    then
+		echo -n vcp $phot_cat $phot_cat_local \;
+	    fi
 	    echo asctoldac_theli \
-		 -a $phot_cat \
+		 -a $phot_cat_local \
 		 -o $cat_LDAC \
 		 -c @RUNROOT@/@CONFIGPATH@/asctoldac_MP.conf
 	fi
     fi
 done
 
-### Prepare images and directories.
+### Prepare images.
 for mode in ${MODE}
 do
     if [ "${mode}" = "PREPARE" ]; then
 	
-	### Loop over all VISTA bands.
+	### Loop over all UNIONS bands.
 	for band in u g r i z
 	do
 	    ### Create band directory.
@@ -134,39 +139,44 @@ do
 	for filter in u r
 	do
     	    prefix=CFIS
-    	    base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
-	    if [ -e $base.fits ]
+    	    base=$image_dir/tiles_DR5/${prefix}.${xxx}.${yyy}.${filter}
+	    vls $base.fits >& /dev/null
+	    if [ "$?" -eq "0" ]
 	    then
-    		ln -sf $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits
-	    fi
-	    if [ -e $base.weight.fits.fz ] && [ ! -e $base.weight.fits ]
-	    then
-		echo -n funpack -O $base.weight.fits $base.weight.fits.fz \;
-	    fi
-    	    test -e $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
-		&& rm $md/$field_name/$filter/${field_name}_${filter}.weight.fits
-    	    echo -n python @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
-    		 $base.weight.fits \
-    		 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-	    if [ -e $base.weight.fits.fz ]
-	    then
-		echo -n rm $base.weight.fits \;
+		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+		then
+    		    echo -n vcp $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+		fi
+		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz ]
+		then
+    		    echo -n vcp $base.weight.fits.fz $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
+		fi
+		echo -n funpack -O $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
+    		test -e $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
+		    && rm $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+    		echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		     @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
+    		     $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits \
+    		     $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		echo -n rm $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits \
+		     $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
 	    fi
 	done
 	
 	# PanSTARRS i-band
 	filter=i
-	prefix=PS-DR4 #???
-	base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
-	if [ -e $base.fits ]
+	prefix=PSS.DR4
+	base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.${filter}
+	vls $base.fits >& /dev/null
+	if [ "$?" -eq "0" ]
 	then
-	    ln -sf $base.fits        $md/$field_name/$filter/${field_name}_${filter}.fits
-	    if [ -e $base.weight.fits ]
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 	    then
-		ln -sf $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits
-	    elif [ -e $base.weight.fits.fz ]
+		echo -n vcp $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+	    fi
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
 	    then
-		echo -n funpack -O $md/$field_name/$filter/${field_name}_$filter.weight.fits $base.weight.fits.fz \;
+		echo -n vcp $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
 	    echo -n replacekey_theli \
 		 $md/$field_name/$filter/${field_name}_${filter}.fits \
@@ -186,45 +196,61 @@ do
 	filter=g
 	prefix=calexp-CFIS_
 	HSC_field_name=`echo ${xxx} ${yyy}|awk '{printf "%i_%i\n",$1,$2}'`
-	base=$image_dir/${filter}/${prefix}${HSC_field_name}
-	if [ -e $base.fits ]
+	base=$image_dir/whigs/stack_images_CFIS_scheme/${prefix}${HSC_field_name}
+	vls $base.fits >& /dev/null
+	if [ "$?" -eq "0" ]
 	then
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.raw.fits ]
+	    then
+		echo -n vcp $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
+	    fi
 	    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
-    		 $base.fits \
+    		 $md/$field_name/$filter/${field_name}_${filter}.raw.fits \
     		 $md/$field_name/$filter/${field_name}_${filter} \
 		 EXTNAME \;
-	    echo -n ic \'0 1 %1 259 \> \?\' \
-		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \
+	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+		 \'0 1 %1 259 \> \?\' \
+		 $md/$field_name/$filter/${field_name}_${filter}.flag.fits \
 		 \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
-	    echo -n ic \'%1 %2 \*\' \
+	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+		 \'%1 %2 \*\' \
 		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
 		 $md/$field_name/$filter/${field_name}_${filter}.01.fits \
 		 \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    echo -n rm $md/$field_name/$filter/${field_name}_${filter}.01.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \;
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \;
+		 #$md/$field_name/$filter/${field_name}_${filter}.flag.fits \;
+	    echo -n rm $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 	fi
 	
 	# HSC z-band
 	filter=z
-	prefix=WISHES
-	base=$image_dir/${filter}/${prefix}.${xxx}.${yyy}.${filter}
-	if [ -e $base.fits ]
+	prefix=CFIS #WISHES
+	base=$image_dir/wishes_pre/${prefix}.${xxx}.${yyy}.${filter}
+	vls $base.fits >& /dev/null
+	if [ "$?" -eq "0" ]
 	then
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.raw.fits ]
+	    then
+		echo -n vcp $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
+	    fi
 	    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
-    		 $base.fits \
+    		 $md/$field_name/$filter/${field_name}_${filter}.raw.fits \
     		 $md/$field_name/$filter/${field_name}_${filter} \
 		 EXTTYPE \;
-	    echo -n ic \'0 1 %1 259 \> \?\' \
-		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \
+	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+		 \'0 1 %1 259 \> \?\' \
+		 $md/$field_name/$filter/${field_name}_${filter}.flag.fits \
 		 \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
-	    echo -n ic \'%1 %2 \*\' \
+	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+		 \'%1 %2 \*\' \
 		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
 		 $md/$field_name/$filter/${field_name}_${filter}.01.fits \
 		 \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    echo -n rm $md/$field_name/$filter/${field_name}_${filter}.01.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.mask.fits \;
+		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \;
+		 #$md/$field_name/$filter/${field_name}_${filter}.flag.fits \;
+	    echo -n rm $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 	fi
 	
 	echo
@@ -256,7 +282,7 @@ do
       base=`basename $image .fits`
       gaussianised_image=${wdband}/${base}_smart_ggpsf.fits
       # Check for gaussianised images 
-      if [ -e $image ] #&& [ ! -e ${gaussianised_image} ]
+      if [ -e $image ] && [ ! -e ${gaussianised_image} ]
       then 
 	  echo -n "echo $base ; "
 	  echo -n "cd $wdband ; "
@@ -324,7 +350,8 @@ do
 	      fi
 	      for ending in "" "_minaper1p0" "_stars" "_stars0p7"
 	      do
-		  echo -n python @RUNROOT@/@SCRIPTPATH@/average_fluxes_list.py \
+		  echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		       @RUNROOT@/@SCRIPTPATH@/average_fluxes_list.py \
 		       $no_obj_phot_cat \
 		       $wdband/${base}_smart${ending}_full.gaap \
 		       $wdband/${base}_smart${ending}.gaap \;
@@ -370,7 +397,7 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILE" ]; then
     SDSS_cat=${mdfield}/SDSS/${field_name}_sdssdr10_stars.cat
-    ### Loop over all VISTA bands.
+    ### Loop over all UNIONS bands.
     for ending in "" _minaper1p0 _stars _stars0p7
     do
       for band in u g r i z
@@ -397,7 +424,7 @@ do
 
     i=0
 
-    ### Loop over all VISTA bands.
+    ### Loop over all UNIONS bands.
     for band in u g r i
     do
       if [ -e ${mdfield}/${band}/${field_name}_${band}_smart_full.cat ]
@@ -495,9 +522,10 @@ do
 
     echo -n rm ${mdfield}/*_$$ \;
 
-    echo -n python @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes.py \
-      ${mdfield}/${field_name}_ugri.cat_tmp \
-      ${mdfield}/${field_name}_ugri.cat \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes.py \
+	 ${mdfield}/${field_name}_ugri.cat_tmp \
+	 ${mdfield}/${field_name}_ugri.cat \;
 
     echo rm ${mdfield}/${field_name}_ugri.cat_tmp
   fi
@@ -514,7 +542,7 @@ do
 
     i=0
 
-    ### Loop over all VISTA bands.
+    ### Loop over all UNIONS bands.
     for band in u g r i z
     do
       if [ -e ${mdfield}/${band}/${field_name}_${band}_smart_full.cat ]
@@ -613,9 +641,10 @@ do
 
     echo -n rm ${mdfield}/*_$$ \;
 
-    echo -n python @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes5.py \
-      ${mdfield}/${field_name}_ugriz.cat_tmp \
-      ${mdfield}/${field_name}_ugriz.cat \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes5.py \
+	 ${mdfield}/${field_name}_ugriz.cat_tmp \
+	 ${mdfield}/${field_name}_ugriz.cat \;
 
     echo rm ${mdfield}/${field_name}_ugriz.cat_tmp
   fi
@@ -626,17 +655,19 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "BPZ" ]; then
     echo -n "set -e ; "
-    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
-      ${mdfield}/${field_name}_ugri_maglim.cat \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
+	 ${mdfield}/${field_name}_ugri_maglim.cat \;
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
       ${mdfield}\
       ${field_name}_ugri_maglim.cat \
       \"u g r i\" \
       MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
       0.01 \;
-    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
-      ${mdfield}/${field_name}_ugri_maglim_photoz.cat \
-      ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp_$$ \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
+	 ${mdfield}/${field_name}_ugri_maglim_photoz.cat \
+	 ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp_$$ \;
     echo -n ldacaddtab -i ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp_$$ \
       -o ${mdfield}/${field_name}_ugri_photoz_ext.cat_tmp2_$$ \
       -p ${mdfield}/${field_name}_ugri_maglim_photoz.cat \
@@ -670,7 +701,8 @@ do
 		    ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
 	    done > $mdfield/${field_name}_ugri_offsets.asc
 	    #echo -n "set -e ; "
-	    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
+	    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		 @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
 		 ${mdfield}/${field_name}_ugri_maglim.cat \;
 	    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
 		 ${mdfield}\
@@ -680,7 +712,8 @@ do
 		 0.01 \
 		 $mdfield/${field_name}_ugri_offsets.asc \
 		 _recalib \;
-	    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
+	    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		 @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
 		 ${mdfield}/${field_name}_ugri_maglim_photoz_recalib.cat \
 		 ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat_tmp_$$ \;
 	    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugri_photoz_recalib_ext.cat_tmp_$$ \
@@ -717,7 +750,8 @@ do
 		    ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
 	    done > $mdfield/${field_name}_ugri_offsetsplus.asc
 	    #echo -n "set -e ; "
-	    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
+	    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		 @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
 		 ${mdfield}/${field_name}_ugri_maglim.cat \;
 	    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
 		 ${mdfield}\
@@ -727,7 +761,8 @@ do
 		 0.01 \
 		 $mdfield/${field_name}_ugri_offsetsplus.asc \
 		 _recalibplus \;
-	    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
+	    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		 @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
 		 ${mdfield}/${field_name}_ugri_maglim_photoz_recalibplus.cat \
 		 ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat_tmp_$$ \;
 	    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugri_photoz_recalibplus_ext.cat_tmp_$$ \
@@ -754,17 +789,19 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "BPZ5" ]; then
     echo -n "set -e ; "
-    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
-      ${mdfield}/${field_name}_ugriz_maglim.cat \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
+	 ${mdfield}/${field_name}_ugriz_maglim.cat \;
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
       ${mdfield}\
       ${field_name}_ugriz_maglim.cat \
       \"u g r i z\" \
       MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
       0.01 \;
-    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
-      ${mdfield}/${field_name}_ugriz_maglim_photoz.cat \
-      ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp_$$ \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+	 ${mdfield}/${field_name}_ugriz_maglim_photoz.cat \
+	 ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp_$$ \;
     echo -n ldacaddtab -i ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp_$$ \
       -o ${mdfield}/${field_name}_ugriz_photoz_ext.cat_tmp2_$$ \
       -p ${mdfield}/${field_name}_ugriz_maglim_photoz.cat \
@@ -799,7 +836,8 @@ do
 		    ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
 	    done > $mdfield/${field_name}_ugriz_offsets.asc
 	    #echo -n "set -e ; "
-	    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
+	    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		 @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
 		 ${mdfield}/${field_name}_ugriz_maglim.cat \;
 	    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
 		 ${mdfield}\
@@ -809,7 +847,8 @@ do
 		 0.01 \
 		 $mdfield/${field_name}_ugriz_offsets.asc \
 		 _recalib \;
-	    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+	    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		 @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
 		 ${mdfield}/${field_name}_ugriz_maglim_photoz_recalib.cat \
 		 ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat_tmp_$$ \;
 	    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugriz_photoz_recalib_ext.cat_tmp_$$ \
@@ -847,7 +886,8 @@ do
 		    ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
 	    done > $mdfield/${field_name}_ugriz_offsetsplus.asc
 	    #echo -n "set -e ; "
-	    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
+	    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		 @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
 		 ${mdfield}/${field_name}_ugriz_maglim.cat \;
 	    echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
 		 ${mdfield}\
@@ -857,7 +897,8 @@ do
 		 0.01 \
 		 $mdfield/${field_name}_ugriz_offsetsplus.asc \
 		 _recalibplus \;
-	    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+	    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		 @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
 		 ${mdfield}/${field_name}_ugriz_maglim_photoz_recalibplus.cat \
 		 ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat_tmp_$$ \;
 	    echo -n ldacaddtab -i ${mdfield}/${field_name}_ugriz_photoz_recalibplus_ext.cat_tmp_$$ \
@@ -884,17 +925,19 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "BPZuri" ]; then
     echo -n "set -e ; "
-    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
-      ${mdfield}/${field_name}_uri_maglim.cat \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/add_maglim.py ${mdfield}/${field_name}_ugri.cat \
+	 ${mdfield}/${field_name}_uri_maglim.cat \;
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
       ${mdfield}\
       ${field_name}_uri_maglim.cat \
       \"u g r\" \
       MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
       0.01 \;
-    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
-      ${mdfield}/${field_name}_uri_maglim_photoz.cat \
-      ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp_$$ \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugri.py \
+	 ${mdfield}/${field_name}_uri_maglim_photoz.cat \
+	 ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp_$$ \;
     echo -n ldacaddtab -i ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp_$$ \
       -o ${mdfield}/${field_name}_uri_photoz_ext.cat_tmp2_$$ \
       -p ${mdfield}/${field_name}_uri_maglim_photoz.cat \
@@ -918,17 +961,19 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "BPZgriz" ]; then
     echo -n "set -e ; "
-    echo -n python @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
-      ${mdfield}/${field_name}_griz_maglim.cat \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}_ugriz.cat \
+	 ${mdfield}/${field_name}_griz_maglim.cat \;
     echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
       ${mdfield}\
       ${field_name}_griz_maglim.cat \
       \"g r i z\" \
       MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
       0.01 \;
-    echo -n python @RUNROOT@/@SCRIPTPATH@/apply_extinction_griz.py \
-      ${mdfield}/${field_name}_griz_maglim_photoz.cat \
-      ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp_$$ \;
+    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	 @RUNROOT@/@SCRIPTPATH@/apply_extinction_griz.py \
+	 ${mdfield}/${field_name}_griz_maglim_photoz.cat \
+	 ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp_$$ \;
     echo -n ldacaddtab -i ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp_$$ \
       -o ${mdfield}/${field_name}_griz_photoz_ext.cat_tmp2_$$ \
       -p ${mdfield}/${field_name}_griz_maglim_photoz.cat \
@@ -1024,7 +1069,8 @@ do
     if [ "${mode}" = "MASK" ]; then
 	if [ ! -s ${mdfield}/${field_name}_ugri.mask.fits ] && [ ! -s ${mdfield}/${field_name}_ugri.mask.fits.gz ]
 	then
-	    echo -n ic \'0 1 \%1 0 \> \? 0 2 \%2 0 \> \? \+ 0 4 \%3 0 \> \? \+ 0 8 \%4 0 \> \? \+\' \
+	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+		 \'0 1 \%1 0 \> \? 0 2 \%2 0 \> \? \+ 0 4 \%3 0 \> \? \+ 0 8 \%4 0 \> \? \+\' \
 		 ${mdfield}/[ugri]/${field_name}_?.weight.fits \
 		 \> ${mdfield}/${field_name}_ugri.mask.fits \;
 	fi
@@ -1051,7 +1097,8 @@ done
 for mode in ${MODE}
 do
     if [ "${mode}" = "MASK5" ]; then
-	echo -n ic \'0 1 \%1 0 \> \? 0 2 \%2 0 \> \? \+ 0 4 \%3 0 \> \? \+ 0 8 \%4 0 \> \? \+ 0 16 \%5 0 \> \? \+\' \
+	echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+	     \'0 1 \%1 0 \> \? 0 2 \%2 0 \> \? \+ 0 4 \%3 0 \> \? \+ 0 8 \%4 0 \> \? \+ 0 16 \%5 0 \> \? \+\' \
 	     ${mdfield}/[ugriz]/${field_name}_?.weight.fits \
 	     \> ${mdfield}/${field_name}_ugriz.mask.fits \;
 	echo -n gzip -c ${mdfield}/${field_name}_ugriz.mask.fits \
@@ -1074,7 +1121,8 @@ do
       #### Width of stellar locus.
       for band in u g r i
       do
-	  echo python @RUNROOT@/@SCRIPTPATH@/width_stellar_locus.py \
+	  echo @RUNROOT@/INSTALL/anaconda2/bin/python \
+	       @RUNROOT@/@SCRIPTPATH@/width_stellar_locus.py \
                ${mdfield}/${band}/${field_name}_${band}_star_cat_GAaP
       done
   fi

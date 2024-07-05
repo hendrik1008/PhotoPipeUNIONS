@@ -27,13 +27,13 @@ RUNTIME=RUNTIME
 #Survey ID  
 SURVEY=UNIONS5000
 #Directory of the MegaPipe catalogues
-CATDIR=/net/home/fohlen14/hendrik/UNIONS/UNIONS2000/catalogues_MP_DR5/
-#Directory of the images
-IMDIR=/net/home/fohlen14/hendrik/UNIONS/UNIONS2000/
+CATDIR=vos:cfis/tiles_DR5/
 #Username (default: `whoami`) 
 USER=`whoami`
 #Directory for work
-WORKINGDIR=work_${SURVEY}
+WORKINGDIR=/scratch/work_${SURVEY}/
+#Directories of the images
+IMDIR=vos:cfis/
 #Path to configuration files
 CONFIGPATH=RUNTIME/config/
 #Path to modified script files
@@ -42,21 +42,22 @@ SCRIPTPATH=RUNTIME/scripts/
 DRYRUN=0
 #Define the Pointing Filelist 
 #POINTINGLIST=W3_testtiles_new.txt
-#POINTINGLIST=ugriz_tiles.txt1
+POINTINGLIST=ugriz_tiles.txt1
 #POINTINGLIST=specz_testtile.txt
-POINTINGLIST=r_tiles.txt1
+#POINTINGLIST=r_tiles.txt1
 #File containing Deep Spec-z for photo-z comparison 
 DEEPZCAT=/net/home/fohlen11/hendrik/data/DEEP2/DEEP2_specz.cat
 #File containing Seb's spec-z for photo-z comparison 
-ZCAT=/net/home/fohlen14/hendrik/UNIONS/redshifts-2024-01-04/redshifts-2024-01-04.asc 
+ZCAT=/arc/home/hendrik/UNIONS/redshifts/2024-05-07/redshifts-2024-05-07.asc 
 #Machine type
 MACHINE=Linux_64 # can be seen using `uname`
 #THELI Path 
-THELIPATH=${RUNROOT}/INSTALL/theli-1.6.1/bin/${MACHINE}/
+THELIPATH=${RUNROOT}/INSTALL/theli-1.30.0/bin/${MACHINE}/
+THELIPACKVERS=1.30.0
 #File with pointing WCS limits
 POINTINGLIMITSFILE=${RUNROOT}/${CONFIGPATH}/KIDS_ra_dec_cuts.txt        #KIDS
 #Number of threads 
-NTHREAD=100
+NTHREAD=8
 #Set the wait time between completion checks 
 REFRESHRATE=5
 #Logfile name 
@@ -66,7 +67,7 @@ LOGFILE=PhotoPipe.log
 OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY USER \
   WORKINGDIR CONFIGPATH SCRIPTPATH DRYRUN \
   POINTINGLIST POINTINGLIMITSFILE \
-  THELIPATH NTHREAD \
+  THELIPATH THELIPACKVERS NTHREAD \
   REFRESHRATE LOGFILE \
   MACHINE DEEPZCAT ZCAT \
   CATDIR IMDIR"
@@ -287,6 +288,36 @@ then
   echo -e "\033[0;31m   ##GAaP installation done!##\033[0m" 
 fi 
 
+#Install LaTeX
+if [ ! -d ${RUNROOT}/INSTALL/tex ]
+then 
+  echo -en "   >\033[0;34m Installing LaTeX (might take ~2h)\033[0m" 
+  cd ${RUNROOT}/INSTALL
+  mkdir tex
+  cd tex
+  wget https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz 2>&1
+  zcat < install-tl-unx.tar.gz | tar xf - 2>&1
+  rm install-tl-unx.tar.gz
+  cd install-tl-*
+  perl ./install-tl --no-interaction --texdir ${RUNROOT}/INSTALL/tex 2>&1
+  cd ${RUNROOT}
+  echo -e "\033[0;31m - Done! \033[0m"
+  echo -e "\033[0;31m   ##LaTeX installation done!##\033[0m" 
+fi
+
+#Install Schlegel dust code
+if [ ! -d ${RUNROOT}/INSTALL/schlegel ]
+then 
+  echo -en "   >\033[0;34m Installing Schlegel dust code\033[0m" 
+  cd ${RUNROOT}/INSTALL
+  mkdir schlegel
+  cd schlegel
+  git clone https://github.com/cristobal-sifon/astro.git
+  cd ${RUNROOT}
+  echo -e "\033[0;31m - Done! \033[0m"
+  echo -e "\033[0;31m   ##Schlegel dust code installation done!##\033[0m" 
+fi
+
 #}}}
 #Check that THELI Package version is defined {{{
 if [ "${THELIPACKVERS}" == "" ]
@@ -316,7 +347,7 @@ echo -en "   >\033[0;34m Update the configure script \033[0m"
 #PYTHONBIN=${RUNROOT}/INSTALL/anaconda2/bin/
 cp ${PACKROOT}/scripts/run_PhotoPipe_raw.sh ${RUNROOT}/run_PhotoPipe.sh 
 #Make the Script, Config, and Runtime directories 
-mkdir -p ${RUNROOT}/${SCRIPTPATH}/ ${RUNROOT}/${CONFIGPATH}/ ${RUNROOT}/${WORKINGDIR}/
+mkdir -p ${RUNROOT}/${SCRIPTPATH}/ ${RUNROOT}/${CONFIGPATH}/ ${WORKINGDIR}/
 cp -r ${PACKROOT}/scripts/* ${RUNROOT}/${SCRIPTPATH}/
 cp ${PACKROOT}/config/* ${RUNROOT}/${CONFIGPATH}/
 for OPT in $OPTLIST
