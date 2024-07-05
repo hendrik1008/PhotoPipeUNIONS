@@ -15,7 +15,7 @@ for i in range(1,4):
         ending = '.fits'
         data_new = data
     elif name == 'MASK':
-        ending = '.mask.fits'
+        ending = '.flag.fits'
         data_new = data
     elif name == 'VARIANCE':
         ending = '.weight.tmp.fits'
