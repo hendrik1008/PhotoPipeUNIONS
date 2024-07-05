@@ -38,7 +38,7 @@ set -e
 
 #Set up the PATH {{{
 export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
-export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/:${PYTHONPATH}
 export NUMERIX=numpy
 export PATH=@RUNROOT@/INSTALL/anaconda2/bin/:${PATH}
 export PATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/:${PATH}
@@ -215,12 +215,11 @@ do
     #then
       #Construct the executable list {{{
   	  bash -xv @SCRIPTPATH@/construct_commands_KiDSLegacy.sh \
-           -md @RUNROOT@/@WORKINGDIR@/ \
+           -md @WORKINGDIR@/ \
            -cd @CATDIR@/ \
            -id @IMDIR@/ \
            -fi ${field} \
-           -lg @RUNROOT@/@WORKINGDIR@/@LOGFILE@ \
-           -ma @IMDIR@/masks/${field}_lensingcandidate_r.MP9602.fits \
+           -lg @WORKINGDIR@/@LOGFILE@ \
            -m $MODE \
            >> ${MODE}_commandlist.sh 2>> ${MODE}_commandlist.log
        #}}}
@@ -242,20 +241,27 @@ do
       ####Splits subsequent lines across NTHREAD files
       ###awk -v MODE=${MODE} -v NPROC=${NTHREAD} \
       ###  '{print $0 > MODE"_job"NR%NPROC+1"_of_"NPROC".sh"}' ${MODE}_commandlist.sh
-      #Constructs NTHREAD chunks of the original commandlist
-      split --numeric-suffixes=01 -e -n l/${NTHREAD} --additional-suffix=_of_${NTHREAD}.sh ${MODE}_commandlist.sh ${MODE}_job
+	#Constructs NTHREAD chunks of the original commandlist
+	if [ $NTHREAD -lt 10 ]
+	then
+	    split --suffix-length=1 --numeric-suffixes=1 -e -n l/${NTHREAD} --additional-suffix=_of_${NTHREAD}.sh ${MODE}_commandlist.sh ${MODE}_job
+	else
+	    split --numeric-suffixes=01 -e -n l/${NTHREAD} --additional-suffix=_of_${NTHREAD}.sh ${MODE}_commandlist.sh ${MODE}_job
+	fi
       #}}}
       #Distribute the executables and wait for their completion {{{
       for i in `seq -w $NTHREAD`
       do
         if [ -f ${MODE}_job${i}_of_${NTHREAD}.sh ]
-        then 
-          screen -L -Logfile ${MODE}_job${i}_of_${NTHREAD}.log -S ${MODE}_job${i}_of_${NTHREAD}.sh -d -m nice bash ${MODE}_job${i}_of_${NTHREAD}.sh
+        then
+            screen -L -Logfile ${MODE}_job${i}_of_${NTHREAD}.log -S ${MODE}_job${i}_of_${NTHREAD}.sh -d -m nice bash ${MODE}_job${i}_of_${NTHREAD}.sh
         fi 
       done
+      sleep ${REFRESHRATE}
       #}}}
       #Check if we can continue to the next MODE {{{
-      while [ `ps au | grep -v "bash -c " | grep -v grep | grep -c ${MODE}_job` -ge 1 ]
+      #while [ `ps au | grep -v "bash -c " | grep -v grep | grep -c ${MODE}_job` -ge 1 ]
+      while [ `ps a | grep -v "bash -c " | grep -v grep | grep -c ${MODE}_job` -ge 1 ]
       do
         #If this is the first loop of the wait, then print what is running  /*fold*/ {{{
         if [ "${prompt}" != "${MODE}" ]
