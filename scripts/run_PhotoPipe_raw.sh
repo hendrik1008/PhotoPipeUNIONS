@@ -23,6 +23,11 @@
 # Version history:
 # 2020-08-05 V1.0
 
+POINTINGLIST=$1
+SUFFIX=$2
+shift
+shift
+
 #Set Stop-On-Error {{{
 abort()
 {
@@ -49,11 +54,10 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:@RUNROOT@/INSTALL/anaconda2/photopipe_
 
 #Check for the MODE specification {{{
 ALLMODES=`echo CONVERT PREPARE GAIAPREP GAUSSIANISE GAAP COMBINETILE SDSSPREP ZPREP \
-               COMPTILE MERGE MERGE5 \
-	       BPZ BPZRECALIB BPZRECALIBPLUS BPZ5 BPZ5RECALIB BPZ5RECALIBPLUS BPZuri BPZgriz \
-	       COMPTILEZ COMPTILEZRECALIB COMPTILEZRECALIBPLUS COMPTILEZ5 COMPTILEZ5RECALIB COMPTILEZ5RECALIBPLUS \
-	       COMPTILEDEEPZ COMPTILEDEEPZ5 \
-	       MASK MASK5 QC`
+               COMPTILE MERGE \
+	       BPZ BPZ5 \
+	       COMPTILEZ MASK QC \
+	       CLEAN COPY`
 MODELIST=""
 while [ $# -gt 0 ]
 do 
@@ -90,7 +94,7 @@ REFRESHRATE=@REFRESHRATE@
 #}}}
 
 #Define the Pointing List file {{{
-POINTINGLIST=@POINTINGLIST@
+#POINTINGLIST=@POINTINGLIST@
 #}}}
 
 #Define the DryRun variable {{{
@@ -189,21 +193,21 @@ echo -e "\033[0;34m=======================================\033[0m"
 for MODE in ${MODES} 
 do 
   #Check that no executable list exists {{{
-  if [ -f ${MODE}_commandlist.sh ] 
+  if [ -f ${MODE}_commandlist_${SUFFIX}.sh ] 
   then 
     echo -e "\033[0;31mWARNING:\033[0m Removing previous command list!"
-    rm ${MODE}_commandlist.sh 
+    rm ${MODE}_commandlist_${SUFFIX}.sh 
   fi 
-  if [ -f ${MODE}_commandlist.log ] 
+  if [ -f ${MODE}_commandlist_${SUFFIX}.log ] 
   then 
     echo -e "\033[0;31mWARNING:\033[0m Removing previous command log!"
-    rm ${MODE}_commandlist.log 
+    rm ${MODE}_commandlist_${SUFFIX}.log 
   fi 
-  joblist=( ${MODE}_job*.sh )
+  joblist=( ${MODE}_job*_${SUFFIX}.sh )
   if [ ${#joblist[@]} -gt 1 ] 
   then 
     echo -e "\033[0;31mWARNING:\033[0m Removing previous job lists!"
-    rm ${MODE}_job*.sh
+    rm ${MODE}_job*_${SUFFIX}.sh
   fi 
   #}}}
   #Construct the executable list {{{
@@ -221,20 +225,20 @@ do
            -fi ${field} \
            -lg @WORKINGDIR@/@LOGFILE@ \
            -m $MODE \
-           >> ${MODE}_commandlist.sh 2>> ${MODE}_commandlist.log
+           >> ${MODE}_commandlist_${SUFFIX}.sh 2>> ${MODE}_commandlist_${SUFFIX}.log
        #}}}
     #fi
   done < ${POINTINGLIST}
   #Remove any duplicated commands {{{ 
-  cat ${MODE}_commandlist.sh | sort | uniq > tmp_${MODE}_commandlist.sh 
-  mv tmp_${MODE}_commandlist.sh ${MODE}_commandlist.sh 
+  cat ${MODE}_commandlist_${SUFFIX}.sh | sort | uniq > tmp_${MODE}_commandlist_${SUFFIX}.sh 
+  mv tmp_${MODE}_commandlist_${SUFFIX}.sh ${MODE}_commandlist_${SUFFIX}.sh 
   #}}}
   #}}}
   #Launch the commands {{{
   if [ "$DRYRUN" == "0" ]
   then 
     #Check that there is anything to run:
-    if [ "`wc -l ${MODE}_commandlist.sh | awk '{print $1}'`" != "0" ]
+    if [ "`wc -l ${MODE}_commandlist_${SUFFIX}.sh | awk '{print $1}'`" != "0" ]
     then
       #Run the jobs and wait until they are completed {{{
       #Construct the NTHREAD job commands {{{
@@ -244,17 +248,17 @@ do
 	#Constructs NTHREAD chunks of the original commandlist
 	if [ $NTHREAD -lt 10 ]
 	then
-	    split --suffix-length=1 --numeric-suffixes=1 -e -n l/${NTHREAD} --additional-suffix=_of_${NTHREAD}.sh ${MODE}_commandlist.sh ${MODE}_job
+	    split --suffix-length=1 --numeric-suffixes=1 -e -n l/${NTHREAD} --additional-suffix=_of_${NTHREAD}_${SUFFIX}.sh ${MODE}_commandlist_${SUFFIX}.sh ${MODE}_job
 	else
-	    split --numeric-suffixes=01 -e -n l/${NTHREAD} --additional-suffix=_of_${NTHREAD}.sh ${MODE}_commandlist.sh ${MODE}_job
+	    split --numeric-suffixes=01 -e -n l/${NTHREAD} --additional-suffix=_of_${NTHREAD}_${SUFFIX}.sh ${MODE}_commandlist_${SUFFIX}.sh ${MODE}_job
 	fi
       #}}}
       #Distribute the executables and wait for their completion {{{
       for i in `seq -w $NTHREAD`
       do
-        if [ -f ${MODE}_job${i}_of_${NTHREAD}.sh ]
+        if [ -f ${MODE}_job${i}_of_${NTHREAD}_${SUFFIX}.sh ]
         then
-            screen -L -Logfile ${MODE}_job${i}_of_${NTHREAD}.log -S ${MODE}_job${i}_of_${NTHREAD}.sh -d -m nice bash ${MODE}_job${i}_of_${NTHREAD}.sh
+            screen -L -Logfile ${MODE}_job${i}_of_${NTHREAD}_${SUFFIX}.log -S ${MODE}_job${i}_of_${NTHREAD}_${SUFFIX}.sh -d -m nice bash ${MODE}_job${i}_of_${NTHREAD}_${SUFFIX}.sh
         fi 
       done
       sleep ${REFRESHRATE}
@@ -276,7 +280,7 @@ do
       echo "Mode ${MODE} is complete! Moving to next mode (`date`)" 
       #Move the commands and logs to storage {{{
       mkdir -p ${MODE}_logs 
-      mv -f ${MODE}_*.* ${MODE}_logs/
+      mv -f ${MODE}_*_${SUFFIX}.* ${MODE}_logs/
       #}}}
       #}}}
     else
