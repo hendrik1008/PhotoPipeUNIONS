@@ -72,7 +72,7 @@ echo
 ldacrentab -i $wd/merg_spec_comp2.cat_$$ -o $wd/${base}_${label}.cat \
 		-t PSSC OBJECTS
 
-python @RUNROOT@/@SCRIPTPATH@/zz_plot.py \
+@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/zz_plot.py \
        $wd/${base}_${label}.cat \
        z_spec_spec \
        Z_B \
@@ -80,7 +80,7 @@ python @RUNROOT@/@SCRIPTPATH@/zz_plot.py \
        $wd/${base}_${label}_zz.png \
        $wd/${base}_${label}_zz.pdf
 
-python @RUNROOT@/@SCRIPTPATH@/zz_stats.py \
+@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/zz_stats.py \
        $wd/${base}_${label}.cat \
        z_spec_spec \
        Z_B \
