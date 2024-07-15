@@ -42,7 +42,7 @@ SCRIPTPATH=RUNTIME/scripts/
 DRYRUN=0
 #Define the Pointing Filelist 
 #POINTINGLIST=W3_testtiles_new.txt
-POINTINGLIST=ugriz_tiles.txt1
+POINTINGLIST=testtile.txt #ugriz_tiles.txt
 #POINTINGLIST=specz_testtile.txt
 #POINTINGLIST=r_tiles.txt1
 #File containing Deep Spec-z for photo-z comparison 
@@ -57,7 +57,7 @@ THELIPACKVERS=1.30.0
 #File with pointing WCS limits
 POINTINGLIMITSFILE=${RUNROOT}/${CONFIGPATH}/KIDS_ra_dec_cuts.txt        #KIDS
 #Number of threads 
-NTHREAD=8
+NTHREAD=5
 #Set the wait time between completion checks 
 REFRESHRATE=5
 #Logfile name 
@@ -346,14 +346,18 @@ echo -e "\033[0;31m - Done! \033[0m"
 echo -en "   >\033[0;34m Update the configure script \033[0m" 
 #PYTHONBIN=${RUNROOT}/INSTALL/anaconda2/bin/
 cp ${PACKROOT}/scripts/run_PhotoPipe_raw.sh ${RUNROOT}/run_PhotoPipe.sh 
+cp ${PACKROOT}/scripts/CANFAR_launch*.sh ${RUNROOT}/
 #Make the Script, Config, and Runtime directories 
 mkdir -p ${RUNROOT}/${SCRIPTPATH}/ ${RUNROOT}/${CONFIGPATH}/ ${WORKINGDIR}/
 cp -r ${PACKROOT}/scripts/* ${RUNROOT}/${SCRIPTPATH}/
 cp ${PACKROOT}/config/* ${RUNROOT}/${CONFIGPATH}/
 for OPT in $OPTLIST
 do 
-  sed -i "s#\@${OPT}\@#${!OPT}#g" ${RUNROOT}/run_PhotoPipe.sh ${RUNROOT}/${SCRIPTPATH}/*.*
-  sed -i "s#\@${OPT}\@#${!OPT}#g" ${RUNROOT}/run_PhotoPipe.sh ${RUNROOT}/${SCRIPTPATH}/QC/*.*
+    sed -i "s#\@${OPT}\@#${!OPT}#g" \
+	${RUNROOT}/run_PhotoPipe.sh \
+	${RUNROOT}/CANFAR_launch*.sh \
+	${RUNROOT}/${SCRIPTPATH}/*.* \
+	${RUNROOT}/${SCRIPTPATH}/QC/*.*
 done 
 echo -e "\033[0;31m - Done! \033[0m" 
 #}}}
