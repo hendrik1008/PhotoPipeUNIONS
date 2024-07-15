@@ -295,7 +295,8 @@ mkdir -p ${TEMPDIR}
               print out;   # to STDOUT
              }' ${TEMPDIR}/tmp1_$$.asc > ${BASE}_photoz.asc
   
-  python $BPZPATH/bpz.py ${BASE}_photoz.asc -COLUMNS ${BASE}_photoz.columns \
+  @RUNROOT@/INSTALL/anaconda2/bin/python \
+      $BPZPATH/bpz.py ${BASE}_photoz.asc -COLUMNS ${BASE}_photoz.columns \
                   -OUTPUT ${BASE}_bpz.asc -SPECTRA CWWSB_capak.list \
                   -PRIOR NGVS -ZMAX 7.0 -INTERP 10 -NEW_AB no \
 		  -ODDS 0.68 -MIN_RMS 0.067 -PHOTO_ERRORS yes #\
