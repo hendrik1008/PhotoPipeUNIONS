@@ -57,7 +57,7 @@ ALLMODES=`echo CONVERT PREPARE GAIAPREP GAUSSIANISE GAAP COMBINETILE SDSSPREP ZP
                COMPTILE MERGE \
 	       BPZ BPZ5 \
 	       COMPTILEZ MASK QC \
-	       CLEAN COPY`
+	       CLEAN COPY COPYBACK`
 MODELIST=""
 while [ $# -gt 0 ]
 do 
@@ -221,6 +221,7 @@ do
   	  bash -xv @SCRIPTPATH@/construct_commands_KiDSLegacy.sh \
            -md @WORKINGDIR@/ \
            -cd @CATDIR@/ \
+           -cd2 @CATDIR2@/ \
            -id @IMDIR@/ \
            -fi ${field} \
            -lg @WORKINGDIR@/@LOGFILE@ \

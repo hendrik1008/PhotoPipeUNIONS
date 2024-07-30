@@ -39,6 +39,7 @@ phot_cat_RA=$5        # RA key in photometric catalogue
 phot_cat_Dec=$6       # Dec key in photometric catalogue
 gaap_dir=${7}         # path to the GAaP code
 band=${8}             # VISTA band of the chip, i.e. Z, Y, J, H, or Ks
+cat_base=${9}
 
 ### need to go to work directory as GaAP assumes
 ### hard-coded links (e.g. inimage.fits)
@@ -111,7 +112,7 @@ tcsh $gaap_dir/gaap-corr.csh \
     0.7 \
     2.0 \
     $gaussianised_image_dir/${original_image_base}_smart_ker.map \
-    $wd/${original_image_base}_smart.gaap \
+    $wd/${cat_base}_smart.gaap \
     $gaap_dir \
     $phot_cat_RA \
     $phot_cat_Dec
@@ -130,7 +131,7 @@ tcsh $gaap_dir/gaap-corr.csh \
     1.0 \
     2.0 \
     $gaussianised_image_dir/${original_image_base}_smart_ker.map \
-    $wd/${original_image_base}_smart_minaper1p0.gaap \
+    $wd/${cat_base}_smart_minaper1p0.gaap \
     $gaap_dir \
     $phot_cat_RA \
     $phot_cat_Dec
@@ -149,7 +150,7 @@ tcsh $gaap_dir/gaap-corr_stars_DR5.csh \
     1.0 \
     2.0 \
     $gaussianised_image_dir/${original_image_base}_smart_ker.map \
-    $wd/${original_image_base}_smart_stars.gaap \
+    $wd/${cat_base}_smart_stars.gaap \
     $gaap_dir \
     $phot_cat_RA \
     $phot_cat_Dec
@@ -168,7 +169,7 @@ tcsh $gaap_dir/gaap-corr_stars_DR5.csh \
     0.7 \
     2.0 \
     $gaussianised_image_dir/${original_image_base}_smart_ker.map \
-    $wd/${original_image_base}_smart_stars0p7.gaap \
+    $wd/${cat_base}_smart_stars0p7.gaap \
     $gaap_dir \
     $phot_cat_RA \
     $phot_cat_Dec

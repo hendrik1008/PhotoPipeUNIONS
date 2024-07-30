@@ -26,49 +26,61 @@ cat=$3
 field=$4
 label=$5
 filters=$6
+cat_id=$7
 
 base=`basename $cat .cat`
 
-ldacaddkey -i $cat \
-		-o ${cat}_tmp_$$ \
-		-t FIELDS \
-		-k CRVAL1 0.0 DOUBLE ""\
-		CRVAL2 0.0 DOUBLE ""\
-		CRPIX1 0.0 DOUBLE ""\
-		CRPIX2 0.0 DOUBLE ""\
-		CDELT1 0.0 DOUBLE ""\
-		CDELT2 0.0 DOUBLE ""\
-		MAPNAXS1 0.0 LONG ""\
-		MAPNAXS2 0.0 LONG ""
+if [ $cat_id = "ugriz_photoz" ] || [ $cat_id = "ugri_photoz" ]
+then
+    ldacaddkey -i $cat \
+	       -o ${cat}_tmp_$$ \
+	       -t FIELDS \
+	       -k CRVAL1 0.0 DOUBLE ""\
+	       CRVAL2 0.0 DOUBLE ""\
+	       CRPIX1 0.0 DOUBLE ""\
+	       CRPIX2 0.0 DOUBLE ""\
+	       CDELT1 0.0 DOUBLE ""\
+	       CDELT2 0.0 DOUBLE ""\
+	       MAPNAXS1 0.0 LONG ""\
+	       MAPNAXS2 0.0 LONG ""
+else
+    cp $cat ${cat}_tmp_$$
+fi
 
+echo
 associate -i ${cat}_tmp_$$ ${spec_cat} \
                -o $wd/tmp1.cat_$$ $wd/tmp2.cat_$$ \
                -c @RUNROOT@/@CONFIGPATH@/associate_UNIONS.conf
 
+echo
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp1.cat_$$ -c 0 > $wd/make_ssc.conf_$$
 bash @RUNROOT@/@SCRIPTPATH@/make_make_ssc_conf -i $wd/tmp2.cat_$$ -c 1 | \
     gawk 'BEGIN{FS="="}{if ($1=="COL_NAME") printf "%s_spec\n",$0; else print $0}' \
 	>> $wd/make_ssc.conf_$$
 
+echo
 make_ssc -i ${wd}/tmp1.cat_$$ ${wd}/tmp2.cat_$$ \
              -o ${wd}/merg_spec_comp.cat_$$ \
              -c $wd/make_ssc.conf_$$
 
 if [ $filters = "uri" ]
 then
+    echo
     ldacfilter -i $wd/merg_spec_comp.cat_$$ -o $wd/merg_spec_comp2.cat_$$ \
 	       -t PSSC -c "(((RICHNESS>1)AND(MAG_GAAP_u>0))AND(MAG_GAAP_r>0))AND(MAG_GAAP_i>0);"
 elif [ $filters = "ugri" ]
 then
+    echo
     ldacfilter -i $wd/merg_spec_comp.cat_$$ -o $wd/merg_spec_comp2.cat_$$ \
 	       -t PSSC -c "((((RICHNESS>1)AND(MAG_GAAP_u>0))AND(MAG_GAAP_g>0))AND(MAG_GAAP_r>0))AND(MAG_GAAP_i>0);"
 elif [ $filters = "ugriz" ]
 then
+    echo
     ldacfilter -i $wd/merg_spec_comp.cat_$$ -o $wd/merg_spec_comp2.cat_$$ \
 	       -t PSSC -c "(((((RICHNESS>1)AND(MAG_GAAP_u>0))AND(MAG_GAAP_g>0))AND(MAG_GAAP_r>0))AND(MAG_GAAP_i>0))AND(MAG_GAAP_z>0);"
 fi
-echo
 
+echo
 ldacrentab -i $wd/merg_spec_comp2.cat_$$ -o $wd/${base}_${label}.cat \
 		-t PSSC OBJECTS
 

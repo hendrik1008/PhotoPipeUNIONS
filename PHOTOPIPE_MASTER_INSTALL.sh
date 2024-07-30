@@ -28,6 +28,8 @@ RUNTIME=RUNTIME
 SURVEY=UNIONS5000
 #Directory of the MegaPipe catalogues
 CATDIR=vos:cfis/tiles_DR5/
+#Directory of the ShapePipe catalogues
+CATDIR2=/arc/home/kilbinger/cosmostat/v2/pre_v2/psfex/DR5/output/run_sp_combined_tile_detection/sextractor_runner/output/
 #Username (default: `whoami`) 
 USER=`whoami`
 #Directory for work
@@ -57,7 +59,7 @@ THELIPACKVERS=1.30.0
 #File with pointing WCS limits
 POINTINGLIMITSFILE=${RUNROOT}/${CONFIGPATH}/KIDS_ra_dec_cuts.txt        #KIDS
 #Number of threads 
-NTHREAD=5
+NTHREAD=1
 #Set the wait time between completion checks 
 REFRESHRATE=5
 #Logfile name 
@@ -70,7 +72,7 @@ OPTLIST="NOCONFIG PACKROOT RUNROOT RUNTIME SURVEY USER \
   THELIPATH THELIPACKVERS NTHREAD \
   REFRESHRATE LOGFILE \
   MACHINE DEEPZCAT ZCAT \
-  CATDIR IMDIR"
+  CATDIR CATDIR2 IMDIR"
 #}}}
 
 #Read any command line options  {{{
