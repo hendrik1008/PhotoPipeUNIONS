@@ -2,7 +2,7 @@
 
 from astropy.io import fits
 import numpy as np
-import sys
+import sys,os
 from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord
 from astropy import wcs
@@ -39,4 +39,6 @@ new_cols = fits.ColDefs((ebv_col,))
 hdu[1] = fits.BinTableHDU.from_columns(cols + new_cols)
 hdu[1].name = 'OBJECTS'
 
+if os.path.exists(outcat):
+    os.remove(outcat)
 hdu.writeto(outcat)
