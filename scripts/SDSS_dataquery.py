@@ -104,11 +104,7 @@ if objects_mode == "STARS" :
           "AND ((flags_i & 0x8100000c00a4) = 0)" + \
           "AND (((flags_i & 0x400000000000) = 0))" + \
           "AND (((flags_i & 0x100000000000) = 0) or (flags_i & 0x1000) = 0)" + \
-          "AND (psfMagErr_u < 0.05)" + \
-          "AND (psfMagErr_g < 0.05)" + \
-          "AND (psfMagErr_r < 0.05)" + \
-          "AND (psfMagErr_i < 0.05)" + \
-          "AND (psfMagErr_z < 0.05)"
+          "AND (psfMagErr_r < 0.2)"
 
 if objects_mode == "GALZ" :
     query = "select s.ra, s.dec, s.z, s.zErr, s.zWarning, \
