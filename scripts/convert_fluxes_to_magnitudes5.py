@@ -78,7 +78,7 @@ for aperture in ('0p7', '1p0'):
 
 ### take a decision, which apertures to use
 
-R = np.zeros((nobj,10))
+R = np.zeros((nobj,5))
 i=0
 for band in ('u', 'g', 'r', 'i', 'z'):
     # first assign the smaller apertures throughout
@@ -96,11 +96,6 @@ for band in ('u', 'g', 'r', 'i', 'z'):
     ldac_table.set_unit('FLUXERR_GAAP_'+band, 'count')
     ldac_table['FLAG_GAAP_'+band] = ldac_table['FLAG_GAAP_0p7_'+band]
     ldac_table.set_comment('FLAG_GAAP_'+band, 'GAaP Flag for MAG_GAAP_'+band+' optimal min_aper')
-    if band == 'Z' or band == 'Y' or band == 'J' or band == 'H' or band == 'Ks':
-        ldac_table['GAAP_nexp_'+band] = ldac_table['GAAP_nexp_0p7_'+band]
-        ldac_table.set_comment('GAAP_nexp_'+band, 'GAaP number of exposures '+band+'-band optimal min_aper')
-        ldac_table['GAAP_chi_sq_dof_'+band] = ldac_table['GAAP_chi_sq_dof_0p7_'+band]
-        ldac_table.set_comment('GAAP_chi_sq_dof_'+band, 'GAaP chi^2/dof '+band+'-band optimal min_aper')
 
     # Calculate R
     fluxerr1 = ldac_table['FLUXERR_GAAP_1p0_'+band]
@@ -127,9 +122,6 @@ for band in ('u', 'g', 'r', 'i', 'z'):
     ldac_table['FLUX_GAAP_'+band][large_aper] = ldac_table['FLUX_GAAP_1p0_'+band][large_aper]
     ldac_table['FLUXERR_GAAP_'+band][large_aper] = ldac_table['FLUXERR_GAAP_1p0_'+band][large_aper]
     ldac_table['FLAG_GAAP_'+band][large_aper] = ldac_table['FLAG_GAAP_1p0_'+band][large_aper]
-    if band == 'Z' or band == 'Y' or band == 'J' or band == 'H' or band == 'Ks':
-        ldac_table['GAAP_nexp_'+band][large_aper] = ldac_table['GAAP_nexp_1p0_'+band][large_aper]
-        ldac_table['GAAP_chi_sq_dof_'+band][large_aper] = ldac_table['GAAP_chi_sq_dof_1p0_'+band][large_aper]
 
 #ldac_table['Agaper'][large_aper] = ldac_table['Agaper_1p0'][large_aper]
 #ldac_table['Bgaper'][large_aper] = ldac_table['Bgaper_1p0'][large_aper]
