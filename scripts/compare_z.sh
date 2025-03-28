@@ -73,6 +73,11 @@ then
     echo
     ldacfilter -i $wd/merg_spec_comp.cat_$$ -o $wd/merg_spec_comp2.cat_$$ \
 	       -t PSSC -c "((((RICHNESS>1)AND(MAG_GAAP_u>0))AND(MAG_GAAP_g>0))AND(MAG_GAAP_r>0))AND(MAG_GAAP_i>0);"
+elif [ $filters = "uriz" ]
+then
+    echo
+    ldacfilter -i $wd/merg_spec_comp.cat_$$ -o $wd/merg_spec_comp2.cat_$$ \
+	       -t PSSC -c "((((RICHNESS>1)AND(MAG_GAAP_u>0))AND(MAG_GAAP_r>0))AND(MAG_GAAP_i>0))AND(MAG_GAAP_z>0);"
 elif [ $filters = "ugriz" ]
 then
     echo
