@@ -10,7 +10,14 @@ hdu = fits.open(filename)
 for i in range(1,4):
     data = hdu[i].data
     header = hdu[i].header
+    
+    if "EXTTYPE" in header.keys():
+        extkey = "EXTTYPE"
+    if "EXTNAME" in header.keys():
+        extkey = "EXTNAME"
+        
     name = header[extkey]
+    
     if name == 'IMAGE':
         ending = '.fits'
         data_new = data
