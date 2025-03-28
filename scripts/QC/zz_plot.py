@@ -13,21 +13,27 @@ z_spec_key = sys.argv[2]
 z_phot_key = sys.argv[3]
 r_mag_key = sys.argv[4]
 ZBmax = float(sys.argv[5])
-label = sys.argv[6]
-outbase = sys.argv[7]
+rmax = float(sys.argv[6])
+label = sys.argv[7]
+outbase = sys.argv[8]
 
 catalogue = pyfits.open(catalogue_file)
 catdata_tmp = catalogue[1].data
 ZBmask = np.less(catdata_tmp.field(z_phot_key),ZBmax)
-catdata = catdata_tmp[ZBmask]
+rmask = np.less(catdata_tmp.field(r_mag_key),rmax)
+zmask = np.greater(catdata_tmp.field(z_spec_key),0.01)
+zmask2 = np.less(catdata_tmp.field(z_spec_key),10.)
+catdata = catdata_tmp[ZBmask*rmask*zmask*zmask2]
 z_spec = catdata.field(z_spec_key)
 z_phot = catdata.field(z_phot_key)
 r_mag = catdata.field(r_mag_key)
 
+print(np.sum(z_spec>1.5))
+
 Delta_z = z_spec - z_phot
 Delta_z_scaled = Delta_z / (1+z_spec)
 
-bias = "%1.3f" % np.average(Delta_z_scaled)
+bias = "%1.3f" % np.median(Delta_z_scaled)
 scatter = "%1.3f" % np.std(Delta_z_scaled)
 NMAD = "%1.3f" % astropy.stats.mad_std(Delta_z_scaled)
 outlier015 = np.greater(np.abs(Delta_z_scaled),0.15)
@@ -46,8 +52,8 @@ plt.title(label)
 plt.gca().set_aspect('equal', adjustable='box')
 ax.set_xlabel(r"$z_\mathrm{spec}$")
 ax.set_ylabel(r"$Z_\mathrm{B}$")
-ax.set_xlim(0.,1.95)
-ax.set_ylim(0.,1.95)
+ax.set_xlim(0.,1.65)
+ax.set_ylim(0.,1.65)
 ax.xaxis.labelpad = -1
 ax.scatter(z_spec,z_phot, s=15., alpha=0.01, marker=".", edgecolors="none")
 ax.plot([0.,2.],[0.,2.], color="black")
@@ -72,8 +78,11 @@ ax.plot([0.15,2.],[0.,1.55], "k:")
 ax.text(0.95, 0.35, r'bias$ = $'+bias)
 ax.text(0.95, 0.25, r'NMAD$ = $'+NMAD)
 ax.text(0.95, 0.15, r'$\eta_{0.15} = $'+outlier_rate015+"%")
+ax.text(0.95, 0.05, r'$\eta_{0.25} = $'+outlier_rate025+"%")
 ax.set_xlim(0.,1.65)
 ax.set_ylim(0.,1.65)
+#ax.set_xlim(0.,1.95)
+#ax.set_ylim(0.,1.95)
 plt.savefig(outbase+"_2Dhist.png")
 #plt.savefig(outbase+".pdf")
 
@@ -97,7 +106,7 @@ plt.savefig(outbase+"_zlt7.png")
 
 ### bias, scatter, outlier rate as fct. of ZB, z_spec, mag
 stats = {}
-for statistic in ('bias', 'NMAD', 'outlier rate'):
+for statistic in ('bias', 'NMAD', 'outlier rate', 'outlier rate2'):
     stats[statistic] = {}
     for variable in ('z_spec', 'z_phot', 'r_mag'):
         stats[statistic][variable] = np.zeros(20)
@@ -112,39 +121,54 @@ for index in range(20):
     z_spec_high = z_spec_low + 0.1
     z_spec_filter = np.logical_and(np.greater(z_spec,z_spec_low), np.less_equal(z_spec,z_spec_high))
     Delta_z_scaled_filtered = Delta_z_scaled[z_spec_filter]
-    stats['bias']['z_spec'][index] = np.average(Delta_z_scaled_filtered)
+    stats['bias']['z_spec'][index] = np.median(Delta_z_scaled_filtered)
     stats['NMAD']['z_spec'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered)
     outlier015_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.15)
     if float(outlier015_filtered.shape[0]) > 0:
         stats['outlier rate']['z_spec'][index] = (float(np.sum(outlier015_filtered)) / float(outlier015_filtered.shape[0]) * 100.)
     else:
         stats['outlier rate']['z_spec'][index] = 0.
+    outlier025_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.25)
+    if float(outlier025_filtered.shape[0]) > 0:
+        stats['outlier rate2']['z_spec'][index] = (float(np.sum(outlier025_filtered)) / float(outlier025_filtered.shape[0]) * 100.)
+    else:
+        stats['outlier rate2']['z_spec'][index] = 0.
 
     z_phot_low = index / 10.
     z_phot_list.append(z_phot_low+0.05)
     z_phot_high = z_phot_low + 0.1
     z_phot_filter = np.logical_and(np.greater(z_phot,z_phot_low), np.less_equal(z_phot,z_phot_high))
     Delta_z_scaled_filtered = Delta_z_scaled[z_phot_filter]
-    stats['bias']['z_phot'][index] = np.average(Delta_z_scaled_filtered)
+    stats['bias']['z_phot'][index] = np.median(Delta_z_scaled_filtered)
     stats['NMAD']['z_phot'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered)
     outlier015_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.15)
     if float(outlier015_filtered.shape[0]) > 0:
         stats['outlier rate']['z_phot'][index] = (float(np.sum(outlier015_filtered)) / float(outlier015_filtered.shape[0]) * 100.)
     else:
         stats['outlier rate']['z_phot'][index] = 0.
+    outlier025_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.25)
+    if float(outlier025_filtered.shape[0]) > 0:
+        stats['outlier rate2']['z_phot'][index] = (float(np.sum(outlier025_filtered)) / float(outlier025_filtered.shape[0]) * 100.)
+    else:
+        stats['outlier rate2']['z_phot'][index] = 0.
 
     r_mag_low = 17. + index / 2.
     r_mag_list.append(r_mag_low+0.25)
     r_mag_high = r_mag_low + 0.5
     r_mag_filter = np.logical_and(np.greater(r_mag,r_mag_low), np.less_equal(r_mag,r_mag_high))
     Delta_z_scaled_filtered = Delta_z_scaled[r_mag_filter]
-    stats['bias']['r_mag'][index] = np.average(Delta_z_scaled_filtered)
+    stats['bias']['r_mag'][index] = np.median(Delta_z_scaled_filtered)
     stats['NMAD']['r_mag'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered)
     outlier015_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.15)
     if float(outlier015_filtered.shape[0]) > 0:
         stats['outlier rate']['r_mag'][index] = (float(np.sum(outlier015_filtered)) / float(outlier015_filtered.shape[0]) * 100.)
     else:
         stats['outlier rate']['r_mag'][index] = 0.
+    outlier025_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.25)
+    if float(outlier025_filtered.shape[0]) > 0:
+        stats['outlier rate2']['r_mag'][index] = (float(np.sum(outlier025_filtered)) / float(outlier025_filtered.shape[0]) * 100.)
+    else:
+        stats['outlier rate2']['r_mag'][index] = 0.
 
 #plt.rc('font', size=5)
 
@@ -155,9 +179,11 @@ fig.subplots_adjust(hspace=0, wspace=0, bottom=0.2, left=0.2)
 ax[3,0].set_xlabel(r"$z_\mathrm{spec}$")
 ax[3,1].set_xlabel(r"$z_\mathrm{phot}$")
 ax[3,2].set_xlabel(r"$r$")
-ax[0,0].set_ylabel(r"$\langle\Delta z\rangle$")
-ax[1,0].set_ylabel(r"$\mathrm{NMAD}(\Delta z)$")
-ax[2,0].set_ylabel(r"$\eta_{0.15}\: [\%]$")
+#ax[0,0].set_ylabel(r"$\langle\Delta z\rangle$")
+ax[0,0].set_ylabel(r"$\mathrm{median}(\Delta z/(1+z))$")
+ax[1,0].set_ylabel(r"$\mathrm{NMAD}(\Delta z/(1+z))$")
+#ax[2,0].set_ylabel(r"$\eta_{0.15}\: [\%]$")
+ax[2,0].set_ylabel(r"$\eta\: [\%]$")
 ax[3,0].set_ylabel(r"rel. freq.")
 ax[0,0].set_xlim(0.,1.95)
 ax[0,1].set_xlim(0.,1.95)
@@ -177,12 +203,18 @@ ax[1,1].plot(z_phot_list,stats['NMAD']['z_phot']) #, color="black")
 ax[1,2].plot(r_mag_list,stats['NMAD']['r_mag']) #, color="black")
 
 ax[2,0].plot(z_spec_list,stats['outlier rate']['z_spec']) #, color="black")
+ax[2,0].plot(z_spec_list,stats['outlier rate2']['z_spec']) #, color="black")
 ax[2,1].plot(z_phot_list,stats['outlier rate']['z_phot']) #, color="black")
+ax[2,1].plot(z_phot_list,stats['outlier rate2']['z_phot']) #, color="black")
 ax[2,2].plot(r_mag_list,stats['outlier rate']['r_mag']) #, color="black")
+ax[2,2].plot(r_mag_list,stats['outlier rate2']['r_mag']) #, color="black")
 
-ax[3,0].hist(z_spec, bins=10, range=(0.,1.), normed=True)
-ax[3,1].hist(z_phot, bins=10, range=(0.,1.), normed=True)
-ax[3,2].hist(r_mag,  bins=10, range=(17.,22.), normed=True)
+#ax[3,0].hist(z_spec, bins=10, range=(0.,1.),   density=True)
+#ax[3,1].hist(z_phot, bins=10, range=(0.,1.),   density=True)
+#ax[3,2].hist(r_mag,  bins=10, range=(17.,22.), density=True)
+ax[3,0].hist(z_spec, bins=20, range=(0.,2.),   normed=True, log=True)
+ax[3,1].hist(z_phot, bins=20, range=(0.,2.),   normed=True, log=True)
+ax[3,2].hist(r_mag,  bins=20, range=(15.,25.), normed=True, log=True)
 
 #ax.plot([0.,7.],[0.15,7.9], "k:")
 #ax.plot([0.15,7.9],[0.,7], "k:")

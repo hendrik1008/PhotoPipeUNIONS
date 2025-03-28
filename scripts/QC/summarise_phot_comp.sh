@@ -1,17 +1,35 @@
 #!/bin/bash
 
-md=/net/home/fohlen14/hendrik/UNIONS/PhotoPipe/work_UNIONS2000/
+export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
+export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 
-test ! -d $md/phot_comp && mkdir $md/phot_comp
+md=/arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS5000/
+wd=/arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS5000_QC/phot_comp/
 
-for ending in "_" #_minaper1p0_ # _stars_ _stars0p7_ 
+test ! -d $wd && mkdir $wd
+
+for survey in PS SDSS
 do
-    #for filter in u g i z #r
-    #do
-    #	cat $md/UNIONS.*/$filter/*smart${ending}full_SDSS_${filter}_offset.asc \
-    #	    > $md/phot_comp/${filter}${ending}SDSS_offsets_tile.asc
-    #done
-    
-    python summarise_phot_comp.py $md ${ending} \
-	   > $md/phot_comp/phot_comp_summary${ending}.txt
+    echo $survey
+    for ending in "_" #_minaper1p0_ # _stars_ _stars0p7_ 
+    do
+	echo $ending
+	#for filter in u g r i z 
+	#do
+	#    echo $filter
+	#    rm $wd/${filter}${ending}${survey}_offsets_tile.asc
+	#    for file in $md/UNIONS.*/phot_comp_$survey/UNIONS.???.???_ugriz_${survey}_${filter}_offset.asc
+	#    do
+	#	tile=`basename $file|cut -d "_" -f 1|cut -d "." -f 2-3`
+	#	WCS=`@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/translate_THELI2MP.py $tile|sed 's/\_/\ /g'`
+	#	{ 
+	#	    echo -n $tile $WCS" "
+	#    	    awk '!/nan/' $file
+	#	} |awk 'NF==8' >> $wd/${filter}${ending}${survey}_offsets_tile.asc
+	#    done
+	#done
+	
+	@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/summarise_phot_comp.py $wd ${ending} $survey \
+	       > $wd/phot_comp_summary${ending}_${survey}.txt
+    done
 done

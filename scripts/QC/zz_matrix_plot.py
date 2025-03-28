@@ -32,7 +32,7 @@ Delta_z_scaled = Delta_z / (1+z_spec)
 
 ### bias, scatter, outlier rate as fct. of ZB, z_spec, mag
 stats = {}
-for statistic in ('bias', 'NMAD', 'outlier rate'):
+for statistic in ('bias', 'NMAD', 'outlier rate', 'outlier rate2'):
     stats[statistic] = {}
     for variable in ('z_spec', 'z_phot', 'r_mag'):
         stats[statistic][variable] = np.zeros(20)
@@ -47,39 +47,54 @@ for index in range(20):
     z_spec_high = z_spec_low + 0.1
     z_spec_filter = np.logical_and(np.greater(z_spec,z_spec_low), np.less_equal(z_spec,z_spec_high))
     Delta_z_scaled_filtered = Delta_z_scaled[z_spec_filter]
-    stats['bias']['z_spec'][index] = np.average(Delta_z_scaled_filtered)
+    stats['bias']['z_spec'][index] = np.median(Delta_z_scaled_filtered)
     stats['NMAD']['z_spec'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered)
     outlier015_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.15)
     if float(outlier015_filtered.shape[0]) > 0:
         stats['outlier rate']['z_spec'][index] = (float(np.sum(outlier015_filtered)) / float(outlier015_filtered.shape[0]) * 100.)
     else:
         stats['outlier rate']['z_spec'][index] = 0.
+    outlier025_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.25)
+    if float(outlier025_filtered.shape[0]) > 0:
+        stats['outlier rate2']['z_spec'][index] = (float(np.sum(outlier025_filtered)) / float(outlier025_filtered.shape[0]) * 100.)
+    else:
+        stats['outlier rate2']['z_spec'][index] = 0.
 
     z_phot_low = index / 10.
     z_phot_list.append(z_phot_low+0.05)
     z_phot_high = z_phot_low + 0.1
     z_phot_filter = np.logical_and(np.greater(z_phot,z_phot_low), np.less_equal(z_phot,z_phot_high))
     Delta_z_scaled_filtered = Delta_z_scaled[z_phot_filter]
-    stats['bias']['z_phot'][index] = np.average(Delta_z_scaled_filtered)
+    stats['bias']['z_phot'][index] = np.median(Delta_z_scaled_filtered)
     stats['NMAD']['z_phot'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered)
     outlier015_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.15)
     if float(outlier015_filtered.shape[0]) > 0:
         stats['outlier rate']['z_phot'][index] = (float(np.sum(outlier015_filtered)) / float(outlier015_filtered.shape[0]) * 100.)
     else:
         stats['outlier rate']['z_phot'][index] = 0.
+    outlier025_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.25)
+    if float(outlier025_filtered.shape[0]) > 0:
+        stats['outlier rate2']['z_phot'][index] = (float(np.sum(outlier025_filtered)) / float(outlier025_filtered.shape[0]) * 100.)
+    else:
+        stats['outlier rate2']['z_phot'][index] = 0.
 
     r_mag_low = 17. + index / 2.
     r_mag_list.append(r_mag_low+0.25)
     r_mag_high = r_mag_low + 0.5
     r_mag_filter = np.logical_and(np.greater(r_mag,r_mag_low), np.less_equal(r_mag,r_mag_high))
     Delta_z_scaled_filtered = Delta_z_scaled[r_mag_filter]
-    stats['bias']['r_mag'][index] = np.average(Delta_z_scaled_filtered)
+    stats['bias']['r_mag'][index] = np.median(Delta_z_scaled_filtered)
     stats['NMAD']['r_mag'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered)
     outlier015_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.15)
     if float(outlier015_filtered.shape[0]) > 0:
         stats['outlier rate']['r_mag'][index] = (float(np.sum(outlier015_filtered)) / float(outlier015_filtered.shape[0]) * 100.)
     else:
         stats['outlier rate']['r_mag'][index] = 0.
+    outlier025_filtered = np.greater(np.abs(Delta_z_scaled_filtered),0.25)
+    if float(outlier025_filtered.shape[0]) > 0:
+        stats['outlier rate2']['r_mag'][index] = (float(np.sum(outlier025_filtered)) / float(outlier025_filtered.shape[0]) * 100.)
+    else:
+        stats['outlier rate2']['r_mag'][index] = 0.
 
 ### catalogue 2 ###
 
@@ -96,7 +111,7 @@ Delta_z_scaled2 = Delta_z2 / (1+z_spec2)
 
 ### bias, scatter, outlier rate as fct. of ZB, z_spec, mag
 stats2 = {}
-for statistic in ('bias', 'NMAD', 'outlier rate'):
+for statistic in ('bias', 'NMAD', 'outlier rate', 'outlier rate2'):
     stats2[statistic] = {}
     for variable in ('z_spec', 'z_phot', 'r_mag'):
         stats2[statistic][variable] = np.zeros(20)
@@ -106,37 +121,52 @@ for index in range(20):
     z_spec_high = z_spec_low + 0.1
     z_spec_filter2 = np.logical_and(np.greater(z_spec2,z_spec_low), np.less_equal(z_spec2,z_spec_high))
     Delta_z_scaled_filtered2 = Delta_z_scaled2[z_spec_filter2]
-    stats2['bias']['z_spec'][index] = np.average(Delta_z_scaled_filtered2)
+    stats2['bias']['z_spec'][index] = np.median(Delta_z_scaled_filtered2)
     stats2['NMAD']['z_spec'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered2)
     outlier015_filtered2 = np.greater(np.abs(Delta_z_scaled_filtered2),0.15)
     if float(outlier015_filtered2.shape[0]) > 0:
         stats2['outlier rate']['z_spec'][index] = (float(np.sum(outlier015_filtered2)) / float(outlier015_filtered2.shape[0]) * 100.)
     else:
         stats2['outlier rate']['z_spec'][index] = 0.
+    outlier025_filtered2 = np.greater(np.abs(Delta_z_scaled_filtered2),0.25)
+    if float(outlier025_filtered2.shape[0]) > 0:
+        stats2['outlier rate2']['z_spec'][index] = (float(np.sum(outlier025_filtered2)) / float(outlier025_filtered2.shape[0]) * 100.)
+    else:
+        stats2['outlier rate2']['z_spec'][index] = 0.
 
     z_phot_low = index / 10.
     z_phot_high = z_phot_low + 0.1
     z_phot_filter2 = np.logical_and(np.greater(z_phot2,z_phot_low), np.less_equal(z_phot2,z_phot_high))
     Delta_z_scaled_filtered2 = Delta_z_scaled2[z_phot_filter2]
-    stats2['bias']['z_phot'][index] = np.average(Delta_z_scaled_filtered2)
+    stats2['bias']['z_phot'][index] = np.median(Delta_z_scaled_filtered2)
     stats2['NMAD']['z_phot'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered2)
     outlier015_filtered2 = np.greater(np.abs(Delta_z_scaled_filtered2),0.15)
     if float(outlier015_filtered2.shape[0]) > 0:
         stats2['outlier rate']['z_phot'][index] = (float(np.sum(outlier015_filtered2)) / float(outlier015_filtered2.shape[0]) * 100.)
     else:
         stats2['outlier rate']['z_phot'][index] = 0.
+    outlier025_filtered2 = np.greater(np.abs(Delta_z_scaled_filtered2),0.25)
+    if float(outlier025_filtered2.shape[0]) > 0:
+        stats2['outlier rate2']['z_phot'][index] = (float(np.sum(outlier025_filtered2)) / float(outlier025_filtered2.shape[0]) * 100.)
+    else:
+        stats2['outlier rate2']['z_phot'][index] = 0.
 
     r_mag_low = 17. + index / 2.
     r_mag_high = r_mag_low + 0.5
     r_mag_filter2 = np.logical_and(np.greater(r_mag2,r_mag_low), np.less_equal(r_mag2,r_mag_high))
     Delta_z_scaled_filtered2 = Delta_z_scaled2[r_mag_filter2]
-    stats2['bias']['r_mag'][index] = np.average(Delta_z_scaled_filtered2)
+    stats2['bias']['r_mag'][index] = np.median(Delta_z_scaled_filtered2)
     stats2['NMAD']['r_mag'][index] = astropy.stats.mad_std(Delta_z_scaled_filtered2)
     outlier015_filtered2 = np.greater(np.abs(Delta_z_scaled_filtered2),0.15)
     if float(outlier015_filtered2.shape[0]) > 0:
         stats2['outlier rate']['r_mag'][index] = (float(np.sum(outlier015_filtered2)) / float(outlier015_filtered2.shape[0]) * 100.)
     else:
         stats2['outlier rate']['r_mag'][index] = 0.
+    outlier025_filtered2 = np.greater(np.abs(Delta_z_scaled_filtered2),0.25)
+    if float(outlier025_filtered2.shape[0]) > 0:
+        stats2['outlier rate2']['r_mag'][index] = (float(np.sum(outlier025_filtered2)) / float(outlier025_filtered2.shape[0]) * 100.)
+    else:
+        stats2['outlier rate2']['r_mag'][index] = 0.
 
 #plt.rc('font', size=5)
 
@@ -147,9 +177,11 @@ plt.suptitle(label)
 ax[3,0].set_xlabel(r"$z_\mathrm{spec}$")
 ax[3,1].set_xlabel(r"$z_\mathrm{phot}$")
 ax[3,2].set_xlabel(r"$r$")
-ax[0,0].set_ylabel(r"$\langle\Delta z\rangle$")
-ax[1,0].set_ylabel(r"$\mathrm{NMAD}(\Delta z)$")
+#ax[0,0].set_ylabel(r"$\langle\Delta z\rangle$")
+ax[0,0].set_ylabel(r"$\mathrm{median}(\Delta z/(1+z))$")
+ax[1,0].set_ylabel(r"$\mathrm{NMAD}(\Delta z/(1+z))$")
 ax[2,0].set_ylabel(r"$\eta_{0.15}\: [\%]$")
+#ax[2,0].set_ylabel(r"$\eta\: [\%]$")
 #ax[3,0].set_ylabel(r"rel. freq.")
 ax[3,0].set_ylabel(r"$N$")
 ax[0,0].set_xlim(0.,1.95)
@@ -189,8 +221,8 @@ ax[3,0].hist(z_spec,  bins=20, range=(0.,2.),   normed=False, log=True, histtype
 ax[3,0].hist(z_spec2, bins=20, range=(0.,2.),   normed=False, log=True, histtype="step")
 ax[3,1].hist(z_phot,  bins=20, range=(0.,2.),   normed=False, log=True, histtype="step")
 ax[3,1].hist(z_phot2, bins=20, range=(0.,2.),   normed=False, log=True, histtype="step")
-ax[3,2].hist(r_mag,   bins=20, range=(17.,27.), normed=False, log=True, histtype="step")
-ax[3,2].hist(r_mag2,  bins=20, range=(17.,27.), normed=False, log=True, histtype="step")
+ax[3,2].hist(r_mag,   bins=20, range=(15.,27.), normed=False, log=True, histtype="step")
+ax[3,2].hist(r_mag2,  bins=20, range=(15.,27.), normed=False, log=True, histtype="step")
 
 #ax.plot([0.,7.],[0.15,7.9], "k:")
 #ax.plot([0.15,7.9],[0.,7], "k:")
