@@ -46,7 +46,7 @@ for aperture in ('0p7', '1p0'):
 
 ### take a decision, which apertures to use
 
-R = np.zeros((nobj,10))
+R = np.zeros((nobj,5))
 i=0
 for band in ('u', 'g', 'r', 'i', 'z'):
     # first assign the smaller apertures throughout

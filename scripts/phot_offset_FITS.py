@@ -18,6 +18,7 @@ field = sys.argv[4]
 # https://hsc.mtk.nao.ac.jp/pipedoc/pipedoc_8_e/colorterms.html (g and z)
 # https://arxiv.org/abs/1203.0297 (for i)
 
+bandref = band
 if band == "u":
     band1 = "u"
     band2 = "g"
@@ -58,11 +59,20 @@ elif band == "z":
     A2 = -0.035334
     mag_min = 16.
     mag_max = 19.
+elif band == "z2":
+    bandref = "z"
+    band1 = "g"
+    band2 = "r"
+    A0 = -0.013
+    A1 =  0.040
+    A2 = -0.001
+    mag_min = 16.
+    mag_max = 19.
 
 catalogue = fits.open(infile)
 catdata = catalogue[1].data
 mag = catdata.field("MAG_GAAP_"+band)
-magref = catdata.field(band+"_SDSS")
+magref = catdata.field(bandref+"_SDSS")
 mag1 = catdata.field(band1+"_SDSS")
 mag2 = catdata.field(band2+"_SDSS")
 
@@ -89,7 +99,7 @@ delta2 = mag[filterall]-magref[filterall] - (A0 + A1 * (mag1[filterall]-mag2[fil
 fig, ax = plt.subplots(1)
 plt.title(field)
 ax.set_xlabel(r"$"+band+"$")
-ax.set_ylabel(r"$"+band+"-"+band+"_{\mathrm{SDSS}}$")
+ax.set_ylabel(r"$"+band+"-"+bandref+"_{\mathrm{SDSS}}$")
 ax.set_xlim(mag_min-2.,mag_max+2.)
 ax.set_ylim(-0.7,0.7)
 #ax.xaxis.labelpad = -1

@@ -155,7 +155,7 @@ do
     if [ "${mode}" = "PREPARE" ]; then
 	
 	### Loop over all UNIONS bands.
-	for band in u g r i z
+	for band in u g r i z z2
 	do
 	    ### Create band directory.
 	    wdband=${mdfield}/${band}
@@ -237,6 +237,30 @@ do
 	filter=i
 	prefix=PSS.DR4
 	base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.${filter}
+	set +e
+	vls --cert=$HOME/cadcproxy.pem --vos-debug $base.fits >& /dev/null
+	if [ "$?" -eq "0" ]
+	then
+	    set -e
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+	    then
+		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+	    fi
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
+	    then
+		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	    fi
+	else
+	    set -e
+	    echo -n ic -p -32 -c 10000 10000 \'0\' \
+		 \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	fi
+	echo
+	
+	# PanSTARRS z-band DR4
+	filter=z2
+	prefix=PSS.DR4
+	base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.z
 	set +e
 	vls --cert=$HOME/cadcproxy.pem --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
@@ -347,7 +371,7 @@ do
   if [ "${mode}" = "GAUSSIANISE" ]; then
       
       ### Loop over all bands.
-      for band in i # u g r i z
+      for band in u g r i z z2
       do
 	  ### band directory.
 	  wdband=${mdfield}/${band}
@@ -390,7 +414,7 @@ do
 	    fi 
 	    
 	    ### Loop over all bands.
-	    for band in i #u g r i z
+	    for band in u g r i z z2
 	    do
 		### band directory.
 		wdband=${mdfield}/${band}
@@ -491,12 +515,12 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILE" ]; then
       SDSS_cat=${mdfield}/SDSS/${field_name}_sdssdr10_stars.cat
-      for suffix in "" "_SP"
+      for suffix in "_SP" ""
       do
 	  ### Loop over all UNIONS bands.
 	  for ending in "" _minaper1p0 _stars _stars0p7
 	  do
-	      for band in i #u g r i z
+	      for band in u g r i z z2
 	      do
 		  wdband=${mdfield}/${band}
 		  echo bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_K1000.sh \
@@ -516,12 +540,12 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEPS" ]; then
       PS_cat=${mdfield}/PS/${field_name}_PS1-DR2.cat
-      for suffix in "" "_SP"
+      for suffix in "_SP" ""
       do
 	  ### Loop over all UNIONS bands.
 	  for ending in "" _minaper1p0 _stars _stars0p7
 	  do
-	      for band in i #u g r i z
+	      for band in u g r i z z2
 	      do
 		  wdband=${mdfield}/${band}
 		  echo bash @RUNROOT@/@SCRIPTPATH@/compare_PS.sh \
@@ -553,7 +577,7 @@ do
 	  i=0
 	  
 	  ### Loop over all UNIONS bands.
-	  for band in u g r i z
+	  for band in u g r i z z2
 	  do
 	      echo -n echo $band minaper0p7 \;
 	      echo -n echo \;
@@ -645,7 +669,8 @@ do
 	       -c \"EXTINCTION\*3.303\;\" -n EXTINCTION_g  \"Galactic extinction in the g band \(mag\)\" -k FLOAT \
 	       -c \"EXTINCTION\*2.285\;\" -n EXTINCTION_r  \"Galactic extinction in the r band \(mag\)\" -k FLOAT \
 	       -c \"EXTINCTION\*1.698\;\" -n EXTINCTION_i  \"Galactic extinction in the i band \(mag\)\" -k FLOAT \
-	       -c \"EXTINCTION\*1.263\;\" -n EXTINCTION_z  \"Galactic extinction in the z band \(mag\)\" -k FLOAT \;
+	       -c \"EXTINCTION\*1.263\;\" -n EXTINCTION_z  \"Galactic extinction in the z band \(mag\)\" -k FLOAT \
+	       -c \"EXTINCTION\*1.263\;\" -n EXTINCTION_z2 \"Galactic extinction in the z2 band \(mag\)\" -k FLOAT \;
 	  
 	  i=$[$i+1]
 	  
@@ -662,7 +687,7 @@ do
 	  echo -n echo Converting to magnitudes \;
 	  echo -n echo \;
 	  echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-	       @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes5.py \
+	       @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes6.py \
 	       ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
 	       ${mdfield}/${field_name}${suffix}_ugriz.cat \;
 	  
@@ -714,7 +739,7 @@ do
       do
 	  for filters in ugriz ugri # uriz
 	  do
-	      filters2="u g r i z"
+	      filters2="u g r i z z2"
 	      if [ $filters = "ugri" ]
 	      then
 		  filters2="u g r i"
@@ -723,7 +748,7 @@ do
 		  filters2="u r i z"
 	      fi
 	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
+		   @RUNROOT@/@SCRIPTPATH@/add_maglim6.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
 		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
 	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
 		   ${mdfield}\
@@ -732,7 +757,7 @@ do
 		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
 		   0.01 \;
 	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugrizz2.py \
 		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
 		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \;
 	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \
@@ -743,8 +768,8 @@ do
 		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat \
 		   -t OBJECTS \
 		   -k  \
-		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
-		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
+		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z MAG_LIM_0p7_z2 \
+		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z MAG_LIM_1p0_z2 \;
 	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \
 		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
 		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
@@ -756,249 +781,249 @@ do
   fi
 done
 
-### Run BPZ
-for mode in ${MODE}
-do
-  if [ "${mode}" = "BPZRECALIB" ]; then
-      echo -n "set -e ; "
-      for suffix in "" #"_SP"
-      do
-	  for filters in ugriz #ugri uriz
-	  do
-	      filters2="u g r i z"
-	      if [ $filters = "ugri" ]
-	      then
-		  filters2="u g r i"
-	      elif [ $filters = "uriz" ]
-	      then
-		  filters2="u r i z"
-	      fi
-	      for filter in $filters2
-	      do
-		  case $filter in
-		      "u") offset=-0.061;;
-		      "g") offset=-0.036;;
-		      "r") offset=-0.031;;
-		      "i") offset=0.036;;
-		      "z") offset=-0.006;;
-		  esac
-		  echo $filter $offset
-	      done > $mdfield/${field_name}_${filters}_offsets.asc
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
-	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
-		   ${mdfield}\
-		   ${field_name}${suffix}_${filters}_maglim.cat \
-		   \"$filters2\" \
-		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
-		   0.01 \
-		   $mdfield/${field_name}_${filters}_offsets.asc \
-		   _recalib \;
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalib.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp_$$ \;
-	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp2_$$ \
-		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalib.cat \
-		   -t FIELDS \;
-	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp2_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat \
-		   -t OBJECTS \
-		   -k  \
-		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
-		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
-	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp2_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
-		   ${mdfield}/BPZ_photoz_recalib/${field_name}${suffix}_${filters}_maglim_photoz_recalib.probs \
-		   ${mdfield}/BPZ_photoz_recalib/${field_name}${suffix}_${filters}_maglim_photoz_recalib.flux_comparison
-	  done
-      done
-  fi
-done
-
-### Run BPZ
-for mode in ${MODE}
-do
-  if [ "${mode}" = "BPZRECALIBPLUS" ]; then
-      echo -n "set -e ; "
-      for suffix in "" #"_SP"
-      do
-	  for filters in ugriz #ugri uriz
-	  do
-	      filters2="u g r i z"
-	      if [ $filters = "ugri" ]
-	      then
-		  filters2="u g r i"
-	      elif [ $filters = "uriz" ]
-	      then
-		  filters2="u r i z"
-	      fi
-	      for filter in $filters2
-	      do
-		  case $filter in
-		      "u") offset=0.061;;
-		      "g") offset=0.036;;
-		      "r") offset=0.031;;
-		      "i") offset=-0.036;;
-		      "z") offset=0.006;;
-		  esac
-		  echo $filter $offset
-	      done > $mdfield/${field_name}_${filters}_offsetsplus.asc
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
-	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
-		   ${mdfield}\
-		   ${field_name}${suffix}_${filters}_maglim.cat \
-		   \"$filters2\" \
-		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
-		   0.01 \
-		   $mdfield/${field_name}_${filters}_offsetsplus.asc \
-		   _recalibplus \;
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibplus.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp_$$ \;
-	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp2_$$ \
-		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibplus.cat \
-		   -t FIELDS \;
-	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp2_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat \
-		   -t OBJECTS \
-		   -k  \
-		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
-		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
-	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp2_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
-		   ${mdfield}/BPZ_photoz_recalibplus/${field_name}${suffix}_${filters}_maglim_photoz_recalibplus.probs \
-		   ${mdfield}/BPZ_photoz_recalibplus/${field_name}${suffix}_${filters}_maglim_photoz_recalibplus.flux_comparison
-	  done
-      done
-  fi
-done
-
-### Run BPZ
-for mode in ${MODE}
-do
-  if [ "${mode}" = "BPZRECALIBSDSS" ]; then
-      echo -n "set -e ; "
-      for suffix in "" #"_SP"
-      do
-	  for filters in uriz # ugriz #ugri
-	  do
-	      filters2="u g r i z"
-	      if [ $filters = "ugri" ]
-	      then
-		  filters2="u g r i"
-	      elif [ $filters = "uriz" ]
-	      then
-		  filters2="u r i z"
-	      fi
-	      for filter in $filters2
-	      do
-		  awk '{printf "'$filter' %f\n",-$1}' \
-		      ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
-	      done > $mdfield/${field_name}_${filters}_offsetsSDSS.asc
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
-	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
-		   ${mdfield}\
-		   ${field_name}${suffix}_${filters}_maglim.cat \
-		   \"$filters2\" \
-		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
-		   0.01 \
-		   $mdfield/${field_name}_${filters}_offsetsSDSS.asc \
-		   _recalibSDSS \;
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSS.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp_$$ \;
-	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp2_$$ \
-		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSS.cat \
-		   -t FIELDS \;
-	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp2_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat \
-		   -t OBJECTS \
-		   -k  \
-		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
-		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
-	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp2_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
-		   ${mdfield}/BPZ_photoz_recalibSDSS/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSS.probs \
-		   ${mdfield}/BPZ_photoz_recalibSDSS/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSS.flux_comparison
-	  done
-      done
-  fi
-done
-
-### Run BPZ
-for mode in ${MODE}
-do
-  if [ "${mode}" = "BPZRECALIBSDSSPLUS" ]; then
-      echo -n "set -e ; "
-      for suffix in "" #"_SP"
-      do
-	  for filters in ugriz #ugri uriz
-	  do
-	      filters2="u g r i z"
-	      if [ $filters = "ugri" ]
-	      then
-		  filters2="u g r i"
-	      elif [ $filters = "uriz" ]
-	      then
-		  filters2="u r i z"
-	      fi
-	      for filter in $filters2
-	      do
-		  awk '{printf "'$filter' %f\n",$1}' \
-		      ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
-	      done > $mdfield/${field_name}_${filters}_offsetsSDSSplus.asc
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
-	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
-		   ${mdfield}\
-		   ${field_name}${suffix}_${filters}_maglim.cat \
-		   \"$filters2\" \
-		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
-		   0.01 \
-		   $mdfield/${field_name}_${filters}_offsetsSDSSplus.asc \
-		   _recalibSDSSplus \;
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSSplus.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp_$$ \;
-	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp2_$$ \
-		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSSplus.cat \
-		   -t FIELDS \;
-	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp2_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat \
-		   -t OBJECTS \
-		   -k  \
-		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
-		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
-	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp2_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
-		   ${mdfield}/BPZ_photoz_recalibSDSSplus/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSSplus.probs \
-		   ${mdfield}/BPZ_photoz_recalibSDSSplus/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSSplus.flux_comparison
-	  done
-      done
-  fi
-done
+#### Run BPZ
+#for mode in ${MODE}
+#do
+#  if [ "${mode}" = "BPZRECALIB" ]; then
+#      echo -n "set -e ; "
+#      for suffix in "" #"_SP"
+#      do
+#	  for filters in ugriz #ugri uriz
+#	  do
+#	      filters2="u g r i z"
+#	      if [ $filters = "ugri" ]
+#	      then
+#		  filters2="u g r i"
+#	      elif [ $filters = "uriz" ]
+#	      then
+#		  filters2="u r i z"
+#	      fi
+#	      for filter in $filters2
+#	      do
+#		  case $filter in
+#		      "u") offset=-0.061;;
+#		      "g") offset=-0.036;;
+#		      "r") offset=-0.031;;
+#		      "i") offset=0.036;;
+#		      "z") offset=-0.006;;
+#		  esac
+#		  echo $filter $offset
+#	      done > $mdfield/${field_name}_${filters}_offsets.asc
+#	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+#		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
+#	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+#		   ${mdfield}\
+#		   ${field_name}${suffix}_${filters}_maglim.cat \
+#		   \"$filters2\" \
+#		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+#		   0.01 \
+#		   $mdfield/${field_name}_${filters}_offsets.asc \
+#		   _recalib \;
+#	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+#		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalib.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp_$$ \;
+#	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp_$$ \
+#		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp2_$$ \
+#		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalib.cat \
+#		   -t FIELDS \;
+#	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp2_$$ \
+#		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat \
+#		   -t OBJECTS \
+#		   -k  \
+#		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
+#		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
+#	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp_$$ \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalib_ext.cat_tmp2_$$ \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
+#		   ${mdfield}/BPZ_photoz_recalib/${field_name}${suffix}_${filters}_maglim_photoz_recalib.probs \
+#		   ${mdfield}/BPZ_photoz_recalib/${field_name}${suffix}_${filters}_maglim_photoz_recalib.flux_comparison
+#	  done
+#      done
+#  fi
+#done
+#
+#### Run BPZ
+#for mode in ${MODE}
+#do
+#  if [ "${mode}" = "BPZRECALIBPLUS" ]; then
+#      echo -n "set -e ; "
+#      for suffix in "" #"_SP"
+#      do
+#	  for filters in ugriz #ugri uriz
+#	  do
+#	      filters2="u g r i z"
+#	      if [ $filters = "ugri" ]
+#	      then
+#		  filters2="u g r i"
+#	      elif [ $filters = "uriz" ]
+#	      then
+#		  filters2="u r i z"
+#	      fi
+#	      for filter in $filters2
+#	      do
+#		  case $filter in
+#		      "u") offset=0.061;;
+#		      "g") offset=0.036;;
+#		      "r") offset=0.031;;
+#		      "i") offset=-0.036;;
+#		      "z") offset=0.006;;
+#		  esac
+#		  echo $filter $offset
+#	      done > $mdfield/${field_name}_${filters}_offsetsplus.asc
+#	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+#		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
+#	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+#		   ${mdfield}\
+#		   ${field_name}${suffix}_${filters}_maglim.cat \
+#		   \"$filters2\" \
+#		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+#		   0.01 \
+#		   $mdfield/${field_name}_${filters}_offsetsplus.asc \
+#		   _recalibplus \;
+#	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+#		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibplus.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp_$$ \;
+#	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp_$$ \
+#		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp2_$$ \
+#		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibplus.cat \
+#		   -t FIELDS \;
+#	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp2_$$ \
+#		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat \
+#		   -t OBJECTS \
+#		   -k  \
+#		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
+#		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
+#	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp_$$ \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibplus_ext.cat_tmp2_$$ \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
+#		   ${mdfield}/BPZ_photoz_recalibplus/${field_name}${suffix}_${filters}_maglim_photoz_recalibplus.probs \
+#		   ${mdfield}/BPZ_photoz_recalibplus/${field_name}${suffix}_${filters}_maglim_photoz_recalibplus.flux_comparison
+#	  done
+#      done
+#  fi
+#done
+#
+#### Run BPZ
+#for mode in ${MODE}
+#do
+#  if [ "${mode}" = "BPZRECALIBSDSS" ]; then
+#      echo -n "set -e ; "
+#      for suffix in "" #"_SP"
+#      do
+#	  for filters in uriz # ugriz #ugri
+#	  do
+#	      filters2="u g r i z"
+#	      if [ $filters = "ugri" ]
+#	      then
+#		  filters2="u g r i"
+#	      elif [ $filters = "uriz" ]
+#	      then
+#		  filters2="u r i z"
+#	      fi
+#	      for filter in $filters2
+#	      do
+#		  awk '{printf "'$filter' %f\n",-$1}' \
+#		      ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
+#	      done > $mdfield/${field_name}_${filters}_offsetsSDSS.asc
+#	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+#		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
+#	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+#		   ${mdfield}\
+#		   ${field_name}${suffix}_${filters}_maglim.cat \
+#		   \"$filters2\" \
+#		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+#		   0.01 \
+#		   $mdfield/${field_name}_${filters}_offsetsSDSS.asc \
+#		   _recalibSDSS \;
+#	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+#		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSS.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp_$$ \;
+#	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp_$$ \
+#		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp2_$$ \
+#		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSS.cat \
+#		   -t FIELDS \;
+#	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp2_$$ \
+#		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat \
+#		   -t OBJECTS \
+#		   -k  \
+#		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
+#		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
+#	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp_$$ \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSS_ext.cat_tmp2_$$ \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
+#		   ${mdfield}/BPZ_photoz_recalibSDSS/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSS.probs \
+#		   ${mdfield}/BPZ_photoz_recalibSDSS/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSS.flux_comparison
+#	  done
+#      done
+#  fi
+#done
+#
+#### Run BPZ
+#for mode in ${MODE}
+#do
+#  if [ "${mode}" = "BPZRECALIBSDSSPLUS" ]; then
+#      echo -n "set -e ; "
+#      for suffix in "" #"_SP"
+#      do
+#	  for filters in ugriz #ugri uriz
+#	  do
+#	      filters2="u g r i z"
+#	      if [ $filters = "ugri" ]
+#	      then
+#		  filters2="u g r i"
+#	      elif [ $filters = "uriz" ]
+#	      then
+#		  filters2="u r i z"
+#	      fi
+#	      for filter in $filters2
+#	      do
+#		  awk '{printf "'$filter' %f\n",$1}' \
+#		      ${mdfield}/${filter}/${field_name}_${filter}_smart_full_SDSS_${filter}_offset.asc
+#	      done > $mdfield/${field_name}_${filters}_offsetsSDSSplus.asc
+#	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+#		   @RUNROOT@/@SCRIPTPATH@/add_maglim5.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
+#	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+#		   ${mdfield}\
+#		   ${field_name}${suffix}_${filters}_maglim.cat \
+#		   \"$filters2\" \
+#		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+#		   0.01 \
+#		   $mdfield/${field_name}_${filters}_offsetsSDSSplus.asc \
+#		   _recalibSDSSplus \;
+#	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+#		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugriz.py \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSSplus.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp_$$ \;
+#	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp_$$ \
+#		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp2_$$ \
+#		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSSplus.cat \
+#		   -t FIELDS \;
+#	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp2_$$ \
+#		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat \
+#		   -t OBJECTS \
+#		   -k  \
+#		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z \
+#		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z \;
+#	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp_$$ \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_recalibSDSSplus_ext.cat_tmp2_$$ \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
+#		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
+#		   ${mdfield}/BPZ_photoz_recalibSDSSplus/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSSplus.probs \
+#		   ${mdfield}/BPZ_photoz_recalibSDSSplus/${field_name}${suffix}_${filters}_maglim_photoz_recalibSDSSplus.flux_comparison
+#	  done
+#      done
+#  fi
+#done
 
 ### Comparison to SDSS redshifts.
 ### Full tile.
@@ -1045,12 +1070,13 @@ for mode in ${MODE}
 do
     if [ "${mode}" = "MASK" ]; then
 	echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic -p 16 \
-	     \'0 64 \%1 0 \> \? 0 16 \%2 0 \> \? \+ 0 32 \%3 0 \> \? \+ 0 128 \%4 0 \> \? \+ 0 256 \%5 0 \> \? \+\' \
+	     \'0 64 \%1 0 \> \? 0 16 \%2 0 \> \? \+ 0 32 \%3 0 \> \? \+ 0 128 \%4 0 \> \? \+ 0 256 \%5 0 \> \? \+ 0 2048 \%6 0 \> \? \+\' \
 	     ${mdfield}/r/${field_name}_r.weight.fits \
 	     ${mdfield}/u/${field_name}_u.weight.fits \
 	     ${mdfield}/g/${field_name}_g.weight.fits \
 	     ${mdfield}/i/${field_name}_i.weight.fits \
 	     ${mdfield}/z/${field_name}_z.weight.fits \
+	     ${mdfield}/z2/${field_name}_z2.weight.fits \
 	     \> ${mdfield}/${field_name}_ugriz.mask.fits \;
 	echo -n gzip -c ${mdfield}/${field_name}_ugriz.mask.fits \
 	     \> ${mdfield}/${field_name}_ugriz.mask.fits.gz \;
@@ -1070,7 +1096,7 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "QC" ]; then
       #### Width of stellar locus.
-      for band in i #u g r i z
+      for band in u g r i z z2
       do
 	  echo @RUNROOT@/INSTALL/anaconda2/bin/python \
 	       @RUNROOT@/@SCRIPTPATH@/width_stellar_locus.py \
@@ -1084,7 +1110,7 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "CLEAN" ]; then
       #### Clean up temporary and duplicated data products.
-      for band in u g r i z
+      for band in u g r i z z2
       do
 	  echo rm -f \
 	     ${mdfield}/${band}/${field_name}_${band}.fits \

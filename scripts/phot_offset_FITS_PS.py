@@ -68,6 +68,16 @@ elif band == "z":
     A3 =  0.
     mag_min = 16.
     mag_max = 19.
+elif band == "z2":
+    bandref = "z"
+    band1 = "z"
+    band2 = "y"
+    A0 =  0.
+    A1 =  0.
+    A2 =  0.
+    A3 =  0.
+    mag_min = 16.
+    mag_max = 19.
 
 catalogue = fits.open(infile)
 catdata = catalogue[1].data

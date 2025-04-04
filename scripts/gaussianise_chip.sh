@@ -72,6 +72,7 @@ case $band in
     "g")  sat_level=300; ZP=27;;
     "r")  sat_level=`dfits_theli $measurement_image | fitsort_theli -d SATURATE|awk '{print $2*0.5}'`; ZP=30;;
     "i")  sat_level=`dfits_theli $measurement_image | fitsort_theli -d SATURATE|awk '{print $2*50}'`; ZP=30;; # HACK: not sure about the saturation level
+    "z2")  sat_level=`dfits_theli $measurement_image | fitsort_theli -d SATURATE|awk '{print $2*50}'`; ZP=30;; # HACK: not sure about the saturation level
     "z")  sat_level=1000; ZP=27;; # HACK: not sure about any of this
 esac
 
@@ -104,7 +105,7 @@ then
     fmax=`awk '{if ($10==0 && $5<'$rad1'+0.5) print $3}' $wd/${measurement_image_base}_cat.asc | sort -gr |head -1`
     rad2=`awk '{if ($3>'$fmax'/30. && $5<'$rad1'+0.5 && $10==0) print $5}' $wd/${measurement_image_base}_cat.asc|$gaap_dir/kk/mode | awk '{printf "%f\n",$1}'`
     #awk '{if ($3>'$fmax'/30. && $5<'$rad2'+0.3 && $5>'$rad2'-0.3 && $10==0) print $0}' $wd/${measurement_image_base}_cat.asc > $wd/${measurement_image_base}_star_cat_GAaP.asc
-    if [ $band = "r" ] || [ $band = "i" ]
+    if [ $band = "r" ] || [ $band = "i" ] || [ $band = "z2" ]
     then
 	awk '{if ($3>'$fmax'/30. && $5<'$rad2'+0.3 && $5>'$rad2'/2.0 && $10==0) print $0}' $wd/${measurement_image_base}_cat.asc > $wd/${measurement_image_base}_star_cat_GAaP.asc
     elif [ $band = "z" ]

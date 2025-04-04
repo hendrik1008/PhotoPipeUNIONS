@@ -24,5 +24,5 @@ awk '{if (NR>='$tile_no_start' && NR<='$tile_no_end') print $0}' \
 bash @RUNROOT@/run_PhotoPipe.sh \
      @RUNROOT@/${tile_list_base}_${tile_no_start}t${tile_no_end}.txt \
      ${tile_no_start}t${tile_no_end} $nthread \
-     COPYBACK BPZ COMPTILEZ CLEAN COPY\
+     COPYBACK CONVERT GAAP COMPTILE COMPTILEPS CLEAN COPY\
      >& @RUNROOT@/PhotoPipe_${tile_list_base}_${tile_no_start}t${tile_no_end}.log

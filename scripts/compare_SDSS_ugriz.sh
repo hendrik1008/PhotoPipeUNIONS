@@ -52,7 +52,7 @@ rm $wd/*_$$
 
 test ! -d $wd/phot_comp_SDSS && mkdir $wd/phot_comp_SDSS
 
-for band in u g r i z
+for band in u g r i z z2
 do
     python @RUNROOT@/@SCRIPTPATH@/phot_offset_FITS.py \
 	   $wd/phot_comp_SDSS/${base}_SDSS $wd/${base}_SDSS.cat $band $field \

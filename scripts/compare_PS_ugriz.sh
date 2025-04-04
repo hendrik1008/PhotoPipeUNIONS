@@ -52,7 +52,7 @@ rm $wd/*_$$
 
 test ! -d $wd/phot_comp_PS && mkdir $wd/phot_comp_PS
 
-for band in u g r i z
+for band in u g r i z z2
 do
     python @RUNROOT@/@SCRIPTPATH@/phot_offset_FITS_PS.py \
 	   $wd/phot_comp_PS/${base}_PS $wd/${base}_PS.cat $band $field \
