@@ -30,14 +30,26 @@ set -e
 
 # MODES: {{{
 #
-# 1. PREPARE: Create directories.
-# 2. GAAP: Extract GaAP photometry.
-# 3. COMBINETILE: Combine flux measurements.
-# 4. SDSSPREP: Preparation of SDSS catalogue.
-# 5. COMPTILE: Comparisons to SDSS (ugri bands). Full tile.
-# 6. MERGE: Paste the measurements from individual bands into a full 4-band catalogue.
-# 7. BPZ: Run BPZ.
-# 8. COMPTILEZ: Comparison to SDSS redshifts. Full tile.
+# 1. CONVERT: Convert input catalogue to FITS-LDAC.
+# 2. PREPARE: Create directories and copy images.
+# 3. GAUSSIANISE: Gaussianise the PSF of the images.
+# 4. GAAP: Extract GaAP photometry.
+# 5. SDSSPREP: Preparation of SDSS catalogue.
+# 6. ZPREP: Preparation of redshift catalogue.
+# 7. PSPREP: Preparation of PanSTARRS catalogue.
+# 8. COMPTILE: Photometric comparisons to SDSS.
+# 9. COMPTILEPS: Photometric comparisons to PanSTARRS.
+# 10. MERGE: Paste measurements from all bands into 5-band catalogue.
+# 11. COMPTILEPOSTMERGE: Photometric comparisons to SDSS.
+# 12. COMPTILEPSPOSTMERGE: Photometric comparisons to PanSTARRS.
+# 13. BPZ: Run BPZ.
+# 14. COMPTILEZ: Compare BPZ photo-z to spectroscopic redshifts.
+# 15. MASK: Create 5-band mask.
+# 16. QC: Run some quality control scripts.
+# 17. CLEAN: Erase temporary data.
+# 18. COPY: Copy results back to mass storage.
+# 19. COPYBACK: Copy directory from mass storage to scratch.
+# 20. ERASE: Erase everything from scratch.
 #}}}
 
 #Read command line modes {{{
@@ -1054,11 +1066,11 @@ do
 				     ${field_name} \
 				     $label \
 				     $filters \
-				     $cat \;
+				     A$suffix \;
 			    fi
-			    echo
 			done
 		    fi
+		    echo
 		done
 	    done
 	done
