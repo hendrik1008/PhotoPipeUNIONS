@@ -18,7 +18,7 @@ print("# band reference unit mean std median NMAD")
 
 unit="tile"
 star=""
-for band in ("u", "g", "r", "i", "z"):
+for band in ("u", "g", "r", "i", "z", "z2"):
     cat = np.loadtxt(md+band+"_"+survey+star+"_offsets_"+unit+".asc")
     medians = cat[:,3]
     NMADs = cat[:,4]
