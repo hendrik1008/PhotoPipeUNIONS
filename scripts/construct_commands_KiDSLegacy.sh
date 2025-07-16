@@ -403,7 +403,7 @@ do
     if [ "${mode}" = "GAAP" ]; then
 	for incat in $cat_LDAC $cat_LDAC2
 	do
-	    ### Count the number of objects in the photometric and star catalogues.
+	    ### Count the number of objects in the photometric catalogue.
 	    if [ -e $incat ]
 	    then 
 		no_obj_phot_cat=`ldacdesc -i $incat | \
@@ -519,7 +519,7 @@ do
       for suffix in "_SP" ""
       do
 	  ### Loop over all UNIONS bands.
-	  for ending in "" _minaper1p0 _stars _stars0p7
+	  for ending in "" _minaper1p0 #_stars _stars0p7
 	  do
 	      for band in u g r i z z2
 	      do
@@ -544,7 +544,7 @@ do
       for suffix in "_SP" ""
       do
 	  ### Loop over all UNIONS bands.
-	  for ending in "" _minaper1p0 _stars _stars0p7
+	  for ending in "" _minaper1p0 #_stars _stars0p7
 	  do
 	      for band in u g r i z z2
 	      do

@@ -136,45 +136,45 @@ tcsh $gaap_dir/gaap-corr.csh \
     $phot_cat_RA \
     $phot_cat_Dec
 
-#### Stars GAaP script - photometric catalogue - fixed aperture 1.0"
+##### Stars GAaP script - photometric catalogue - fixed aperture 1.0"
+#
+#phot_cat_image_stars=$wd/${original_image_base}_stars.cat
+#
+#ln -sf $phot_cat_image $phot_cat_image_stars
+#
+#tcsh $gaap_dir/gaap-corr_stars_DR5.csh \
+#    $phot_cat_image_stars \
+#    $original_image \
+#    $gaussianised_image \
+#    $original_image_weight \
+#    1.0 \
+#    2.0 \
+#    $gaussianised_image_dir/${original_image_base}_smart_ker.map \
+#    $wd/${cat_base}_smart_stars.gaap \
+#    $gaap_dir \
+#    $phot_cat_RA \
+#    $phot_cat_Dec
+#
+#### Stars GAaP script - photometric catalogue - fixed aperture 0.7"
+#
+#phot_cat_image_stars0p7=$wd/${original_image_base}_stars0p7.cat
+#
+#ln -sf $phot_cat_image $phot_cat_image_stars0p7
+#
+#tcsh $gaap_dir/gaap-corr_stars_DR5.csh \
+#    $phot_cat_image_stars0p7 \
+#    $original_image \
+#    $gaussianised_image \
+#    $original_image_weight \
+#    0.7 \
+#    2.0 \
+#    $gaussianised_image_dir/${original_image_base}_smart_ker.map \
+#    $wd/${cat_base}_smart_stars0p7.gaap \
+#    $gaap_dir \
+#    $phot_cat_RA \
+#    $phot_cat_Dec
 
-phot_cat_image_stars=$wd/${original_image_base}_stars.cat
-
-ln -sf $phot_cat_image $phot_cat_image_stars
-
-tcsh $gaap_dir/gaap-corr_stars_DR5.csh \
-    $phot_cat_image_stars \
-    $original_image \
-    $gaussianised_image \
-    $original_image_weight \
-    1.0 \
-    2.0 \
-    $gaussianised_image_dir/${original_image_base}_smart_ker.map \
-    $wd/${cat_base}_smart_stars.gaap \
-    $gaap_dir \
-    $phot_cat_RA \
-    $phot_cat_Dec
-
-### Stars GAaP script - photometric catalogue - fixed aperture 0.7"
-
-phot_cat_image_stars0p7=$wd/${original_image_base}_stars0p7.cat
-
-ln -sf $phot_cat_image $phot_cat_image_stars0p7
-
-tcsh $gaap_dir/gaap-corr_stars_DR5.csh \
-    $phot_cat_image_stars0p7 \
-    $original_image \
-    $gaussianised_image \
-    $original_image_weight \
-    0.7 \
-    2.0 \
-    $gaussianised_image_dir/${original_image_base}_smart_ker.map \
-    $wd/${cat_base}_smart_stars0p7.gaap \
-    $gaap_dir \
-    $phot_cat_RA \
-    $phot_cat_Dec
-
-rm orders.par starsused.txt kerpos.ps fitkermap.ps \
+rm -f orders.par starsused.txt kerpos.ps fitkermap.ps \
    kersticks.ps $phot_cat_image $phot_cat_image_minaper1p0 \
    $phot_cat_image_stars $phot_cat_image_stars0p7 default.*
 
