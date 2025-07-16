@@ -187,20 +187,17 @@ do
 		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 		then
     		    echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-		fi
-		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz ]
-		then
     		    echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.weight.fits.fz $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
+		    echo -n funpack -O $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
+    		    test -e $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
+			&& rm -f $md/$field_name/$filter/${field_name}_${filter}.weight.fits
+    		    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+			 @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
+    			 $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits \
+    			 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		    echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits \
+			 $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
 		fi
-		echo -n funpack -O $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
-    		test -e $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
-		    && rm -f $md/$field_name/$filter/${field_name}_${filter}.weight.fits
-    		echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		     @RUNROOT@/@SCRIPTPATH@/extract_MPweight.py \
-    		     $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits \
-    		     $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-		echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits \
-		     $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
 	    else
 		set -e
 		echo -n ic -p -32 -c 10000 10000 \'0\' \
@@ -257,9 +254,6 @@ do
 	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 	    then
 		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-	    fi
-	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
-	    then
 		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
 	else
@@ -281,9 +275,6 @@ do
 	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 	    then
 		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-	    fi
-	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
-	    then
 		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
 	else
@@ -309,24 +300,23 @@ do
 		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.raw.fits ]
 		then
 		    echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
+		    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
+    			 $md/$field_name/$filter/${field_name}_${filter}.raw.fits \
+    			 $md/$field_name/$filter/${field_name}_${filter} \
+			 EXTNAME \;
+		    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+			 \'0 1 %1 259 \> \?\' \
+			 $md/$field_name/$filter/${field_name}_${filter}.flag.fits \
+			 \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
+		    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+			 \'%1 %2 \*\' \
+			 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
+			 $md/$field_name/$filter/${field_name}_${filter}.01.fits \
+			 \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		    echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.01.fits \
+			 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \;
+		    echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 		fi
-		echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
-    		     $md/$field_name/$filter/${field_name}_${filter}.raw.fits \
-    		     $md/$field_name/$filter/${field_name}_${filter} \
-		     EXTNAME \;
-		echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
-		     \'0 1 %1 259 \> \?\' \
-		     $md/$field_name/$filter/${field_name}_${filter}.flag.fits \
-		     \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
-		echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
-		     \'%1 %2 \*\' \
-		     $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
-		     $md/$field_name/$filter/${field_name}_${filter}.01.fits \
-		     \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-		echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.01.fits \
-		     $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \;
-		#$md/$field_name/$filter/${field_name}_${filter}.flag.fits \;
-		echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 	    else
 		echo -n ic -p -32 -c 10000 10000 \'0\' \
 		     \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
@@ -350,24 +340,23 @@ do
 	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.raw.fits ]
 	    then
 		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
+		echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
+    		     $md/$field_name/$filter/${field_name}_${filter}.raw.fits \
+    		     $md/$field_name/$filter/${field_name}_${filter} \
+		     EXTTYPE \;
+		echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+		     \'0 1 %1 259 \> \?\' \
+		     $md/$field_name/$filter/${field_name}_${filter}.flag.fits \
+		     \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
+		echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
+		     \'%1 %2 \*\' \
+		     $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
+		     $md/$field_name/$filter/${field_name}_${filter}.01.fits \
+		     \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.01.fits \
+		     $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \;
+		echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 	    fi
-	    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
-    		 $md/$field_name/$filter/${field_name}_${filter}.raw.fits \
-    		 $md/$field_name/$filter/${field_name}_${filter} \
-		 EXTTYPE \;
-	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
-		 \'0 1 %1 259 \> \?\' \
-		 $md/$field_name/$filter/${field_name}_${filter}.flag.fits \
-		 \> $md/$field_name/$filter/${field_name}_${filter}.01.fits \;
-	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic \
-		 \'%1 %2 \*\' \
-		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.01.fits \
-		 \> $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-	    echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.01.fits \
-		 $md/$field_name/$filter/${field_name}_${filter}.weight.tmp.fits \;
-		 #$md/$field_name/$filter/${field_name}_${filter}.flag.fits \;
-	    echo -n rm -f $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 	else
 	    set -e
 	    echo -n ic -p -32 -c 10000 10000 \'0\' \
