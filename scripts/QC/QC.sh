@@ -107,51 +107,58 @@ test ! -d $md/ && mkdir $md/
 
 ulimit -n 20000
 
-for filters in ugriz #ugri #uriz 
+for suffix in "_SP" #""
 do
-    for calib in "" # "_recalibSDSSplus" # "_recalibSDSS" # "" #"_recalib" "_recalibplus"
+    for filters in  ugriz #ugri #ugriz2 #ugri #uriz 
     do
-	for ending in "" # "_cleanZP" # "_cleanZPi" # ""
+	filters2=$filters
+	if [ $filters = "ugriz2" ]
+	then
+	    filters2=ugriz
+	fi
+	for calib in "" # "_recalibSDSSplus" # "_recalibSDSS" # "" #"_recalib" "_recalibplus"
 	do
-	    for survey in specz #SDSS
+	    for ending in "" # "_cleanZP" # "_cleanZPi" # ""
 	    do
-		#pointings=ugriz_tiles$ending.txt
-		#FILES=""
-		#while read field
-		#do
-		#    FILES=$FILES" "$bd/$field/${field}_${filters}_photoz${calib}_ext_${survey}.cat
-		#done<@RUNROOT@/$pointings
-		#@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats.py \
-		#       $md/UNIONS5000_${filters}${calib}_${survey}${ending}.cat \
-		#       OBJECTS \
-		#       $FILES
-		if [ -f  $md/UNIONS5000_${filters}${calib}_${survey}${ending}.cat ]
-		then
-		    #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
-		    #	   $md/UNIONS5000_${filters}${calib}_${survey}${ending}.cat \
-		    #	   z_spec_spec \
-		    #	   Z_B \
-		    #	   MAG_AUTO \
-		    #	   2.0 \
-		    #	   24.0 \
-		    #	   $filters"-"$calib"-"$ending"-"$survey \
-		    #	   $md/UNIONS5000_${filters}${calib}_${survey}${ending}_zz
-		    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot_weighted.py \
-			   $md/UNIONS5000_${filters}${calib}_${survey}${ending}.cat \
-			   z_spec_spec \
-			   Z_B \
-			   MAG_AUTO \
-			   2.0 \
-			   24.0 \
-			   $filters \
-			   $md/UNIONS5000_${filters}${calib}_${survey}${ending}_zzw \
-			   $md/UNIONS100_ugriz_photoz_ext_nc.txt
-		fi
+		for survey in specz #SDSS
+		do
+		    pointings=${filters}_tiles$ending.txt
+		    FILES=""
+		    while read field
+		    do
+			FILES=$FILES" "$bd/$field/${field}${suffix}_${filters2}_photoz${calib}_ext_${survey}.cat
+		    done<@RUNROOT@/$pointings
+		    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats.py \
+							   $md/UNIONS5000${suffix}_${filters}${calib}_${survey}${ending}.cat \
+							   OBJECTS \
+							   $FILES
+		    if [ -f  $md/UNIONS5000${suffix}_${filters}${calib}_${survey}${ending}.cat ]
+		    then
+			#@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
+			    #	   $md/UNIONS5000_${filters}${calib}_${survey}${ending}.cat \
+			    #	   z_spec_spec \
+			    #	   Z_B \
+			    #	   MAG_AUTO \
+			    #	   2.0 \
+			    #	   24.0 \
+			    #	   $filters"-"$calib"-"$ending"-"$survey \
+			    #	   $md/UNIONS5000_${filters}${calib}_${survey}${ending}_zz
+			@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot_weighted.py \
+							       $md/UNIONS5000${suffix}_${filters}${calib}_${survey}${ending}.cat \
+							       z_spec_spec \
+							       Z_B \
+							       MAG_AUTO \
+							       2.0 \
+							       24.0 \
+							       ${filters}${suffix} \
+							       $md/UNIONS5000${suffix}_${filters}${calib}_${survey}${ending}_zzw \
+							       $md/UNIONS100_ugriz_photoz_ext_nc.txt
+		    fi
+		done
 	    done
 	done
     done
 done
-
 
 #############################
 #### Photo-z matrix plots ###
