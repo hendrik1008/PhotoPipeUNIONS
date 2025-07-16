@@ -25,9 +25,9 @@ RUNROOT=/arc/home/hendrik/PhotoPipeTest/
 #Directory for runtime script storage
 RUNTIME=RUNTIME
 #Survey ID  
-SURVEY=UNIONS5000
+SURVEY=UNIONS_DR6
 #Directory of the MegaPipe catalogues
-CATDIR=vos:cfis/tiles_DR5/
+CATDIR=vos:cfis/tiles_DR6/
 #Directory of the ShapePipe catalogues
 #CATDIR2=/arc/home/kilbinger/cosmostat/v2/pre_v2/psfex/DR5/output/run_sp_combined_tile_detection/sextractor_runner/output/
 CATDIR2=/arc/home/hendrik/UNIONS/ShapePipe/
