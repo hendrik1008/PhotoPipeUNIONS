@@ -434,8 +434,8 @@ do
 		    echo
 		    #exit 1
 		else
-		    #if [ ! -s ${wdband}/${base}_smart_stars0p7.gaap ]
-		    #then
+		    if [ ! -s ${wdband}/${base}_smart.gaap ]
+		    then
 			####################################
 			### This is the main work script ###
 			####################################
@@ -456,7 +456,7 @@ do
 			then
 			    MAGZP=27
 			fi
-			for ending in "" "_minaper1p0" "_stars" "_stars0p7"
+			for ending in "" "_minaper1p0" #"_stars" "_stars0p7"
 			do
 			    echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
 				 @RUNROOT@/@SCRIPTPATH@/average_fluxes_list.py \
@@ -473,7 +473,7 @@ do
 				 DELTA_J2000 \;
 			done	      
 			echo
-		    #fi
+		    fi
 		fi 
 	    done
 	done
