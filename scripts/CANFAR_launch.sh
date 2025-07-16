@@ -10,11 +10,13 @@ shift
 shift
 shift
 shift
+# other parameters: modes to run
 
 source @RUNROOT@/INSTALL/anaconda2/bin/activate
 
-#     CONVERT PREPARE GAUSSIANISE GAAP SDSSPREP ZPREP COMPTILE MERGE \
-#     BPZ COMPTILEZ MASK QC CLEAN COPY \
+#     CONVERT PREPARE GAUSSIANISE GAAP SDSSPREP ZPREP PSPREP COMPTILE \
+#     COMPTILEPS MERGE COMPTILEPOSTMERGE COMPTILEPSPOSTMERGE BPZ \
+#     COMPTILEZ MASK QC CLEAN COPY COPYBACK ERASE \
 
 tile_list_base=`basename $tile_list .txt`
 
@@ -24,5 +26,5 @@ awk '{if (NR>='$tile_no_start' && NR<='$tile_no_end') print $0}' \
 bash @RUNROOT@/run_PhotoPipe.sh \
      @RUNROOT@/${tile_list_base}_${tile_no_start}t${tile_no_end}.txt \
      ${tile_no_start}t${tile_no_end} $nthread \
-     COPYBACK CONVERT GAAP COMPTILE COMPTILEPS CLEAN COPY\
+     $*\
      >& @RUNROOT@/PhotoPipe_${tile_list_base}_${tile_no_start}t${tile_no_end}.log
