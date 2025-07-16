@@ -1111,22 +1111,20 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "CLEAN" ]; then
       #### Clean up temporary and duplicated data products.
-      for band in u g r i z z2
-      do
-	  echo rm -f \
-	     ${mdfield}/${band}/${field_name}_${band}.fits \
-	     ${mdfield}/${band}/${field_name}_${band}.weight.fits \
-	     ${mdfield}/${band}/${field_name}_${band}.flag.fits \
-	     ${mdfield}/${band}/${field_name}_${band}.weight.small.fits \
-	     ${mdfield}/${band}/${field_name}_${band}.small.fits \
-	     ${mdfield}/${band}/${field_name}_${band}_smart_ggpsf.fits
-      done
+      #for band in u g r i z z2
+      #do
+      #	  echo rm -f \
+      #	     ${mdfield}/${band}/${field_name}_${band}.fits \
+      #	     ${mdfield}/${band}/${field_name}_${band}.weight.fits \
+      #	     ${mdfield}/${band}/${field_name}_${band}.flag.fits \
+      #	     ${mdfield}/${band}/${field_name}_${band}.weight.small.fits \
+      #	     ${mdfield}/${band}/${field_name}_${band}.small.fits \
+      #	     ${mdfield}/${band}/${field_name}_${band}_smart_ggpsf.fits
+      #done
       echo rm -f \
-	   ${mdfield}/${field_name}_ugriz.mask.fits \
 	   ${mdfield}/*tmp* \
 	   ${mdfield}/make* \
-	   ${mdfield}/merg* \
-	   ${mdfield}/CFIS*
+	   ${mdfield}/merg*
   fi
 done
 
