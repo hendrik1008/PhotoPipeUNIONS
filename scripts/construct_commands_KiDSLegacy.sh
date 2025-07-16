@@ -132,7 +132,8 @@ do
 	then
 	    if [ ! -s $phot_cat_local ]
 	    then
-		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $phot_cat $phot_cat_local \;
+		#echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $phot_cat $phot_cat_local \;
+		echo -n vcp --vos-debug $phot_cat $phot_cat_local \;
 	    fi
 	    echo -n echo \;
 	    echo -n echo Copy done.\;
@@ -141,7 +142,7 @@ do
 		 -a $phot_cat_local \
 		 -o $cat_LDAC \
 		 -c @RUNROOT@/@CONFIGPATH@/asctoldac_MP.conf \;
-	    echo rm -f $phot_cat_local
+	    echo -n rm -f $phot_cat_local \;
 	fi
 	if [ ! -e $cat_LDAC2 ]
 	then
@@ -156,8 +157,9 @@ do
 		 -o $cat_LDAC2 \
 		 -t OBJECTS \
 		 -k X_WORLD ALPHA_J2000 Y_WORLD DELTA_J2000 \;
-	    echo rm -f $cat_LDAC2.tmp
+	    echo -n rm -f $cat_LDAC2.tmp \;
 	fi
+	echo sleep 1
     fi
 done
 
@@ -178,16 +180,16 @@ do
 	for filter in u r
 	do
     	    prefix=CFIS
-    	    base=$image_dir/tiles_DR5/${prefix}.${xxx}.${yyy}.${filter}
+    	    base=$image_dir/tiles_DR6/${prefix}.${xxx}.${yyy}.${filter}
 	    set +e
-	    vls --cert=$HOME/cadcproxy.pem --vos-debug $base.fits >& /dev/null
+	    vls --vos-debug $base.fits >& /dev/null
 	    if [ "$?" -eq "0" ]
 	    then
 		set -e
 		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 		then
-    		    echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-    		    echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.weight.fits.fz $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
+    		    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+    		    echo -n vcp --vos-debug $base.weight.fits.fz $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
 		    echo -n funpack -O $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
     		    test -e $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
 			&& rm -f $md/$field_name/$filter/${field_name}_${filter}.weight.fits
@@ -203,7 +205,7 @@ do
 		echo -n ic -p -32 -c 10000 10000 \'0\' \
 		     \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
-	    echo
+	    echo sleep 1
 	done
 	
 	## PanSTARRS i-band DR3
@@ -211,17 +213,17 @@ do
 	#prefix=PS-DR3
 	#base=$image_dir/panstarrs/DR3/tiles/${prefix}.${xxx}.${yyy}.${filter}
 	#set +e
-	#vls --cert=$HOME/cadcproxy.pem --vos-debug $base.fits >& /dev/null
+	#vls --vos-debug $base.fits >& /dev/null
 	#if [ "$?" -eq "0" ]
 	#then
 	#    set -e
 	#    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 	#    then
-	#    	echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+	#    	echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
 	#    fi
 	#    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
 	#    then
-	#	echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	#	echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	#    fi
 	#    echo -n replacekey_theli \
 	#    	 $md/$field_name/$filter/${field_name}_${filter}.fits \
@@ -245,44 +247,44 @@ do
 	# PanSTARRS i-band DR4
 	filter=i
 	prefix=PSS.DR4
-	base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.${filter}
+	base=$image_dir/panstarrs/DR4.5/resamp/${prefix}.${xxx}.${yyy}.${filter}
 	set +e
-	vls --cert=$HOME/cadcproxy.pem --vos-debug $base.fits >& /dev/null
+	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
 	then
 	    set -e
 	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 	    then
-		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+		echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
 	else
 	    set -e
 	    echo -n ic -p -32 -c 10000 10000 \'0\' \
 		 \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	fi
-	echo
+	echo sleep 1
 	
 	# PanSTARRS z-band DR4
 	filter=z2
 	prefix=PSS.DR4
-	base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.z
+	base=$image_dir/panstarrs/DR4.5/resamp/${prefix}.${xxx}.${yyy}.z
 	set +e
-	vls --cert=$HOME/cadcproxy.pem --vos-debug $base.fits >& /dev/null
+	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
 	then
 	    set -e
 	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 	    then
-		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+		echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
 	else
 	    set -e
 	    echo -n ic -p -32 -c 10000 10000 \'0\' \
 		 \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	fi
-	echo
+	echo sleep 1
 	
 	# HSC g-band
 	filter=g
@@ -290,16 +292,16 @@ do
 	HSC_field_name=`echo ${xxx} ${yyy}|awk '{printf "%i_%i\n",$1,$2}'`
 	base=$image_dir/whigs/stack_images_CFIS_scheme/${prefix}${HSC_field_name}
 	set +e
-	vls --cert=$HOME/cadcproxy.pem --vos-debug $base.fits >& /dev/null
+	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
 	then
 	    set -e
-	    size=`vls -l --cert=$HOME/cadcproxy.pem $base.fits | awk '{print $5}'`
+	    size=`vls -l $base.fits | awk '{print $5}'`
 	    if [ ! $size -eq 0 ]
 	    then
 		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.raw.fits ]
 		then
-		    echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
+		    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 		    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
     			 $md/$field_name/$filter/${field_name}_${filter}.raw.fits \
     			 $md/$field_name/$filter/${field_name}_${filter} \
@@ -326,20 +328,20 @@ do
 	    echo -n ic -p -32 -c 10000 10000 \'0\' \
 		 \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	fi
-	echo
+	echo sleep 1
 	
 	# HSC z-band
 	filter=z
 	prefix=WISHES
 	base=$image_dir/wishes_1/coadd/${prefix}.${xxx}.${yyy}.${filter}
 	set +e
-	vls --cert=$HOME/cadcproxy.pem --vos-debug $base.fits >& /dev/null
+	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
 	then
 	    set -e
 	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.raw.fits ]
 	    then
-		echo -n vcp --cert=$HOME/cadcproxy.pem --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
+		echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 		echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
     		     $md/$field_name/$filter/${field_name}_${filter}.raw.fits \
     		     $md/$field_name/$filter/${field_name}_${filter} \
@@ -362,7 +364,7 @@ do
 	    echo -n ic -p -32 -c 10000 10000 \'0\' \
 		 \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	fi
-	echo
+	echo sleep 1
     fi
 done
 
@@ -390,9 +392,9 @@ do
 		   $image \
 		   @RUNROOT@/INSTALL/gapphot_TE/ \
 		   ${band} \
-		   ${field_name}
+		   ${field_name} \;
 	  fi
-	  echo
+	  echo sleep 1
       done
   fi
 done
@@ -472,7 +474,7 @@ do
 				 ALPHA_J2000 \
 				 DELTA_J2000 \;
 			done	      
-			echo
+			echo sleep 1
 		    fi
 		fi 
 	    done
@@ -486,7 +488,7 @@ do
   if [ "${mode}" = "SDSSPREP" ]; then
       echo -n mkdir ${mdfield}/SDSS \;
       echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $field_name $RA $Dec \;
-      echo
+      echo sleep 1
   fi
 done
 
@@ -496,7 +498,7 @@ do
   if [ "${mode}" = "ZPREP" ]; then
       echo -n mkdir ${mdfield}/specz \;
       echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/prepare_specz.sh ${mdfield}/specz/ $field_name $RA $Dec \;
-      echo
+      echo sleep 1
   fi
 done
 
@@ -506,7 +508,7 @@ do
   if [ "${mode}" = "PSPREP" ]; then
       echo -n mkdir ${mdfield}/PS \;
       echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_PS.sh ${mdfield}/ $field_name $RA $Dec \;
-      echo
+      echo sleep 1
   fi
 done
 
@@ -524,14 +526,15 @@ do
 	      for band in u g r i z z2
 	      do
 		  wdband=${mdfield}/${band}
-		  echo bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_K1000.sh \
+		  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_K1000.sh \
 		       ${wdband} \
 		       $SDSS_cat \
 		       ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat \
-		       ${band} ${field_name}
+		       ${band} ${field_name} \;
 	      done
 	  done
       done
+      echo sleep 1
   fi
 done
 
@@ -549,14 +552,15 @@ do
 	      for band in u g r i z z2
 	      do
 		  wdband=${mdfield}/${band}
-		  echo bash @RUNROOT@/@SCRIPTPATH@/compare_PS.sh \
+		  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS.sh \
 		       ${wdband} \
 		       $PS_cat \
 		       ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat \
-		       ${band} ${field_name}
+		       ${band} ${field_name} \;
 	      done
 	  done
       done
+      echo sleep 1
   fi
 done
 
@@ -692,8 +696,9 @@ do
 	       ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
 	       ${mdfield}/${field_name}${suffix}_ugriz.cat \;
 	  
-	  echo rm -f ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp
+	  echo -n rm -f ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \;
       done
+      echo sleep 1
   fi
 done
 
@@ -705,12 +710,13 @@ do
       SDSS_cat=${mdfield}/SDSS/${field_name}_sdssdr10_stars.cat
       for suffix in "" "_SP"
       do
-	  echo bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_ugriz.sh \
+	  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_ugriz.sh \
 	       ${mdfield} \
 	       $SDSS_cat \
 	       ${mdfield}/${field_name}${suffix}_ugriz.cat \
-	       ${field_name}
+	       ${field_name} \;
       done
+      echo sleep 1
   fi
 done
 
@@ -722,12 +728,13 @@ do
       PS_cat=${mdfield}/PS/${field_name}_PS1-DR2.cat
       for suffix in "" "_SP"
       do
-	  echo bash @RUNROOT@/@SCRIPTPATH@/compare_PS_ugriz.sh \
+	  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS_ugriz.sh \
 	       ${mdfield} \
 	       $PS_cat \
 	       ${mdfield}/${field_name}${suffix}_ugriz.cat \
-	       ${field_name}
+	       ${field_name} \;
       done
+      echo sleep 1
   fi
 done
 
@@ -771,14 +778,15 @@ do
 		   -k  \
 		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z MAG_LIM_0p7_z2 \
 		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z MAG_LIM_1p0_z2 \;
-	      echo rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \
+	      echo -n rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \
 		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
 		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
 		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
 		   ${mdfield}/BPZ_photoz/${field_name}${suffix}_${filters}_maglim_photoz.probs \
-		   ${mdfield}/BPZ_photoz/${field_name}${suffix}_${filters}_maglim_photoz.flux_comparison
+		   ${mdfield}/BPZ_photoz/${field_name}${suffix}_${filters}_maglim_photoz.flux_comparison \;
 	  done
       done
+      echo sleep 1
   fi
 done
 
@@ -1059,7 +1067,7 @@ do
 			    fi
 			done
 		    fi
-		    echo
+		    echo sleep 1
 		done
 	    done
 	done
@@ -1088,7 +1096,7 @@ do
 		  ${field_name}_r.fits \
 		  ${field_name}_r.weight.fits \
 		  MEGAPRIME_mask.ini \;
-	echo
+	echo sleep 1
     fi
 done
 
@@ -1133,7 +1141,7 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COPY" ]; then
       #### Copy data from /scratch to permanent storage.
-      echo rsync -atvu ${mdfield} /arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS5000/
+      echo rsync -atvu ${mdfield} /arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS_DR6/
   fi
 done
 
@@ -1142,7 +1150,7 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COPYBACK" ]; then
       #### Copy data from /scratch to permanent storage.
-      echo rsync --exclude old_PS-DR4 -atvu /arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS5000/${field_name} ${md}/
+      echo rsync --exclude old_PS-DR4 -atvu /arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS_DR6/${field_name} ${md}/
   fi
 done
 
