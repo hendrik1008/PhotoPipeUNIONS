@@ -246,7 +246,7 @@ do
 	
 	# PanSTARRS i-band DR4
 	filter=i
-	prefix=PSS.DR4
+	prefix=PSS.DR4.5
 	base=$image_dir/panstarrs/DR4.5/resamp/${prefix}.${xxx}.${yyy}.${filter}
 	set +e
 	vls --vos-debug $base.fits >& /dev/null
@@ -259,16 +259,30 @@ do
 		echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
 	else
-	    set -e
-	    echo -n ic -p -32 -c 10000 10000 \'0\' \
-		 \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	    prefix=PSS.DR4
+	    base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.${filter}
+	    set +e
+	    vls --vos-debug $base.fits >& /dev/null
+	    if [ "$?" -eq "0" ]
+	    then
+		set -e
+		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+		then
+		    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+		    echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+		fi
+	    else
+		set -e
+		echo -n ic -p -32 -c 10000 10000 \'0\' \
+		     \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	    fi
 	fi
 	echo sleep 1
 	
 	# PanSTARRS z-band DR4
 	filter=z2
 	prefix=PSS.DR4
-	base=$image_dir/panstarrs/DR4.5/resamp/${prefix}.${xxx}.${yyy}.z
+	base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.z
 	set +e
 	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
@@ -299,7 +313,7 @@ do
 	    size=`vls -l $base.fits | awk '{print $5}'`
 	    if [ ! $size -eq 0 ]
 	    then
-		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.raw.fits ]
+		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 		then
 		    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 		    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
@@ -339,7 +353,7 @@ do
 	if [ "$?" -eq "0" ]
 	then
 	    set -e
-	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.raw.fits ]
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
 	    then
 		echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 		echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
@@ -474,42 +488,51 @@ do
 				 ALPHA_J2000 \
 				 DELTA_J2000 \;
 			done	      
-			echo sleep 1
 		    fi
 		fi 
 	    done
 	done
+	echo sleep 1
     fi
 done
 
 ### Preparation of SDSS catalogue.
 for mode in ${MODE}
 do
-  if [ "${mode}" = "SDSSPREP" ]; then
-      echo -n mkdir ${mdfield}/SDSS \;
-      echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $field_name $RA $Dec \;
-      echo sleep 1
-  fi
+    if [ "${mode}" = "SDSSPREP" ]; then
+	if [ ! -s ${mdfield}/SDSS/${field_name}_sdssdr10_stars.cat ]
+	then
+	    echo -n mkdir ${mdfield}/SDSS \;
+	    echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_sloan.sh ${mdfield}/SDSS/ $field_name $RA $Dec \;
+	fi
+	echo sleep 1
+    fi
 done
 
 ### Preparation of Seb's redshift catalogue.
 for mode in ${MODE}
 do
-  if [ "${mode}" = "ZPREP" ]; then
-      echo -n mkdir ${mdfield}/specz \;
-      echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/prepare_specz.sh ${mdfield}/specz/ $field_name $RA $Dec \;
-      echo sleep 1
-  fi
+    if [ "${mode}" = "ZPREP" ]; then
+	if [ ! -s ${mdfield}/SDSS/${field_name}_redshifts-2024-01-04.cat ]
+	then
+	    echo -n mkdir ${mdfield}/specz \;
+	    echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/prepare_specz.sh ${mdfield}/specz/ $field_name $RA $Dec \;
+	fi
+	echo sleep 1
+    fi
 done
 
 ### Preparation of Seb's redshift catalogue.
 for mode in ${MODE}
 do
-  if [ "${mode}" = "PSPREP" ]; then
-      echo -n mkdir ${mdfield}/PS \;
-      echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_PS.sh ${mdfield}/ $field_name $RA $Dec \;
-      echo sleep 1
-  fi
+    if [ "${mode}" = "PSPREP" ]; then
+	if [ ! -s ${mdfield}/SDSS/${field_name}_PS1-DR2.cat ]
+	then
+	    echo -n mkdir ${mdfield}/PS \;
+	    echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_PS.sh ${mdfield}/ $field_name $RA $Dec \;
+	fi
+	echo sleep 1
+    fi
 done
 
 ### Comparisons SDSS (ugriz bands).
@@ -518,22 +541,29 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILE" ]; then
       SDSS_cat=${mdfield}/SDSS/${field_name}_sdssdr10_stars.cat
-      for suffix in "_SP" ""
-      do
-	  ### Loop over all UNIONS bands.
-	  for ending in "" _minaper1p0 #_stars _stars0p7
+      if [ -s $SDSS_cat ]
+      then
+	  for suffix in "_SP" ""
 	  do
-	      for band in u g r i z z2
+	      ### Loop over all UNIONS bands.
+	      for ending in "" _minaper1p0 #_stars _stars0p7
 	      do
-		  wdband=${mdfield}/${band}
-		  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_K1000.sh \
-		       ${wdband} \
-		       $SDSS_cat \
-		       ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat \
-		       ${band} ${field_name} \;
+		  for band in u g r i z z2
+		  do
+		      wdband=${mdfield}/${band}
+		      if [ -s ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat ] && \
+			     [ ! -s $wdband/${field_name}${suffix}_${band}_smart${ending}_full_SDSS_${band}_offset.asc ]
+		      then
+			  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_K1000.sh \
+			       ${wdband} \
+			       $SDSS_cat \
+			       ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat \
+			       ${band} ${field_name} \;
+		      fi
+		  done
 	      done
 	  done
-      done
+      fi
       echo sleep 1
   fi
 done
@@ -544,22 +574,29 @@ for mode in ${MODE}
 do
   if [ "${mode}" = "COMPTILEPS" ]; then
       PS_cat=${mdfield}/PS/${field_name}_PS1-DR2.cat
-      for suffix in "_SP" ""
-      do
-	  ### Loop over all UNIONS bands.
-	  for ending in "" _minaper1p0 #_stars _stars0p7
+      if [ -s $PS_cat ]
+      then
+	  for suffix in "_SP" ""
 	  do
-	      for band in u g r i z z2
+	      ### Loop over all UNIONS bands.
+	      for ending in "" _minaper1p0 #_stars _stars0p7
 	      do
-		  wdband=${mdfield}/${band}
-		  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS.sh \
-		       ${wdband} \
-		       $PS_cat \
-		       ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat \
-		       ${band} ${field_name} \;
+		  for band in u g r i z z2
+		  do
+		      wdband=${mdfield}/${band}
+		      if [ -s ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat ] && \
+			     [ ! -s $wdband/${field_name}${suffix}_${band}_smart${ending}_full_PS_${band}_offset.asc ]
+		      then
+			  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS.sh \
+			       ${wdband} \
+			       $PS_cat \
+			       ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat \
+			       ${band} ${field_name} \;
+		      fi
+		  done
 	      done
 	  done
-      done
+      fi
       echo sleep 1
   fi
 done
