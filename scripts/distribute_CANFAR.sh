@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#### xifjy6-soccuz-papsiV
-
 iterstart=$1
 iterend=$2
 nsession=$3
