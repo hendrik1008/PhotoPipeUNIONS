@@ -246,8 +246,8 @@ do
 	
 	# PanSTARRS i-band DR4
 	filter=i
-	prefix=PSS.DR4.5
-	base=$image_dir/panstarrs/DR4.5/resamp/${prefix}.${xxx}.${yyy}.${filter}
+	prefix=PSS.DR4gold
+	base=$image_dir/panstarrs/DR4gold/resamp/${prefix}.${xxx}.${yyy}.${filter}
 	set +e
 	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
@@ -259,30 +259,30 @@ do
 		echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
 	else
-	    prefix=PSS.DR4
-	    base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.${filter}
-	    set +e
-	    vls --vos-debug $base.fits >& /dev/null
-	    if [ "$?" -eq "0" ]
-	    then
-		set -e
-		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
-		then
-		    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-		    echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-		fi
-	    else
+	    #prefix=PSS.DR4
+	    #base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.${filter}
+	    #set +e
+	    #vls --vos-debug $base.fits >& /dev/null
+	    #if [ "$?" -eq "0" ]
+	    #then
+	    #	set -e
+	    #	if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+	    #	then
+	    #	    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
+	    #	    echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
+	    #	fi
+	    #else
 		set -e
 		echo -n ic -p -32 -c 10000 10000 \'0\' \
 		     \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-	    fi
+	    #fi
 	fi
 	echo sleep 1
 	
 	# PanSTARRS z-band DR4
 	filter=z2
 	prefix=PSS.DR4
-	base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.z
+	base=$image_dir/panstarrs/DR4gold/resamp/${prefix}.${xxx}.${yyy}.z
 	set +e
 	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
@@ -347,7 +347,7 @@ do
 	# HSC z-band
 	filter=z
 	prefix=WISHES
-	base=$image_dir/wishes_1/coadd/${prefix}.${xxx}.${yyy}.${filter}
+	base=$image_dir/wishes_1/coadd_202505/${prefix}.${xxx}.${yyy}.${filter}
 	set +e
 	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
