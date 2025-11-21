@@ -7,7 +7,7 @@ ml.use('Agg')
 import matplotlib.pyplot as plt
 import math
 
-plt.rc('font', size=15)
+plt.rc('font', size=13)
 
 def weighted_std(values, weights):
     """
@@ -40,21 +40,25 @@ z_spec_key = sys.argv[3]
 z_phot_key = sys.argv[4]
 r_mag_key = sys.argv[5]
 ZBmax = float(sys.argv[6])
-label = sys.argv[7]
-outbase = sys.argv[8]
-r_hist_file = sys.argv[9]
+rmax = float(sys.argv[7])
+label = sys.argv[8]
+outbase = sys.argv[9]
+r_hist_file = sys.argv[10]
 
 ### catalogue 1 ###
 
 catalogue = pyfits.open(catalogue_file)
 catdata_tmp = catalogue[1].data
 ZBmask = np.less(catdata_tmp.field(z_phot_key),ZBmax)
-catdata = catdata_tmp[ZBmask]
+rmask = np.less(catdata_tmp.field(r_mag_key),rmax)
+catdata = catdata_tmp[ZBmask*rmask]
 z_spec = catdata.field(z_spec_key)
 z_phot = catdata.field(z_phot_key)
 r_mag = catdata.field(r_mag_key)
 
 r_hist = np.loadtxt(r_hist_file)
+r_hist_mask = np.greater(r_hist[:,1],rmax)
+r_hist[:,2][r_hist_mask] = 0
 r_hist_spec = np.histogram(r_mag, bins=20, range=(15.,25.))
 weight_hist = np.nan_to_num(r_hist[:,2]/r_hist_spec[0])
 weight_hist[np.greater(weight_hist,1E6)] = 0.
@@ -125,7 +129,8 @@ for index in range(20):
 catalogue2 = pyfits.open(catalogue_file2)
 catdata_tmp2 = catalogue2[1].data
 ZBmask2 = np.less(catdata_tmp2.field(z_phot_key),ZBmax)
-catdata2 = catdata_tmp2[ZBmask2]
+rmask2 = np.less(catdata_tmp2.field(r_mag_key),rmax)
+catdata2 = catdata_tmp2[ZBmask2*rmask2]
 z_spec2 = catdata2.field(z_spec_key)
 z_phot2 = catdata2.field(z_phot_key)
 r_mag2  = catdata2.field(r_mag_key)
@@ -195,20 +200,27 @@ fig.subplots_adjust(hspace=0, wspace=0, bottom=0.2, left=0.2)
 plt.suptitle(label)
 #plt.gca().set_aspect('equal', adjustable='box')
 ax[3,0].set_xlabel(r"$z_\mathrm{spec}$")
+ax[3,0].set_xticks((0.,0.5,1.,1.5))
 ax[3,1].set_xlabel(r"$z_\mathrm{phot}$")
+ax[3,1].set_xticks((0.,0.5,1.,1.5))
 ax[3,2].set_xlabel(r"$r$")
+ax[3,2].set_xticks((18.,20.,22.,24.))
 #ax[0,0].set_ylabel(r"$\langle\Delta z\rangle$")
-ax[0,0].set_ylabel(r"$\mathrm{median}(\Delta z/(1+z))$")
+ax[0,0].set_ylabel(r"$\mathrm{med}(\Delta z/(1+z))$")
 ax[1,0].set_ylabel(r"$\mathrm{NMAD}(\Delta z/(1+z))$")
 ax[2,0].set_ylabel(r"$\eta_{0.15}\: [\%]$")
 #ax[3,0].set_ylabel(r"rel. freq.")
 ax[3,0].set_ylabel(r"$N$")
 ax[0,0].set_xlim(0.,1.95)
-ax[0,0].set_ylim(-0.19,0.19)
+ax[0,0].set_ylim(-0.29,0.29)
+ax[0,0].set_yticks((-0.2,-0.1,0.,0.1,0.2))
 ax[0,1].set_xlim(0.,1.95)
-ax[1,0].set_ylim(0.,0.19)
-ax[0,2].set_xlim(17.05,24.95)
+ax[1,0].set_ylim(0.,0.29)
+ax[1,0].set_yticks((0.,0.05,0.1,0.15,0.2,0.25))
+ax[0,2].set_xlim(17.05,rmax)
 ax[2,0].set_ylim(0.,49.)
+ax[2,0].set_yticks((0.,10.,20.,30.,40.))
+#ax[3,0].set_ylim(10.,5.E5)
 #ax.set_ylim(0.,6.95)
 #ax.xaxis.labelpad = -1
 #ax.scatter(z_spec,z_phot, s=15., alpha=0.1, marker=".", edgecolors="none")
@@ -236,12 +248,17 @@ ax[2,1].plot(z_phot_list,stats2['outlier rate']['z_phot']) #, color="black")
 ax[2,2].plot(r_mag_list,stats['outlier rate']['r_mag']) #, color="black")
 ax[2,2].plot(r_mag_list,stats2['outlier rate']['r_mag']) #, color="black")
 
-ax[3,0].hist(z_spec,  bins=20, range=(0.,2.),   normed=False, log=True, histtype="step")
-ax[3,0].hist(z_spec2, bins=20, range=(0.,2.),   normed=False, log=True, histtype="step")
-ax[3,1].hist(z_phot,  bins=20, range=(0.,2.),   normed=False, log=True, histtype="step")
-ax[3,1].hist(z_phot2, bins=20, range=(0.,2.),   normed=False, log=True, histtype="step")
-ax[3,2].hist(r_mag,   bins=20, range=(15.,27.), normed=False, log=True, histtype="step")
-ax[3,2].hist(r_mag2,  bins=20, range=(15.,27.), normed=False, log=True, histtype="step")
+ax[3,0].hist(z_spec,  bins=20, range=(0.,2.),   normed=True, log=False, histtype="step", weights=weight)
+ax[3,0].hist(z_spec2, bins=20, range=(0.,2.),   normed=True, log=False, histtype="step", weights=weight2)
+ax[3,1].hist(z_phot,  bins=20, range=(0.,2.),   normed=True, log=False, histtype="step", weights=weight)
+ax[3,1].hist(z_phot2, bins=20, range=(0.,2.),   normed=True, log=False, histtype="step", weights=weight2)
+ax[3,2].hist(r_mag,   bins=20, range=(15.,27.), normed=True, log=False, histtype="step", weights=None)
+ax[3,2].hist(r_mag2,  bins=20, range=(15.,27.), normed=True, log=False, histtype="step", weights=None)
+ax[3,2].plot(r_hist[:,1], r_hist[:,2])
+
+for i in range(3):
+    for j in range(4):
+        ax[j,i].grid(visible=True)
 
 #ax.plot([0.,7.],[0.15,7.9], "k:")
 #ax.plot([0.15,7.9],[0.,7], "k:")
