@@ -347,7 +347,7 @@ do
 	# HSC z-band
 	filter=z
 	prefix=WISHES
-	base=$image_dir/wishes_1/coadd_202505/${prefix}.${xxx}.${yyy}.${filter}
+	base=$image_dir/wishes_1/coadd_gold/${prefix}.${xxx}.${yyy}.${filter}
 	set +e
 	vls --vos-debug $base.fits >& /dev/null
 	if [ "$?" -eq "0" ]
