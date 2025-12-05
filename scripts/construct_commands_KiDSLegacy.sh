@@ -208,42 +208,6 @@ do
 	    echo sleep 1
 	done
 	
-	## PanSTARRS i-band DR3
-	#filter=i
-	#prefix=PS-DR3
-	#base=$image_dir/panstarrs/DR3/tiles/${prefix}.${xxx}.${yyy}.${filter}
-	#set +e
-	#vls --vos-debug $base.fits >& /dev/null
-	#if [ "$?" -eq "0" ]
-	#then
-	#    set -e
-	#    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
-	#    then
-	#    	echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-	#    fi
-	#    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
-	#    then
-	#	echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-	#    fi
-	#    echo -n replacekey_theli \
-	#    	 $md/$field_name/$filter/${field_name}_${filter}.fits \
-	#    	 \"CRPIX1\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
-	#    	 CRPIX1 \
-	#    	 \"CRPIX2\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
-	#    	 CRPIX2 \;
-	#    echo -n replacekey_theli \
-	#    	 $md/$field_name/$filter/${field_name}_${filter}.weight.fits \
-	#    	 \"CRPIX1\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
-	#    	 CRPIX1 \
-	#    	 \"CRPIX2\ \ \=\ \ \ 5.000672043000E\+03\ \/\ Reference\ pixel\ on\ this\ axis\" \
-	#    	 CRPIX2 \;
-	#else
-	#    set -e
-	#    echo -n ic -p -32 -c 10000 10000 \'0\' \
-	#	 \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-	#fi
-	#echo
-	
 	# PanSTARRS i-band DR4
 	filter=i
 	prefix=PSS.DR4gold
@@ -259,23 +223,9 @@ do
 		echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	    fi
 	else
-	    #prefix=PSS.DR4
-	    #base=$image_dir/panstarrs/DR4/resamp/${prefix}.${xxx}.${yyy}.${filter}
-	    #set +e
-	    #vls --vos-debug $base.fits >& /dev/null
-	    #if [ "$?" -eq "0" ]
-	    #then
-	    #	set -e
-	    #	if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
-	    #	then
-	    #	    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
-	    #	    echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-	    #	fi
-	    #else
-		set -e
-		echo -n ic -p -32 -c 10000 10000 \'0\' \
-		     \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
-	    #fi
+	    set -e
+	    echo -n ic -p -32 -c 10000 10000 \'0\' \
+		 \>$md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
 	fi
 	echo sleep 1
 	
