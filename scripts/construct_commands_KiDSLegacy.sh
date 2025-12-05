@@ -231,7 +231,7 @@ do
 	
 	# PanSTARRS z-band DR4
 	filter=z2
-	prefix=PSS.DR4
+	prefix=PSS.DR4gold
 	base=$image_dir/panstarrs/DR4gold/resamp/${prefix}.${xxx}.${yyy}.z
 	set +e
 	vls --vos-debug $base.fits >& /dev/null
