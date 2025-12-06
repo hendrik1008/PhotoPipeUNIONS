@@ -350,7 +350,7 @@ echo -en "   >\033[0;34m Update the configure script \033[0m"
 #PYTHONBIN=${RUNROOT}/INSTALL/anaconda2/bin/
 cp ${PACKROOT}/scripts/run_PhotoPipe_raw.sh ${RUNROOT}/run_PhotoPipe.sh 
 cp ${PACKROOT}/scripts/CANFAR_launch*.sh ${RUNROOT}/
-cp ${PACKROOT}/scripts/distribute_CANFAR.sh ${RUNROOT}/
+cp ${PACKROOT}/scripts/distribute_CANFAR*.sh ${RUNROOT}/
 #Make the Script, Config, and Runtime directories 
 mkdir -p ${RUNROOT}/${SCRIPTPATH}/ ${RUNROOT}/${CONFIGPATH}/ ${WORKINGDIR}/
 cp -r ${PACKROOT}/scripts/* ${RUNROOT}/${SCRIPTPATH}/
@@ -360,7 +360,7 @@ do
     sed -i "s#\@${OPT}\@#${!OPT}#g" \
 	${RUNROOT}/run_PhotoPipe.sh \
 	${RUNROOT}/CANFAR_launch*.sh \
-	${RUNROOT}/distribute_CANFAR.sh \
+	${RUNROOT}/distribute_CANFAR*.sh \
 	${RUNROOT}/${SCRIPTPATH}/*.* \
 	${RUNROOT}/${SCRIPTPATH}/QC/*.*
 done 
