@@ -732,7 +732,7 @@ do
       echo -n "set -e ; "
       for suffix in "" "_SP"
       do
-	  for filters in ugriz ugri # uriz
+	  for filters in ugriz griz # ugri # uriz
 	  do
 	      filters2="u g r i z z2"
 	      if [ $filters = "ugri" ]
@@ -740,7 +740,10 @@ do
 		  filters2="u g r i"
 	      elif [ $filters = "uriz" ]
 	      then
-		  filters2="u r i z"
+		  filters2="u r i z z2"
+	      elif [ $filters = "griz" ]
+	      then
+		  filters2="g r i z z2"
 	      fi
 	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
 		   @RUNROOT@/@SCRIPTPATH@/add_maglim6.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
@@ -1026,7 +1029,7 @@ done
 for mode in ${MODE}
 do
     if [ "${mode}" = "COMPTILEZ" ]; then
-	for filters in  ugriz ugri #uriz # ugri
+	for filters in  ugriz griz # ugri #uriz # ugri
 	do
 	    for suffix in "" "_SP"
 	    do
