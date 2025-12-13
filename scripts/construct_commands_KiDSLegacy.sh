@@ -697,11 +697,15 @@ do
       SDSS_cat=${mdfield}/SDSS/${field_name}_sdssdr10_stars.cat
       for suffix in "" "_SP"
       do
-	  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_ugriz.sh \
-	       ${mdfield} \
-	       $SDSS_cat \
-	       ${mdfield}/${field_name}${suffix}_ugriz.cat \
-	       ${field_name} \;
+	  if [ -s ${mdfield}/${field_name}${suffix}_ugriz.cat ] && \
+		 [ ! -s ${mdfield}/phot_comp_SDSS/${field_name}${suffix}_ugriz_SDSS_r_offset.asc ]
+	  then
+	      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_SDSS_ugriz.sh \
+		   ${mdfield} \
+		   $SDSS_cat \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat \
+		   ${field_name} \;
+	  fi
       done
       echo sleep 1
   fi
@@ -715,11 +719,15 @@ do
       PS_cat=${mdfield}/PS/${field_name}_PS1-DR2.cat
       for suffix in "" "_SP"
       do
-	  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS_ugriz.sh \
-	       ${mdfield} \
-	       $PS_cat \
-	       ${mdfield}/${field_name}${suffix}_ugriz.cat \
-	       ${field_name} \;
+	  if [ -s ${mdfield}/${field_name}${suffix}_ugriz.cat ] && \
+		 [ ! -s ${mdfield}/phot_comp_PS/${field_name}${suffix}_ugriz_SDSS_r_offset.asc ]
+	  then
+	      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS_ugriz.sh \
+		   ${mdfield} \
+		   $PS_cat \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat \
+		   ${field_name} \;
+	  fi
       done
       echo sleep 1
   fi
@@ -734,46 +742,49 @@ do
       do
 	  for filters in ugriz griz # ugri # uriz
 	  do
-	      filters2="u g r i z z2"
-	      if [ $filters = "ugri" ]
+	      if [ ! -s ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat ]
 	      then
-		  filters2="u g r i"
-	      elif [ $filters = "uriz" ]
-	      then
-		  filters2="u r i z z2"
-	      elif [ $filters = "griz" ]
-	      then
-		  filters2="g r i z z2"
+		  filters2="u g r i z z2"
+		  if [ $filters = "ugri" ]
+		  then
+		      filters2="u g r i"
+		  elif [ $filters = "uriz" ]
+		  then
+		      filters2="u r i z z2"
+		  elif [ $filters = "griz" ]
+		  then
+		      filters2="g r i z z2"
+		  fi
+		  echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		       @RUNROOT@/@SCRIPTPATH@/add_maglim6.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
+		       ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
+		  echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
+		       ${mdfield}\
+		       ${field_name}${suffix}_${filters}_maglim.cat \
+		       \"$filters2\" \
+		       MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
+		       0.01 \;
+		  echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		       @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugrizz2.py \
+		       ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
+		       ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \;
+		  echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \
+		       -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
+		       -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
+		       -t FIELDS \;
+		  echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
+		       -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat \
+		       -t OBJECTS \
+		       -k  \
+		       MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z MAG_LIM_0p7_z2 \
+		       MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z MAG_LIM_1p0_z2 \;
+		  echo -n rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \
+		       ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
+		       ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
+		       ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
+		       ${mdfield}/BPZ_photoz/${field_name}${suffix}_${filters}_maglim_photoz.probs \
+		       ${mdfield}/BPZ_photoz/${field_name}${suffix}_${filters}_maglim_photoz.flux_comparison \;
 	      fi
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/add_maglim6.py ${mdfield}/${field_name}${suffix}_ugriz.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \;
-	      echo -n bash @RUNROOT@/@SCRIPTPATH@/create_bpz_photozs_NGVSprior_KiDS_2017_68CI.sh \
-		   ${mdfield}\
-		   ${field_name}${suffix}_${filters}_maglim.cat \
-		   \"$filters2\" \
-		   MAG_GAAP MAGERR_GAAP MAG_LIM FLAG_GAAP EXTINCTION AB \
-		   0.01 \;
-	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-		   @RUNROOT@/@SCRIPTPATH@/apply_extinction_ugrizz2.py \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \;
-	      echo -n ldacaddtab -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
-		   -p ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
-		   -t FIELDS \;
-	      echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat \
-		   -t OBJECTS \
-		   -k  \
-		   MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z MAG_LIM_0p7_z2 \
-		   MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z MAG_LIM_1p0_z2 \;
-	      echo -n rm -f ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim.cat \
-		   ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
-		   ${mdfield}/BPZ_photoz/${field_name}${suffix}_${filters}_maglim_photoz.probs \
-		   ${mdfield}/BPZ_photoz/${field_name}${suffix}_${filters}_maglim_photoz.flux_comparison \;
 	  done
       done
       echo sleep 1
@@ -1044,7 +1055,8 @@ do
 				SDSS) specz_cat=${mdfield}/SDSS/${field_name}_sdssdr10_galz.cat;;
 				specz) specz_cat=${mdfield}/specz/${field_name}_redshifts-2024-01-04.cat;;
 			    esac
-			    if [ -e $specz_cat ]
+			    if [ -e $specz_cat ] && \
+				   [ ! -s ${mdfield}/${field_name}${suffix}_${filters}_photoz${recalib}_ext_${label}_zz.txt ]
 			    then
 				echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_z.sh \
 				     ${mdfield} \
@@ -1068,25 +1080,28 @@ done
 for mode in ${MODE}
 do
     if [ "${mode}" = "MASK" ]; then
-	echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic -p 16 \
-	     \'0 64 \%1 0 \> \? 0 16 \%2 0 \> \? \+ 0 32 \%3 0 \> \? \+ 0 128 \%4 0 \> \? \+ 0 256 \%5 0 \> \? \+ 0 2048 \%6 0 \> \? \+\' \
-	     ${mdfield}/r/${field_name}_r.weight.fits \
-	     ${mdfield}/u/${field_name}_u.weight.fits \
-	     ${mdfield}/g/${field_name}_g.weight.fits \
-	     ${mdfield}/i/${field_name}_i.weight.fits \
-	     ${mdfield}/z/${field_name}_z.weight.fits \
-	     ${mdfield}/z2/${field_name}_z2.weight.fits \
-	     \> ${mdfield}/${field_name}_ugriz.mask.fits \;
-	echo -n gzip -c ${mdfield}/${field_name}_ugriz.mask.fits \
-	     \> ${mdfield}/${field_name}_ugriz.mask.fits.gz \;
-	echo -n cd /arc/home/hendrik/src/automask/scripts/Linux_64 \;
-	echo -n export INSTRUMENT\=MEGAPRIME \;
-	echo -n bash ./maskstars.sh \
-	          $mdfield/r/ \
-		  ${field_name}_r.fits \
-		  ${field_name}_r.weight.fits \
-		  MEGAPRIME_mask.ini \;
-	echo sleep 1
+	if [ ! -s ${mdfield}/${field_name}_ugriz.mask.fits ]
+	then
+	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic -p 16 \
+		 \'0 64 \%1 0 \> \? 0 16 \%2 0 \> \? \+ 0 32 \%3 0 \> \? \+ 0 128 \%4 0 \> \? \+ 0 256 \%5 0 \> \? \+ 0 2048 \%6 0 \> \? \+\' \
+		 ${mdfield}/r/${field_name}_r.weight.fits \
+		 ${mdfield}/u/${field_name}_u.weight.fits \
+		 ${mdfield}/g/${field_name}_g.weight.fits \
+		 ${mdfield}/i/${field_name}_i.weight.fits \
+		 ${mdfield}/z/${field_name}_z.weight.fits \
+		 ${mdfield}/z2/${field_name}_z2.weight.fits \
+		 \> ${mdfield}/${field_name}_ugriz.mask.fits \;
+	    echo -n gzip -c ${mdfield}/${field_name}_ugriz.mask.fits \
+		 \> ${mdfield}/${field_name}_ugriz.mask.fits.gz \;
+	    echo -n cd /arc/home/hendrik/src/automask/scripts/Linux_64 \;
+	    echo -n export INSTRUMENT\=MEGAPRIME \;
+	    echo -n bash ./maskstars.sh \
+	         $mdfield/r/ \
+		 ${field_name}_r.fits \
+		 ${field_name}_r.weight.fits \
+		 MEGAPRIME_mask.ini \;
+	    echo sleep 1
+	fi
     fi
 done
 
@@ -1097,9 +1112,13 @@ do
       #### Width of stellar locus.
       for band in u g r i z z2
       do
-	  echo @RUNROOT@/INSTALL/anaconda2/bin/python \
-	       @RUNROOT@/@SCRIPTPATH@/width_stellar_locus.py \
-               ${mdfield}/${band}/${field_name}_${band}_star_cat_GAaP
+	  if [ -s ${mdfield}/${band}/${field_name}_${band}_star_cat_GAaP.asc ] && \
+		 [ ! -s ${mdfield}/${band}/${field_name}_${band}_star_cat_GAaP_SL.txt ]
+	  then
+	      echo @RUNROOT@/INSTALL/anaconda2/bin/python \
+		   @RUNROOT@/@SCRIPTPATH@/width_stellar_locus.py \
+		   ${mdfield}/${band}/${field_name}_${band}_star_cat_GAaP
+	  fi
       done
   fi
 done
@@ -1141,6 +1160,15 @@ do
   if [ "${mode}" = "COPYBACK" ]; then
       #### Copy data from /scratch to permanent storage.
       echo rsync --exclude old_PS-DR4 -atvu /arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS_DR6/${field_name} ${md}/
+  fi
+done
+
+### CHECKFAIL.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "CHECKFAIL" ]; then
+      #### Check for failures in previous processing and delete faulty products.
+      echo bash @RUNROOT@/@SCRIPTPATH@/check_fail.sh /arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS_DR6/${field_name}
   fi
 done
 
