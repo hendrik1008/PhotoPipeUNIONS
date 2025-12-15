@@ -358,8 +358,8 @@ do
 		   ${band} \
 		   ${field_name} \;
 	  fi
-	  echo sleep 1
       done
+      echo sleep 1
   fi
 done
 
@@ -1069,10 +1069,10 @@ do
 			    fi
 			done
 		    fi
-		    echo sleep 1
 		done
 	    done
 	done
+	echo sleep 1
     fi
 done
 
@@ -1100,8 +1100,8 @@ do
 		 ${field_name}_r.fits \
 		 ${field_name}_r.weight.fits \
 		 MEGAPRIME_mask.ini \;
-	    echo sleep 1
 	fi
+	echo sleep 1
     fi
 done
 
@@ -1120,6 +1120,7 @@ do
 		   ${mdfield}/${band}/${field_name}_${band}_star_cat_GAaP
 	  fi
       done
+      echo sleep 1
   fi
 done
 
