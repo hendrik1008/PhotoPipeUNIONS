@@ -186,7 +186,8 @@ do
 	    if [ "$?" -eq "0" ]
 	    then
 		set -e
-		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ] || \
+		       [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
 		then
     		    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
     		    echo -n vcp --vos-debug $base.weight.fits.fz $md/$field_name/$filter/${field_name}_${filter}.weightraw.fits.fz \;
@@ -217,7 +218,8 @@ do
 	if [ "$?" -eq "0" ]
 	then
 	    set -e
-	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ] || \
+		   [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
 	    then
 		echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
 		echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
@@ -238,7 +240,8 @@ do
 	if [ "$?" -eq "0" ]
 	then
 	    set -e
-	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ] || \
+		   [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
 	    then
 		echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.fits \;
 		echo -n vcp --vos-debug $base.weight.fits $md/$field_name/$filter/${field_name}_${filter}.weight.fits \;
@@ -263,7 +266,8 @@ do
 	    size=`vls -l $base.fits | awk '{print $5}'`
 	    if [ ! $size -eq 0 ]
 	    then
-		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+		if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ] || \
+		       [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
 		then
 		    echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 		    echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \
@@ -303,7 +307,8 @@ do
 	if [ "$?" -eq "0" ]
 	then
 	    set -e
-	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ]
+	    if [ ! -s $md/$field_name/$filter/${field_name}_${filter}.fits ] || \
+		   [ ! -s $md/$field_name/$filter/${field_name}_${filter}.weight.fits ]
 	    then
 		echo -n vcp --vos-debug $base.fits $md/$field_name/$filter/${field_name}_${filter}.raw.fits \;
 		echo -n python3 @RUNROOT@/@SCRIPTPATH@/extract_HSC.py \

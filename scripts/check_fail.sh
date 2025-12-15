@@ -10,7 +10,8 @@ do
     if [ -s $md/$band/${tile}_${band}.fits ]
     then
 	size=`ls -l $md/$band/${tile}_${band}.fits|awk '{print $5}'`
-	if [ $size -lt 400000000 ]
+	sizew=`ls -l $md/$band/${tile}_${band}.weight.fits|awk '{print $5}'`
+	if [ $size -lt 400000000 ] || [ $sizew -lt 400000000 ]
 	then
 	    rm -rf $md/$band
 	    rm -rf $md/${tile}*
