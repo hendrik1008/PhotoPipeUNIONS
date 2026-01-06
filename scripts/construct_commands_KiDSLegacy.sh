@@ -568,7 +568,7 @@ do
 	  then
 	      suffix="_SP"
 	  fi
-	  echo -n set -e \;
+	  #echo -n set -e \;
 	  echo -n cp $incat ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp0_$$ \;
 	  
 	  i=0
@@ -742,7 +742,7 @@ done
 for mode in ${MODE}
 do
   if [ "${mode}" = "BPZ" ]; then
-      echo -n "set -e ; "
+      #echo -n "set -e ; "
       for suffix in "" "_SP"
       do
 	  for filters in ugriz griz # ugri # uriz
@@ -1087,15 +1087,37 @@ do
     if [ "${mode}" = "MASK" ]; then
 	if [ ! -s ${mdfield}/${field_name}_ugriz.mask.fits ]
 	then
+	    for filter in u g r i z z2
+	    do
+		if [ -s ${mdfield}/$filter/${field_name}_$filter.weight.fits ]
+		then
+		    if [ -s ${mdfield}/$filter/${field_name}_${filter}_smart_full.cat ]
+		    then
+			echo -n ln -s ${mdfield}/r/${field_name}_r.weight.fits ${mdfield}/r/${field_name}_r.weight2.fits \;
+		    else
+			echo -n ic -p -32 -c 10000 10000 \'0\' \
+			     \>$md/$field_name/$filter/${field_name}_${filter}.weight2.fits \;
+		    fi
+		else
+		    echo -n ln -s ${mdfield}/r/${field_name}_r.weight.fits ${mdfield}/r/${field_name}_r.weight2.fits \;
+		fi
+	    done
 	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic -p 16 \
 		 \'0 64 \%1 0 \> \? 0 16 \%2 0 \> \? \+ 0 32 \%3 0 \> \? \+ 0 128 \%4 0 \> \? \+ 0 256 \%5 0 \> \? \+ 0 2048 \%6 0 \> \? \+\' \
-		 ${mdfield}/r/${field_name}_r.weight.fits \
-		 ${mdfield}/u/${field_name}_u.weight.fits \
-		 ${mdfield}/g/${field_name}_g.weight.fits \
-		 ${mdfield}/i/${field_name}_i.weight.fits \
-		 ${mdfield}/z/${field_name}_z.weight.fits \
-		 ${mdfield}/z2/${field_name}_z2.weight.fits \
+		 ${mdfield}/r/${field_name}_r.weight2.fits \
+		 ${mdfield}/u/${field_name}_u.weight2.fits \
+		 ${mdfield}/g/${field_name}_g.weight2.fits \
+		 ${mdfield}/i/${field_name}_i.weight2.fits \
+		 ${mdfield}/z/${field_name}_z.weight2.fits \
+		 ${mdfield}/z2/${field_name}_z2.weight2.fits \
 		 \> ${mdfield}/${field_name}_ugriz.mask.fits \;
+	    for filter in u g r i z z2
+	    do
+		if [ -L ${mdfield}/r/${field_name}_r.weight.fits ${mdfield}/r/${field_name}_r.weight2.fits ]
+		then
+		    echo -n rm ${mdfield}/r/${field_name}_r.weight2.fits \;
+		fi
+	    done
 	    echo -n gzip -c ${mdfield}/${field_name}_ugriz.mask.fits \
 		 \> ${mdfield}/${field_name}_ugriz.mask.fits.gz \;
 	    echo -n cd /arc/home/hendrik/src/automask/scripts/Linux_64 \;
