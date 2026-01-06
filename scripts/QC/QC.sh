@@ -3,8 +3,8 @@
 export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
 export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 
-bd=/arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS5000/
-md=$bd/../UNIONS5000_QC/
+bd=/arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS_DR6/
+md=$bd/../UNIONS_DR6_QC/
 
 test ! -d $md/ && mkdir $md/
 
@@ -19,24 +19,24 @@ test ! -d $md/ && mkdir $md/
 #    ###########################
 #    wc $bd/UNIONS.*/$band/*cat_GAaP.asc \
 #       | sed '$d' \
-#       > $md/UNIONS5000_${band}_star_cat_GAaP_wc.asc
+#       > $md/UNIONS_DR6_${band}_star_cat_GAaP_wc.asc
 #    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/star_count.py \
-#    	   $md/UNIONS5000_${band}_star_cat_GAaP_wc $band
+#    	   $md/UNIONS_DR6_${band}_star_cat_GAaP_wc $band
 #    
 #    #############################
 #    #### Used PSF star counts ###
 #    #############################
 #    wc $bd/UNIONS.*/$band/*_smart_ggstarsused.txt \
 #       | sed '$d' \
-#       > $md/UNIONS5000_${band}_starsused.asc
+#       > $md/UNIONS_DR6_${band}_starsused.asc
 #    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/star_count.py \
-#    	   $md/UNIONS5000_${band}_starsused $band
+#    	   $md/UNIONS_DR6_${band}_starsused $band
 #    
 #    ###############################
 #    ### Fraction of used stars  ###
 #    ###############################
 #    echo "#tile stars used-stars fraction" > \
-#    	 $md/UNIONS5000_${band}_starfrac.asc
+#    	 $md/UNIONS_DR6_${band}_starfrac.asc
 #    while read tile
 #    do
 #    	stars=$bd/$tile/$band/${tile}_${band}_star_cat_GAaP.asc
@@ -47,15 +47,15 @@ test ! -d $md/ && mkdir $md/
 #    	    nused=`wc $starsused | awk '{print $1}'`
 #    	    echo $n $nused | awk '{if ($1!=0) print "'$tile'", $1, $2, $2/$1}'
 #    	fi
-#    done < @RUNROOT@/ugri_tiles.txt >> $md/UNIONS5000_${band}_starfrac.asc
+#    done < @RUNROOT@/ugri_tiles.txt >> $md/UNIONS_DR6_${band}_starfrac.asc
 #    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/starfrac.py \
-#    	   $md/UNIONS5000_${band}_starfrac $band
+#    	   $md/UNIONS_DR6_${band}_starfrac $band
 #    
 #    ####################################################
 #    ### Extent of PSF star vs. full catalogue in x/y ###
 #    ####################################################
 #    echo "#tile x-range y-range x-range_stars y-range_stars" > \
-#    	 $md/UNIONS5000_${band}_xy_range.asc
+#    	 $md/UNIONS_DR6_${band}_xy_range.asc
 #    while read tile
 #    do
 #    	stats=$bd/$tile/$band/${tile}_${band}_cat_stats.txt
@@ -65,15 +65,15 @@ test ! -d $md/ && mkdir $md/
 #    	    
 #    	    paste $stats $stats_stars | awk '{if (NR>1) print "'$tile'", $2-$1,$4-$3,$6-$5,$8-$7}'
 #    	fi
-#    done < @RUNROOT@/ugri_tiles.txt >> $md/UNIONS5000_${band}_xy_range.asc
+#    done < @RUNROOT@/ugri_tiles.txt >> $md/UNIONS_DR6_${band}_xy_range.asc
 #    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/xy_range.py \
-#    	   $md/UNIONS5000_${band}_xy_range $band
+#    	   $md/UNIONS_DR6_${band}_xy_range $band
 #    
 #    ##############################
 #    ### Width of stellar locus ###
 #    ##############################
 #    echo "#tile SL-mean SL-std" > \
-#    	 $md/UNIONS5000_${band}_SL.asc
+#    	 $md/UNIONS_DR6_${band}_SL.asc
 #    while read tile
 #    do
 #    	stats=$bd/$tile/$band/${tile}_${band}_star_cat_GAaP_SL.txt
@@ -81,9 +81,9 @@ test ! -d $md/ && mkdir $md/
 #    	then
 #    	    cat $stats | awk '{print "'$tile'", $1, $2, $2/$1}'
 #    	fi
-#    done < @RUNROOT@/ugri_tiles.txt >> $md/UNIONS5000_${band}_SL.asc
+#    done < @RUNROOT@/ugri_tiles.txt >> $md/UNIONS_DR6_${band}_SL.asc
 #    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/SL_dist.py \
-#    	   $md/UNIONS5000_${band}_SL $band
+#    	   $md/UNIONS_DR6_${band}_SL $band
 #done
 
 
@@ -107,186 +107,185 @@ test ! -d $md/ && mkdir $md/
 
 ulimit -n 20000
 
-#for suffix in "_SP" #""
-#do
-#    for filters in  ugriz #ugri #ugriz2 #ugri #uriz 
-#    do
-#	filters2=$filters
-#	if [ $filters = "ugriz2" ]
-#	then
-#	    filters2=ugriz
-#	fi
-#	for calib in "" # "_recalibSDSSplus" # "_recalibSDSS" # "" #"_recalib" "_recalibplus"
-#	do
-#	    for ending in "" # "_cleanZP" # "_cleanZPi" # ""
-#	    do
-#		for survey in specz #SDSS
-#		do
-#		    pointings=${filters}_tiles$ending.txt
-#		    FILES=""
-#		    while read field
-#		    do
-#			FILES=$FILES" "$bd/$field/${field}${suffix}_${filters2}_photoz${calib}_ext_${survey}.cat
-#		    done<@RUNROOT@/$pointings
-#		    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats.py \
-#							   $md/UNIONS5000${suffix}_${filters}${calib}_${survey}${ending}.cat \
-#							   OBJECTS \
-#							   $FILES
-#		    if [ -f  $md/UNIONS5000${suffix}_${filters}${calib}_${survey}${ending}.cat ]
-#		    then
-#			#@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
-#			    #	   $md/UNIONS5000_${filters}${calib}_${survey}${ending}.cat \
-#			    #	   z_spec_spec \
-#			    #	   Z_B \
-#			    #	   MAG_AUTO \
-#			    #	   2.0 \
-#			    #	   24.0 \
-#			    #	   $filters"-"$calib"-"$ending"-"$survey \
-#			    #	   $md/UNIONS5000_${filters}${calib}_${survey}${ending}_zz
-#			@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot_weighted.py \
-#							       $md/UNIONS5000${suffix}_${filters}${calib}_${survey}${ending}.cat \
-#							       z_spec_spec \
-#							       Z_B \
-#							       MAG_AUTO \
-#							       2.0 \
-#							       24.0 \
-#							       ${filters}${suffix} \
-#							       $md/UNIONS5000${suffix}_${filters}${calib}_${survey}${ending}_zzw \
-#							       $md/UNIONS100_ugriz_photoz_ext_nc.txt
-#		    fi
-#		done
-#	    done
-#	done
-#    done
-#done
+for suffix in "" # "_SP"
+do
+    for filters in ugriz griz  #ugri #ugriz2 #ugri #uriz 
+    do
+	filters2=$filters
+	if [ $filters = "ugriz2" ]
+	then
+	    filters2=ugriz
+	fi
+	for calib in "" # "_recalibSDSSplus" # "_recalibSDSS" # "" #"_recalib" "_recalibplus"
+	do
+	    for ending in "" # "_cleanZP" # "_cleanZPi" # ""
+	    do
+		for survey in specz #SDSS
+		do
+		    pointings=${filters}_tiles$ending.txt
+		    while read field
+		    do
+			echo $bd/$field/${field}${suffix}_${filters2}_photoz${calib}_ext_${survey}.cat
+		    done<@RUNROOT@/$pointings>$md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
+		    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats_list.py \
+							   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
+							   OBJECTS \
+							   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
+		    if [ -f  $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat ]
+		    then
+			@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
+			    				       $md/UNIONS_DR6_${filters}${calib}_${survey}${ending}.cat \
+			    				       z_spec_spec \
+			    				       Z_B \
+			    				       MAG_AUTO \
+			    				       2.0 \
+			    				       24.0 \
+			    				       $filters"-"$calib"-"$ending"-"$survey \
+			    				       $md/UNIONS_DR6_${filters}${calib}_${survey}${ending}_zz
+			@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot_weighted.py \
+							       $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
+							       z_spec_spec \
+							       Z_B \
+							       MAG_AUTO \
+							       2.0 \
+							       24.0 \
+							       ${filters}${suffix} \
+							       $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_zzw \
+							       $md/UNIONS100_ugriz_photoz_ext_nc.txt
+		    fi
+		done
+	    done
+	done
+    done
+done
 
 #############################
 #### Photo-z matrix plots ###
 #############################
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugri_specz.cat \
-#       $md/UNIONS5000_ugriz_specz.cat \
+#       $md/UNIONS_DR6_ugri_specz.cat \
+#       $md/UNIONS_DR6_ugriz_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugri vs. ugriz photo-z" \
-#       $md/UNIONS5000_ugri_vs_ugriz
+#       $md/UNIONS_DR6_ugri_vs_ugriz
 
-@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot_weighted.py \
-       $md/UNIONS5000_ugri_specz.cat \
-       $md/UNIONS5000_ugriz_specz.cat \
-       z_spec_spec \
-       Z_B \
-       MAG_AUTO \
-       10. \
-       25. \
-       "ugri vs. ugriz photo-z" \
-       $md/UNIONS5000_ugri_vs_ugriz_weighted \
-       $md/UNIONS100_ugriz_photoz_ext_nc.txt
-
-@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot_weighted.py \
-       $md/UNIONS5000_ugri_specz.cat \
-       $md/UNIONS5000_ugriz_specz.cat \
-       z_spec_spec \
-       Z_B \
-       MAG_AUTO \
-       10. \
-       23. \
-       "ugri vs. ugriz photo-z r<23" \
-       $md/UNIONS5000_ugri_vs_ugriz_weighted_rlt23 \
-       $md/UNIONS100_ugriz_photoz_ext_nc.txt
+#@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot_weighted.py \
+#       $md/UNIONS_DR6_ugri_specz.cat \
+#       $md/UNIONS_DR6_ugriz_specz.cat \
+#       z_spec_spec \
+#       Z_B \
+#       MAG_AUTO \
+#       10. \
+#       25. \
+#       "ugri vs. ugriz photo-z" \
+#       $md/UNIONS_DR6_ugri_vs_ugriz_weighted \
+#       $md/UNIONS100_ugriz_photoz_ext_nc.txt
+#
+#@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot_weighted.py \
+#       $md/UNIONS_DR6_ugri_specz.cat \
+#       $md/UNIONS_DR6_ugriz_specz.cat \
+#       z_spec_spec \
+#       Z_B \
+#       MAG_AUTO \
+#       10. \
+#       23. \
+#       "ugri vs. ugriz photo-z r<23" \
+#       $md/UNIONS_DR6_ugri_vs_ugriz_weighted_rlt23 \
+#       $md/UNIONS100_ugriz_photoz_ext_nc.txt
 
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugri_specz_cleanZP.cat \
-#       $md/UNIONS5000_ugriz_specz_cleanZP.cat \
+#       $md/UNIONS_DR6_ugri_specz_cleanZP.cat \
+#       $md/UNIONS_DR6_ugriz_specz_cleanZP.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugri vs. ugriz photo-z" \
-#       $md/UNIONS5000_ugri_vs_ugriz_cleanZP
+#       $md/UNIONS_DR6_ugri_vs_ugriz_cleanZP
 
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugri_specz.cat \
-#       $md/UNIONS5000_ugri_recalib_specz.cat \
+#       $md/UNIONS_DR6_ugri_specz.cat \
+#       $md/UNIONS_DR6_ugri_recalib_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugri photo-z raw vs. recalib" \
-#       $md/UNIONS5000_ugri_raw_vs_recalib
+#       $md/UNIONS_DR6_ugri_raw_vs_recalib
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugri_specz.cat \
-#       $md/UNIONS5000_ugri_recalibplus_specz.cat \
+#       $md/UNIONS_DR6_ugri_specz.cat \
+#       $md/UNIONS_DR6_ugri_recalibplus_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugri photo-z raw vs. recalibplus" \
-#       $md/UNIONS5000_ugri_raw_vs_recalibplus
+#       $md/UNIONS_DR6_ugri_raw_vs_recalibplus
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugri_recalib_specz.cat \
-#       $md/UNIONS5000_ugri_recalibplus_specz.cat \
+#       $md/UNIONS_DR6_ugri_recalib_specz.cat \
+#       $md/UNIONS_DR6_ugri_recalibplus_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugri photo-z recalib vs. recalibplus" \
-#       $md/UNIONS5000_ugri_recalib_vs_recalibplus
+#       $md/UNIONS_DR6_ugri_recalib_vs_recalibplus
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugriz_specz.cat \
-#       $md/UNIONS5000_ugriz_recalib_specz.cat \
+#       $md/UNIONS_DR6_ugriz_specz.cat \
+#       $md/UNIONS_DR6_ugriz_recalib_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugriz photo-z raw vs. recalib" \
-#       $md/UNIONS5000_ugriz_raw_vs_recalib
+#       $md/UNIONS_DR6_ugriz_raw_vs_recalib
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugri_recalib_specz.cat \
-#       $md/UNIONS5000_ugriz_recalib_specz.cat \
+#       $md/UNIONS_DR6_ugri_recalib_specz.cat \
+#       $md/UNIONS_DR6_ugriz_recalib_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "recalibrated photo-z, ugri vs. ugriz" \
-#       $md/UNIONS5000_ugri_recalib_vs_ugriz_recalib
+#       $md/UNIONS_DR6_ugri_recalib_vs_ugriz_recalib
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugriz_specz.cat \
-#       $md/UNIONS5000_ugriz_recalibplus_specz.cat \
+#       $md/UNIONS_DR6_ugriz_specz.cat \
+#       $md/UNIONS_DR6_ugriz_recalibplus_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugriz photo-z raw vs. recalibplus" \
-#       $md/UNIONS5000_ugriz_raw_vs_recalibplus
+#       $md/UNIONS_DR6_ugriz_raw_vs_recalibplus
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugriz_recalib_specz.cat \
-#       $md/UNIONS5000_ugriz_recalibplus_specz.cat \
+#       $md/UNIONS_DR6_ugriz_recalib_specz.cat \
+#       $md/UNIONS_DR6_ugriz_recalibplus_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugriz photo-z recalib vs. recalibplus" \
-#       $md/UNIONS5000_ugriz_recalib_vs_recalibplus
+#       $md/UNIONS_DR6_ugriz_recalib_vs_recalibplus
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_ugri_recalibplus_specz.cat \
-#       $md/UNIONS5000_ugriz_recalibplus_specz.cat \
+#       $md/UNIONS_DR6_ugri_recalibplus_specz.cat \
+#       $md/UNIONS_DR6_ugriz_recalibplus_specz.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "recalibrated plus photo-z, ugri vs. ugriz" \
-#       $md/UNIONS5000_ugri_recalibplus_vs_ugriz_recalib
+#       $md/UNIONS_DR6_ugri_recalibplus_vs_ugriz_recalib
 
 
 ##########################################################################
@@ -305,29 +304,29 @@ ulimit -n 20000
 #
 #
 #    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats.py \
-#	   $md/UNIONS5000_DEEP_$filters.cat \
+#	   $md/UNIONS_DR6_DEEP_$filters.cat \
 #	   OBJECTS \
 #	   $FILES
 #
 #    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
-#	   $md/UNIONS5000_DEEP_$filters.cat \
+#	   $md/UNIONS_DR6_DEEP_$filters.cat \
 #	   z_spec_spec \
 #	   Z_B \
 #	   MAG_AUTO \
 #	   9.9 \
 #	   $filters"---EGS/COSMOS/VVDS/GOODS-N" \
-#	   $md/UNIONS5000_DEEP_${filters}_zz
+#	   $md/UNIONS_DR6_DEEP_${filters}_zz
 #done
 
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_DEEP_uri.cat \
-#       $md/UNIONS5000_DEEP_ugri.cat \
+#       $md/UNIONS_DR6_DEEP_uri.cat \
+#       $md/UNIONS_DR6_DEEP_ugri.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "uri vs. ugri" \
-#       $md/UNIONS5000_ugr_vs_ugri
+#       $md/UNIONS_DR6_ugr_vs_ugri
 
 #ulimit -n 20000
 #
@@ -341,43 +340,43 @@ ulimit -n 20000
 #    fi
 #done<@RUNROOT@/ugri_tiles.txt
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats.py \
-#       $md/UNIONS5000_noDEEP.cat \
+#       $md/UNIONS_DR6_noDEEP.cat \
 #       OBJECTS \
 #       $FILES
 
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
-#       $md/UNIONS5000_noDEEP.cat \
+#       $md/UNIONS_DR6_noDEEP.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       9.9 \
 #       "ugri---survey w/o deep fields" \
-#       $md/UNIONS5000_noDEEP_zz
+#       $md/UNIONS_DR6_noDEEP_zz
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats.py \
-#       $md/UNIONS5000_noDEEP_plus_DEEP.cat \
+#       $md/UNIONS_DR6_noDEEP_plus_DEEP.cat \
 #       OBJECTS \
-#       $md/UNIONS5000_noDEEP.cat \
-#       $md/UNIONS5000_DEEP.cat
+#       $md/UNIONS_DR6_noDEEP.cat \
+#       $md/UNIONS_DR6_DEEP.cat
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
-#       $md/UNIONS5000_noDEEP_plus_DEEP.cat \
+#       $md/UNIONS_DR6_noDEEP_plus_DEEP.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       9.9 \
 #       "ugri---survey w/ deep fields" \
-#       $md/UNIONS5000_noDEEP_plus_DEEP_zz
+#       $md/UNIONS_DR6_noDEEP_plus_DEEP_zz
 
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
-#       $md/UNIONS5000_noDEEP.cat \
-#       $md/UNIONS5000_DEEP.cat \
+#       $md/UNIONS_DR6_noDEEP.cat \
+#       $md/UNIONS_DR6_DEEP.cat \
 #       z_spec_spec \
 #       Z_B \
 #       MAG_AUTO \
 #       10. \
 #       "ugri, survey vs. deep fields" \
-#       $md/UNIONS5000_ugri_survey_vs_deep_fields
+#       $md/UNIONS_DR6_ugri_survey_vs_deep_fields
 
 #######################################################
 #### Summarise photo-z stats  KiDS(bright vs. SDSS) ###
