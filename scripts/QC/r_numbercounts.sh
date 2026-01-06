@@ -3,8 +3,8 @@
 export PYTHONPATH=@RUNROOT@/INSTALL/anaconda2/photopipe_env/bin/python2:@RUNROOT@/INSTALL/anaconda2/photopipe_env/lib/
 export PYTHONPATH=${PYTHONPATH}:@RUNROOT@/INSTALL/anaconda2/bin/python2:@RUNROOT@/INSTALL/anaconda2/lib/
 
-bd=/arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS5000/
-md=$bd/../UNIONS5000_QC/
+bd=/arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS_DR6/
+md=$bd/../UNIONS_DR6_QC/
 
 test ! -d $md/ && mkdir $md/
 
