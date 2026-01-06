@@ -21,3 +21,18 @@ do
     fi
 done
 
+# Check GAUSSIANISE failures.
+for band in u g r i z z2
+do
+    if [ -s $md/$band/${tile}_${band}.fits ]
+    then
+	size=`ls -l $md/$band/${tile}_${band}_smart_ggpsf.fits|awk '{print $5}'`
+	if [ $size -lt 400000000 ] || [ ! -s $md/$band/${tile}_${band}_smart_ggpsf.fits ]
+	then
+	    rm -rf $md/$band/{*smart*,*.sky,*small*,*QC*,*cat*,*.png}
+	    rm -rf $md/${tile}*
+	    rm -rf $md/BPZ*
+	    rm -rf $md/phot_comp*
+	fi
+    fi
+done
