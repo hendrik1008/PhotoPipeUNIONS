@@ -78,70 +78,70 @@ do
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/${tile}_${band}_smart.cat ]
+    if [ -s $wd/$band/${tile}_${band}_smart_full.cat ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/${tile}_SP_${band}_smart.cat ]
+    if [ -s $wd/$band/${tile}_SP_${band}_smart_full.cat ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/${tile}_${band}_smart_smart_full_SDSS_${band}_offset.asc ]
+    if [ -s $wd/$band/${tile}_${band}_smart_full_SDSS_${band}_offset.asc ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/${tile}_${band}_smart_smart_full_PS_${band}_offset.asc ]
+    if [ -s $wd/$band/${tile}_${band}_smart_full_PS_${band}_offset.asc ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/${tile}_SP_${band}_smart_smart_full_SDSS_${band}_offset.asc ]
+    if [ -s $wd/$band/${tile}_SP_${band}_smart_full_SDSS_${band}_offset.asc ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/${tile}_SP_${band}_smart_smart_full_PS_${band}_offset.asc ]
+    if [ -s $wd/$band/${tile}_SP_${band}_smart_full_PS_${band}_offset.asc ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/phot_comp_SDSS/${tile}_ugriz_SDSS_${band}_offset.asc ]
+    if [ -s $wd/phot_comp_SDSS/${tile}_ugriz_SDSS_${band}_offset.asc ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/phot_comp_SDSS/${tile}_SP_ugriz_SDSS_${band}_offset.asc ]
+    if [ -s $wd/phot_comp_SDSS/${tile}_SP_ugriz_SDSS_${band}_offset.asc ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/phot_comp_PS/${tile}_ugriz_PS_${band}_offset.asc ]
+    if [ -s $wd/phot_comp_PS/${tile}_ugriz_PS_${band}_offset.asc ]
     then
 	echo -n 1" "
     else
 	echo -n 0" "
     fi
 
-    if [ -s $wd/$band/phot_comp_PS/${tile}_SP_ugriz_PS_${band}_offset.asc ]
+    if [ -s $wd/phot_comp_PS/${tile}_SP_ugriz_PS_${band}_offset.asc ]
     then
 	echo -n 1" "
     else
@@ -169,84 +169,84 @@ fi
 
 # 87-98; Check BPZ, COMPTILEZ
 
-if [ -s $wd/${tile}_ugriz_photoz_ext.cat ]
+if [ -s $wd/${tile}_ugriz_photoz_ext.cat ] #87
 then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_SP_ugriz_photoz_ext.cat ]
+if [ -s $wd/${tile}_SP_ugriz_photoz_ext.cat ] #88
 then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_griz_photoz_ext.cat ]
+if [ -s $wd/${tile}_griz_photoz_ext.cat ] #89
 then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_SP_griz_photoz_ext.cat ]
+if [ -s $wd/${tile}_SP_griz_photoz_ext.cat ] #90
 then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_ugriz_photoz_ext_specz_zz.txt ]
+if [ -s $wd/${tile}_ugriz_photoz_ext_specz_zz.txt ] #91
    then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_SP_ugriz_photoz_ext_specz_zz.txt ]
+if [ -s $wd/${tile}_SP_ugriz_photoz_ext_specz_zz.txt ] #92
    then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_griz_photoz_ext_specz_zz.txt ]
+if [ -s $wd/${tile}_griz_photoz_ext_specz_zz.txt ] #93
    then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_SP_griz_photoz_ext_specz_zz.txt ]
+if [ -s $wd/${tile}_SP_griz_photoz_ext_specz_zz.txt ] #94
    then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_ugriz_photoz_ext_SDSS_zz.txt ]
+if [ -s $wd/${tile}_ugriz_photoz_ext_SDSS_zz.txt ] #95
    then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_SP_ugriz_photoz_ext_SDSS_zz.txt ]
+if [ -s $wd/${tile}_SP_ugriz_photoz_ext_SDSS_zz.txt ] #96
    then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_griz_photoz_ext_SDSS_zz.txt ]
+if [ -s $wd/${tile}_griz_photoz_ext_SDSS_zz.txt ] #97
    then
     echo -n 1" "
 else
     echo -n 0" "
 fi
 
-if [ -s $wd/${tile}_SP_griz_photoz_ext_SDSS_zz.txt ]
+if [ -s $wd/${tile}_SP_griz_photoz_ext_SDSS_zz.txt ] #98
    then
     echo -n 1" "
 else
