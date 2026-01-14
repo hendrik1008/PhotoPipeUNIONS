@@ -39,7 +39,8 @@ for band in ("u", "g", "r", "i", "z", "z2"):
         std = "%.3f" % np.std(medians[all_filter])
         NMAD = "%.3f" % mad_std(medians[all_filter])
         N = "%i" % np.sum(all_filter)
-        print(band, survey, star, unit, mean, std, median, NMAD, N)
+        if plot_type == "Delta":
+            print(band, survey, star, unit, mean, std, median, NMAD, N)
         fig, ax = plt.subplots()
         #ax.set_xlim(-0.49,0.49)
         #ax.xaxis.set_ticks(np.arange(-0.3,0.2,0.1))

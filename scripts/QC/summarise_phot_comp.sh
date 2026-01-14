@@ -42,6 +42,6 @@ do
 	done
 	
 	@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/summarise_phot_comp.py $wd $MERGE $survey \
-					       > $wd/phot_comp_summary_${survey}.txt
+					       > $wd/phot_comp_summary_${survey}_tile_${MERGE}.txt
     done
 done
