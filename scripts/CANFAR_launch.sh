@@ -12,7 +12,7 @@ shift
 shift
 # other parameters: modes to run
 
-source @RUNROOT@/INSTALL/anaconda2/bin/activate
+source @RUNROOT@/INSTALL/anaconda2/bin/activate base
 
 #     CONVERT PREPARE GAUSSIANISE GAAP SDSSPREP ZPREP PSPREP COMPTILE \
 #     COMPTILEPS MERGE COMPTILEPOSTMERGE COMPTILEPSPOSTMERGE BPZ \
