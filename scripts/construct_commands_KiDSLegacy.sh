@@ -468,7 +468,7 @@ done
 for mode in ${MODE}
 do
     if [ "${mode}" = "ZPREP" ]; then
-	if [ ! -s ${mdfield}/SDSS/${field_name}_redshifts-2024-01-04.cat ]
+	if [ ! -s ${mdfield}/specz/${field_name}_redshifts-2024-01-04.cat ]
 	then
 	    echo -n mkdir ${mdfield}/specz \;
 	    echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/prepare_specz.sh ${mdfield}/specz/ $field_name $RA $Dec \;
@@ -477,14 +477,28 @@ do
     fi
 done
 
-### Preparation of Seb's redshift catalogue.
+### Preparation of Pan-STARRS catalogue.
 for mode in ${MODE}
 do
     if [ "${mode}" = "PSPREP" ]; then
-	if [ ! -s ${mdfield}/SDSS/${field_name}_PS1-DR2.cat ]
+	if [ ! -s ${mdfield}/PS/${field_name}_PS1-DR2.cat ]
 	then
 	    echo -n mkdir ${mdfield}/PS \;
 	    echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_PS.sh ${mdfield}/ $field_name $RA $Dec \;
+	fi
+	echo sleep 1
+    fi
+done
+
+
+### Preparation of PGM catalogue.
+for mode in ${MODE}
+do
+    if [ "${mode}" = "PGMPREP" ]; then
+	if [ ! -s ${mdfield}/PGM/${field_name}_PGM.cat ]
+	then
+	    echo -n mkdir ${mdfield}/PGM \;
+	    echo -n bash -xv @RUNROOT@/@SCRIPTPATH@/retrieve_PGM.sh ${mdfield}/ $field_name $RA $Dec \;
 	fi
 	echo sleep 1
     fi
@@ -545,6 +559,39 @@ do
 			  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS.sh \
 			       ${wdband} \
 			       $PS_cat \
+			       ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat \
+			       ${band} ${field_name} \;
+		      fi
+		  done
+	      done
+	  done
+      fi
+      echo sleep 1
+  fi
+done
+
+### Comparisons PGM (griz bands).
+### Full tile.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "COMPTILEPGM" ]; then
+      PGM_cat=${mdfield}/PGM/${field_name}_PGM.cat
+      if [ -s $PGM_cat ]
+      then
+	  for suffix in "" "_SP"
+	  do
+	      ### Loop over all UNIONS bands.
+	      for ending in "" _minaper1p0 #_stars _stars0p7
+	      do
+		  for band in g r i z z2
+		  do
+		      wdband=${mdfield}/${band}
+		      if [ -s ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat ] && \
+			     [ ! -s $wdband/${field_name}${suffix}_${band}_smart${ending}_full_PGM_${band}_offset.asc ]
+		      then
+			  echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PGM.sh \
+			       ${wdband} \
+			       $PGM_cat \
 			       ${wdband}/${field_name}${suffix}_${band}_smart${ending}_full.cat \
 			       ${band} ${field_name} \;
 		      fi
@@ -730,6 +777,28 @@ do
 	      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS_ugriz.sh \
 		   ${mdfield} \
 		   $PS_cat \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat \
+		   ${field_name} \;
+	  fi
+      done
+      echo sleep 1
+  fi
+done
+
+### Comparisons PGM (griz bands).
+### Full tile.
+for mode in ${MODE}
+do
+  if [ "${mode}" = "COMPTILEPGMPOSTMERGE" ]; then
+      PGM_cat=${mdfield}/PGM/${field_name}_PGM.cat
+      for suffix in "" "_SP"
+      do
+	  if [ -s ${mdfield}/${field_name}${suffix}_ugriz.cat ] && \
+		 [ ! -s ${mdfield}/phot_comp_PGM/${field_name}${suffix}_ugriz_SDSS_r_offset.asc ]
+	  then
+	      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PGM_griz.sh \
+		   ${mdfield} \
+		   $PGM_cat \
 		   ${mdfield}/${field_name}${suffix}_ugriz.cat \
 		   ${field_name} \;
 	  fi
