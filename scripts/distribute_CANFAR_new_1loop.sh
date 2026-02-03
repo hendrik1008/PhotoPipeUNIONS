@@ -60,7 +60,7 @@ do
 	   >@RUNROOT@/PhotoPipe_${tile_list_base}_${tile_no_start}t${tile_no_end}.sh
     chmod +x @RUNROOT@/PhotoPipe_${tile_list_base}_${tile_no_start}t${tile_no_end}.sh
     echo Launching session with tiles ${tile_no_start} to ${tile_no_end}.
-    canfar launch headless skaha/improc:latest --cpu 1 --memory 4 --  \
+    canfar launch headless skaha/improc:24.04 --cpu 1 --memory 4 --  \
     	   bash @RUNROOT@/PhotoPipe_${tile_list_base}_${tile_no_start}t${tile_no_end}.sh
     sleep 10 #$wait_sec
     echo

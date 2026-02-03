@@ -36,7 +36,7 @@ do
 	    $tile_list \
 	    > @RUNROOT@/${tile_list_base}_${tile_no_start}t${tile_no_end}.txt
 	echo Launching session with tiles ${tile_no_start} to ${tile_no_end}.
-	canfar launch headless skaha/improc:latest --cpu 1 --memory 4 --  \
+	canfar launch headless skaha/improc:24.04 --cpu 1 --memory 4 --  \
 	       bash @RUNROOT@/run_PhotoPipe.sh \
 	       @RUNROOT@/${tile_list_base}_${tile_no_start}t${tile_no_end}.txt \
 	       ${tile_no_start}t${tile_no_end} $nthread \
