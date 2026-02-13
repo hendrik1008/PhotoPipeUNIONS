@@ -1162,7 +1162,7 @@ do
 		then
 		    if [ -s ${mdfield}/$filter/${field_name}_${filter}_smart_full.cat ]
 		    then
-			echo -n ln -s ${mdfield}/r/${field_name}_r.weight.fits ${mdfield}/r/${field_name}_r.weight2.fits \;
+			echo -n ln -sf ${mdfield}/r/${field_name}_r.weight.fits ${mdfield}/r/${field_name}_r.weight2.fits \;
 		    else
 			echo -n ic -p -32 -c 10000 10000 \'0\' \
 			     \>$md/$field_name/$filter/${field_name}_${filter}.weight2.fits \;
@@ -1182,13 +1182,16 @@ do
 		 \> ${mdfield}/${field_name}_ugriz.mask.fits \;
 	    for filter in u g r i z z2
 	    do
-		if [ -L ${mdfield}/r/${field_name}_r.weight.fits ${mdfield}/r/${field_name}_r.weight2.fits ]
+		if [ -L ${mdfield}/r/${field_name}_r.weight2.fits ]
 		then
 		    echo -n rm ${mdfield}/r/${field_name}_r.weight2.fits \;
 		fi
 	    done
 	    echo -n gzip -c ${mdfield}/${field_name}_ugriz.mask.fits \
 		 \> ${mdfield}/${field_name}_ugriz.mask.fits.gz \;
+	fi
+	if [ ! -s ${mdfield}/r/${field_name}_r_maskstars.reg ]
+	then
 	    echo -n cd /arc/home/hendrik/src/automask/scripts/Linux_64 \;
 	    echo -n export INSTRUMENT\=MEGAPRIME \;
 	    echo -n bash ./maskstars.sh \
