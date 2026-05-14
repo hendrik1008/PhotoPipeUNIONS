@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#     CONVERT PREPARE GAUSSIANISE GAAP SDSSPREP ZPREP PSPREP COMPTILE \
-#     COMPTILEPS MERGE COMPTILEPOSTMERGE COMPTILEPSPOSTMERGE BPZ \
+#     CONVERT PREPARE GAUSSIANISE GAAP SDSSPREP ZPREP PSPREP PGMPREP COMPTILE \
+#     COMPTILEPS COMPTILEPGM MERGE COMPTILEPOSTMERGE COMPTILEPSPOSTMERGE COMPTILEPGMPOSTMERGE BPZ \
 #     COMPTILEZ MASK QC CLEAN COPY COPYBACK ERASE \
 
 nsession=$1
@@ -27,8 +27,8 @@ for i in `seq 0 $[$niter-1]`
 do
     while :
     do
-	#canfar ps -a>@RUNROOT@/sessions.txt
-	curl -E /arc/home/hendrik/.ssl/cadcproxy.pem https://ws-uv.canfar.net/skaha/v0/session>@RUNROOT@/sessions.txt
+	canfar ps -a>@RUNROOT@/sessions.txt
+	#curl -E /arc/home/hendrik/.ssl/cadcproxy.pem https://ws-uv.canfar.net/skaha/v0/session>@RUNROOT@/sessions.txt
 	if [ $? -eq 0 ]
 	then
 	    #nsession_live=`grep -e Running -e Pending @RUNROOT@/sessions.txt|grep -c headless`
@@ -62,7 +62,7 @@ do
     echo Launching session with tiles ${tile_no_start} to ${tile_no_end}.
     canfar launch headless skaha/improc:24.04 --cpu 1 --memory 4 --  \
     	   bash @RUNROOT@/PhotoPipe_${tile_list_base}_${tile_no_start}t${tile_no_end}.sh
-    sleep 10 #$wait_sec
+    sleep 30 #$wait_sec
     echo
     i=$[$i+1]
 done
