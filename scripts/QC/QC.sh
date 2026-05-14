@@ -99,7 +99,7 @@ test ! -d $md/ && mkdir $md/
 ### r-band numbercounts ###
 ###########################
 
-#bash @RUNROOT@/@SCRIPTPATH@/QC/r_numbercounts.sh
+bash @RUNROOT@/@SCRIPTPATH@/QC/r_numbercounts.sh
 
 #################################################
 ### Summarise photo-z stats (bright vs. SDSS) ###
@@ -125,12 +125,12 @@ do
 		    pointings=${filters}_tiles$ending.txt
 		    while read field
 		    do
-			echo $bd/$field/${field}${suffix}_${filters2}_photoz${calib}_ext_${survey}.cat
+		    	echo $bd/$field/${field}${suffix}_${filters2}_photoz${calib}_ext_${survey}.cat
 		    done<@RUNROOT@/$pointings>$md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
 		    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats_list.py \
-							   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
-							   OBJECTS \
-							   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
+		    					   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
+		    					   OBJECTS \
+		    					   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
 		    if [ -f  $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat ]
 		    then
 			@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
