@@ -8,10 +8,10 @@ wd=/arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS_DR6_QC/phot_com
 
 test ! -d $wd && mkdir -p $wd
 
-for survey in PS SDSS
+for survey in PGM PS SDSS
 do
     echo $survey
-    for MERGE in preMERGE MERGE
+    for MERGE in MERGE preMERGE
     do
 	for filter in u g r i z z2
 	do
@@ -41,7 +41,8 @@ do
 	    fi
 	done
 	
-	@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/summarise_phot_comp.py $wd $MERGE $survey \
+	#@RUNROOT@/INSTALL/anaconda2/bin/python
+	python3 @RUNROOT@/@SCRIPTPATH@/QC/summarise_phot_comp.py $wd $MERGE $survey \
 					       > $wd/phot_comp_summary_${survey}_tile_${MERGE}.txt
     done
 done
