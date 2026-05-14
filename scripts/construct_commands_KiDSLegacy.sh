@@ -615,127 +615,130 @@ do
 	  then
 	      suffix="_SP"
 	  fi
-	  #echo -n set -e \;
-	  echo -n cp $incat ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp0_$$ \;
-	  
-	  i=0
-	  
-	  ### Loop over all UNIONS bands.
-	  for band in u g r i z z2
-	  do
-	      echo -n echo $band minaper0p7 \;
+	  if [ ! -s ${mdfield}/${field_name}${suffix}_ugriz.cat ]
+	  then
+	      #echo -n set -e \;
+	      echo -n cp $incat ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp0_$$ \;
+	      
+	      i=0
+	      
+	      ### Loop over all UNIONS bands.
+	      for band in u g r i z z2
+	      do
+		  echo -n echo $band minaper0p7 \;
+		  echo -n echo \;
+		  if [ -e ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_full.cat ]
+		  then
+		      echo -n ldacrenkey -i ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_full.cat \
+			   -o ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_full_rename.cat_$$ \
+			   -t OBJECTS -k \
+			   FLUX_GAAP_${band} FLUX_GAAP_0p7_${band} \
+			   FLUXERR_GAAP_${band} FLUXERR_GAAP_0p7_${band} \
+			   MAG_GAAP_${band} MAG_GAAP_0p7_${band} \
+			   MAGERR_GAAP_${band} MAGERR_GAAP_0p7_${band} \
+			   FLAG_GAAP FLAG_GAAP_0p7_${band} \
+			   GAAP_nexp GAAP_nexp_0p7_${band} \
+			   GAAP_chi_sq_dof GAAP_chi_sq_dof_0p7_${band} \;
+		      echo -n ldacjoinkey -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
+			   -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+			   -p ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_full_rename.cat_$$ \
+			   -t OBJECTS \
+			   -k MAG_GAAP_0p7_${band} MAGERR_GAAP_0p7_${band} FLUX_GAAP_0p7_${band} \
+			   FLUXERR_GAAP_0p7_${band} FLAG_GAAP_0p7_${band} GAAP_nexp_0p7_${band} \
+			   GAAP_chi_sq_dof_0p7_${band} \;
+		  else
+		      echo -n ldacaddkey -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
+			   -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+			   -t OBJECTS \
+			   -k \
+			   MAG_GAAP_0p7_${band} -99.0 FLOAT \"${band} magnitude\" \
+			   MAGERR_GAAP_0p7_${band} -99.0 FLOAT \"${band} magnitude error\" \
+			   FLUX_GAAP_0p7_${band} -99.0 FLOAT \"${band} flux\" \
+			   FLUXERR_GAAP_0p7_${band} -99.0 FLOAT \"${band} flux error\" \
+			   FLAG_GAAP_0p7_${band} 1 SHORT \"GAAP photometry Flag\" \
+			   GAAP_nexp_0p7_${band} 0 SHORT \"GAAP number of exposures\" \
+			   GAAP_chi_sq_dof_0p7_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \;
+		  fi
+		  i=$[$i+1]
+		  echo -n echo $band minaper1p0 \;
+		  echo -n echo \;
+		  if [ -e ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_minaper1p0_full.cat ]
+		  then
+		      echo -n ldacrenkey -i ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_minaper1p0_full.cat \
+			   -o ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_minaper1p0_full_rename.cat_$$ \
+			   -t OBJECTS -k \
+			   FLUX_GAAP_${band} FLUX_GAAP_1p0_${band} \
+			   FLUXERR_GAAP_${band} FLUXERR_GAAP_1p0_${band} \
+			   MAG_GAAP_${band} MAG_GAAP_1p0_${band} \
+			   MAGERR_GAAP_${band} MAGERR_GAAP_1p0_${band} \
+			   FLAG_GAAP FLAG_GAAP_1p0_${band} \
+			   GAAP_nexp GAAP_nexp_1p0_${band} \
+			   GAAP_chi_sq_dof GAAP_chi_sq_dof_1p0_${band} \;
+		      echo -n ldacjoinkey -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
+			   -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+			   -p ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_minaper1p0_full_rename.cat_$$ \
+			   -t OBJECTS \
+			   -k MAG_GAAP_1p0_${band} MAGERR_GAAP_1p0_${band} FLUX_GAAP_1p0_${band} \
+			   FLUXERR_GAAP_1p0_${band} FLAG_GAAP_1p0_${band} GAAP_nexp_1p0_${band} \
+			   GAAP_chi_sq_dof_1p0_${band} \;
+		  else
+		      echo -n ldacaddkey -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
+			   -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+			   -t OBJECTS \
+			   -k \
+			   MAG_GAAP_1p0_${band} -99.0 FLOAT \"${band} magnitude\" \
+			   MAGERR_GAAP_1p0_${band} -99.0 FLOAT \"${band} magnitude error\" \
+			   FLUX_GAAP_1p0_${band} -99.0 FLOAT \"${band} flux\" \
+			   FLUXERR_GAAP_1p0_${band} -99.0 FLOAT \"${band} flux error\" \
+			   FLAG_GAAP_1p0_${band} 1 SHORT \"GAAP photometry Flag\" \
+			   GAAP_nexp_1p0_${band} 0 SHORT \"GAAP number of exposures\" \
+			   GAAP_chi_sq_dof_1p0_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \;
+		  fi
+		  echo -n rm -f ${mdfield}/${band}/${field_name}${suffix}_${band}*_$$ \;
+		  i=$[$i+1]
+	      done
+	      
+	      echo -n echo Adding E_B-V \;
 	      echo -n echo \;
-	      if [ -e ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_full.cat ]
-	      then
-		  echo -n ldacrenkey -i ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_full.cat \
-		       -o ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_full_rename.cat_$$ \
-		       -t OBJECTS -k \
-		       FLUX_GAAP_${band} FLUX_GAAP_0p7_${band} \
-		       FLUXERR_GAAP_${band} FLUXERR_GAAP_0p7_${band} \
-		       MAG_GAAP_${band} MAG_GAAP_0p7_${band} \
-		       MAGERR_GAAP_${band} MAGERR_GAAP_0p7_${band} \
-		       FLAG_GAAP FLAG_GAAP_0p7_${band} \
-		       GAAP_nexp GAAP_nexp_0p7_${band} \
-		       GAAP_chi_sq_dof GAAP_chi_sq_dof_0p7_${band} \;
-		  echo -n ldacjoinkey -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
-		       -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-		       -p ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_full_rename.cat_$$ \
-		       -t OBJECTS \
-		       -k MAG_GAAP_0p7_${band} MAGERR_GAAP_0p7_${band} FLUX_GAAP_0p7_${band} \
-		       FLUXERR_GAAP_0p7_${band} FLAG_GAAP_0p7_${band} GAAP_nexp_0p7_${band} \
-		       GAAP_chi_sq_dof_0p7_${band} \;
-	      else
-		  echo -n ldacaddkey -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
-		       -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-		       -t OBJECTS \
-		       -k \
-		       MAG_GAAP_0p7_${band} -99.0 FLOAT \"${band} magnitude\" \
-		       MAGERR_GAAP_0p7_${band} -99.0 FLOAT \"${band} magnitude error\" \
-		       FLUX_GAAP_0p7_${band} -99.0 FLOAT \"${band} flux\" \
-		       FLUXERR_GAAP_0p7_${band} -99.0 FLOAT \"${band} flux error\" \
-		       FLAG_GAAP_0p7_${band} 1 SHORT \"GAAP photometry Flag\" \
-		       GAAP_nexp_0p7_${band} 0 SHORT \"GAAP number of exposures\" \
-		       GAAP_chi_sq_dof_0p7_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \;
-	      fi
+	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/add_extinction_python2.py \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \;
+	      
 	      i=$[$i+1]
-	      echo -n echo $band minaper1p0 \;
+	      
+	      echo -n echo Calculating absorption \;
 	      echo -n echo \;
-	      if [ -e ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_minaper1p0_full.cat ]
-	      then
-		  echo -n ldacrenkey -i ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_minaper1p0_full.cat \
-		       -o ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_minaper1p0_full_rename.cat_$$ \
-		       -t OBJECTS -k \
-		       FLUX_GAAP_${band} FLUX_GAAP_1p0_${band} \
-		       FLUXERR_GAAP_${band} FLUXERR_GAAP_1p0_${band} \
-		       MAG_GAAP_${band} MAG_GAAP_1p0_${band} \
-		       MAGERR_GAAP_${band} MAGERR_GAAP_1p0_${band} \
-		       FLAG_GAAP FLAG_GAAP_1p0_${band} \
-		       GAAP_nexp GAAP_nexp_1p0_${band} \
-		       GAAP_chi_sq_dof GAAP_chi_sq_dof_1p0_${band} \;
-		  echo -n ldacjoinkey -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
-		       -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-		       -p ${mdfield}/${band}/${field_name}${suffix}_${band}_smart_minaper1p0_full_rename.cat_$$ \
-		       -t OBJECTS \
-		       -k MAG_GAAP_1p0_${band} MAGERR_GAAP_1p0_${band} FLUX_GAAP_1p0_${band} \
-		       FLUXERR_GAAP_1p0_${band} FLAG_GAAP_1p0_${band} GAAP_nexp_1p0_${band} \
-		       GAAP_chi_sq_dof_1p0_${band} \;
-	      else
-		  echo -n ldacaddkey -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
-		       -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-		       -t OBJECTS \
-		       -k \
-		       MAG_GAAP_1p0_${band} -99.0 FLOAT \"${band} magnitude\" \
-		       MAGERR_GAAP_1p0_${band} -99.0 FLOAT \"${band} magnitude error\" \
-		       FLUX_GAAP_1p0_${band} -99.0 FLOAT \"${band} flux\" \
-		       FLUXERR_GAAP_1p0_${band} -99.0 FLOAT \"${band} flux error\" \
-		       FLAG_GAAP_1p0_${band} 1 SHORT \"GAAP photometry Flag\" \
-		       GAAP_nexp_1p0_${band} 0 SHORT \"GAAP number of exposures\" \
-		       GAAP_chi_sq_dof_1p0_${band} -99.0 FLOAT \"GAAP chi^2/dof\" \;
-	      fi
-	      echo -n rm -f ${mdfield}/${band}/${field_name}${suffix}_${band}*_$$ \;
+	      echo -n ldaccalc -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+		   -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
+		   -t OBJECTS \
+		   -c \"EXTINCTION\*4.239\;\" -n EXTINCTION_u  \"Galactic extinction in the u band \(mag\)\" -k FLOAT \
+		   -c \"EXTINCTION\*3.303\;\" -n EXTINCTION_g  \"Galactic extinction in the g band \(mag\)\" -k FLOAT \
+		   -c \"EXTINCTION\*2.285\;\" -n EXTINCTION_r  \"Galactic extinction in the r band \(mag\)\" -k FLOAT \
+		   -c \"EXTINCTION\*1.698\;\" -n EXTINCTION_i  \"Galactic extinction in the i band \(mag\)\" -k FLOAT \
+		   -c \"EXTINCTION\*1.263\;\" -n EXTINCTION_z  \"Galactic extinction in the z band \(mag\)\" -k FLOAT \
+		   -c \"EXTINCTION\*1.263\;\" -n EXTINCTION_z2 \"Galactic extinction in the z2 band \(mag\)\" -k FLOAT \;
+	      
 	      i=$[$i+1]
-	  done
-	  
-	  echo -n echo Adding E_B-V \;
-	  echo -n echo \;
-	  echo -n @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/add_extinction_python2.py \
-	       ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-	       ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \;
-	  
-	  i=$[$i+1]
-	  
-	  echo -n echo Calculating absorption \;
-	  echo -n echo \;
-	  echo -n ldaccalc -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-	       -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
-	       -t OBJECTS \
-	       -c \"EXTINCTION\*4.239\;\" -n EXTINCTION_u  \"Galactic extinction in the u band \(mag\)\" -k FLOAT \
-	       -c \"EXTINCTION\*3.303\;\" -n EXTINCTION_g  \"Galactic extinction in the g band \(mag\)\" -k FLOAT \
-	       -c \"EXTINCTION\*2.285\;\" -n EXTINCTION_r  \"Galactic extinction in the r band \(mag\)\" -k FLOAT \
-	       -c \"EXTINCTION\*1.698\;\" -n EXTINCTION_i  \"Galactic extinction in the i band \(mag\)\" -k FLOAT \
-	       -c \"EXTINCTION\*1.263\;\" -n EXTINCTION_z  \"Galactic extinction in the z band \(mag\)\" -k FLOAT \
-	       -c \"EXTINCTION\*1.263\;\" -n EXTINCTION_z2 \"Galactic extinction in the z2 band \(mag\)\" -k FLOAT \;
-	  
-	  i=$[$i+1]
-	  
-	  echo -n echo Adding tile names \;
-	  echo -n echo \;
-	  echo -n ldacaddkey -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-	       -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
-	       -t OBJECTS -k \
-	       MP_NAME \"${field_name}\" STRING \"Name of the pointing in MegaPipe convention\" \
-	       THELI_NAME \"$THELI_name\" STRING \"Name of the pointing in THELI convention\" \;
-	  
-	  echo -n rm -f ${mdfield}/${field_name}${suffix}_ugriz*_$$ \;
-	  
-	  echo -n echo Converting to magnitudes \;
-	  echo -n echo \;
-	  echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
-	       @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes6.py \
-	       ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
-	       ${mdfield}/${field_name}${suffix}_ugriz.cat \;
-	  
-	  echo -n rm -f ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \;
+	      
+	      echo -n echo Adding tile names \;
+	      echo -n echo \;
+	      echo -n ldacaddkey -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+		   -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
+		   -t OBJECTS -k \
+		   MP_NAME \"${field_name}\" STRING \"Name of the pointing in MegaPipe convention\" \
+		   THELI_NAME \"$THELI_name\" STRING \"Name of the pointing in THELI convention\" \;
+	      
+	      echo -n rm -f ${mdfield}/${field_name}${suffix}_ugriz*_$$ \;
+	      
+	      echo -n echo Converting to magnitudes \;
+	      echo -n echo \;
+	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+		   @RUNROOT@/@SCRIPTPATH@/convert_fluxes_to_magnitudes6.py \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat \;
+	      
+	      echo -n rm -f ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \;
+	  fi
       done
       echo sleep 1
   fi
@@ -772,7 +775,7 @@ do
       for suffix in "" "_SP"
       do
 	  if [ -s ${mdfield}/${field_name}${suffix}_ugriz.cat ] && \
-		 [ ! -s ${mdfield}/phot_comp_PS/${field_name}${suffix}_ugriz_SDSS_r_offset.asc ]
+		 [ ! -s ${mdfield}/phot_comp_PS/${field_name}${suffix}_ugriz_PS_r_offset.asc ]
 	  then
 	      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PS_ugriz.sh \
 		   ${mdfield} \
@@ -794,7 +797,7 @@ do
       for suffix in "" "_SP"
       do
 	  if [ -s ${mdfield}/${field_name}${suffix}_ugriz.cat ] && \
-		 [ ! -s ${mdfield}/phot_comp_PGM/${field_name}${suffix}_ugriz_SDSS_r_offset.asc ]
+		 [ ! -s ${mdfield}/phot_comp_PGM/${field_name}${suffix}_ugriz_PGM_r_offset.asc ]
 	  then
 	      echo -n bash @RUNROOT@/@SCRIPTPATH@/compare_PGM_griz.sh \
 		   ${mdfield} \
@@ -1162,13 +1165,14 @@ do
 		then
 		    if [ -s ${mdfield}/$filter/${field_name}_${filter}_smart_full.cat ]
 		    then
-			echo -n ln -sf ${mdfield}/r/${field_name}_r.weight.fits ${mdfield}/r/${field_name}_r.weight2.fits \;
+			echo -n ln -sf ${mdfield}/$filter/${field_name}_$filter.weight.fits ${mdfield}/$filter/${field_name}_$filter.weight2.fits \;
 		    else
 			echo -n ic -p -32 -c 10000 10000 \'0\' \
 			     \>$md/$field_name/$filter/${field_name}_${filter}.weight2.fits \;
 		    fi
 		else
-		    echo -n ln -s ${mdfield}/r/${field_name}_r.weight.fits ${mdfield}/r/${field_name}_r.weight2.fits \;
+		    echo -n ic -p -32 -c 10000 10000 \'0\' \
+			 \>$md/$field_name/$filter/${field_name}_${filter}.weight2.fits \;
 		fi
 	    done
 	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic -p 16 \
@@ -1182,10 +1186,7 @@ do
 		 \> ${mdfield}/${field_name}_ugriz.mask.fits \;
 	    for filter in u g r i z z2
 	    do
-		if [ -L ${mdfield}/r/${field_name}_r.weight2.fits ]
-		then
-		    echo -n rm ${mdfield}/r/${field_name}_r.weight2.fits \;
-		fi
+		echo -n rm -f ${mdfield}/$filter/${field_name}_$filter.weight2.fits \;
 	    done
 	    echo -n gzip -c ${mdfield}/${field_name}_ugriz.mask.fits \
 		 \> ${mdfield}/${field_name}_ugriz.mask.fits.gz \;
