@@ -85,6 +85,9 @@ mag = catdata.field("MAG_GAAP_"+band)
 magref = catdata.field(bandref+"_PGM")
 #mag1 = catdata.field(band1+"_PGM")
 #mag2 = catdata.field(band2+"_PGM")
+magr07 = catdata.field("MAG_GAAP_0p7_r")
+magr10 = catdata.field("MAG_GAAP_1p0_r")
+magrdiff = np.abs(magr07 - magr10)
 
 filter1 = np.greater(magref,0.)
 filter2 = np.less(magref,99.)
@@ -94,8 +97,9 @@ filter2 = np.less(magref,99.)
 #filter6 = np.less(mag2,99.)
 filter7 = np.greater(mag,mag_min)
 filter8 = np.less(mag,mag_max)
+filter9 = np.less(magrdiff,0.01)
 #filter = filter1 * filter2 * filter3 * filter4 * filter5 * filter6 * filter7 * filter8
-filter = filter1 * filter2 * filter7 * filter8
+filter = filter1 * filter2 * filter7 * filter8 * filter9
 
 delta = mag[filter]-magref[filter] #- (A0 + A1 * (mag1[filter]-mag2[filter]) + A2 * (mag1[filter]-mag2[filter])**2 + A3 * (mag1[filter]-mag2[filter])**3 )
 
