@@ -23,7 +23,7 @@
 # Version history:
 # 2020-08-05 V1.0
 
-source @RUNROOT@/INSTALL/anaconda2/bin/activate
+#source @RUNROOT@/INSTALL/anaconda2/bin/activate
 
 POINTINGLIST=$1
 SUFFIX=$2
