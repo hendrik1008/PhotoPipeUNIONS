@@ -32,3 +32,4 @@ gapphot_TE/kk/sortbybeta
 gapphot_TE/kk/stackshear
 theli-1.30.0
 dustmaps
+*.pyc
