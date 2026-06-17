@@ -95,69 +95,79 @@ test ! -d $md/ && mkdir $md/
 #bash @RUNROOT@/@SCRIPTPATH@/QC/exclude_fields_photZP.sh
 
 
-###########################
-### r-band numbercounts ###
-###########################
-
-bash @RUNROOT@/@SCRIPTPATH@/QC/r_numbercounts.sh
-
-#################################################
-### Summarise photo-z stats (bright vs. SDSS) ###
-#################################################
-
-ulimit -n 20000
-
-for suffix in "" # "_SP"
-do
-    for filters in ugriz griz  #ugri #ugriz2 #ugri #uriz 
-    do
-	filters2=$filters
-	if [ $filters = "ugriz2" ]
-	then
-	    filters2=ugriz
-	fi
-	for calib in "" # "_recalibSDSSplus" # "_recalibSDSS" # "" #"_recalib" "_recalibplus"
-	do
-	    for ending in "" # "_cleanZP" # "_cleanZPi" # ""
-	    do
-		for survey in specz #SDSS
-		do
-		    pointings=${filters}_tiles$ending.txt
-		    while read field
-		    do
-		    	echo $bd/$field/${field}${suffix}_${filters2}_photoz${calib}_ext_${survey}.cat
-		    done<@RUNROOT@/$pointings>$md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
-		    @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats_list.py \
-		    					   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
-		    					   OBJECTS \
-		    					   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
-		    if [ -f  $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat ]
-		    then
-			@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
-			    				       $md/UNIONS_DR6_${filters}${calib}_${survey}${ending}.cat \
-			    				       z_spec_spec \
-			    				       Z_B \
-			    				       MAG_AUTO \
-			    				       2.0 \
-			    				       24.0 \
-			    				       $filters"-"$calib"-"$ending"-"$survey \
-			    				       $md/UNIONS_DR6_${filters}${calib}_${survey}${ending}_zz
-			@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot_weighted.py \
-							       $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
-							       z_spec_spec \
-							       Z_B \
-							       MAG_AUTO \
-							       2.0 \
-							       24.0 \
-							       ${filters}${suffix} \
-							       $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_zzw \
-							       $md/UNIONS100_ugriz_photoz_ext_nc.txt
-		    fi
-		done
-	    done
-	done
-    done
-done
+############################
+#### r-band numbercounts ###
+############################
+#
+#bash @RUNROOT@/@SCRIPTPATH@/QC/r_numbercounts.sh
+#
+##################################################
+#### Summarise photo-z stats (bright vs. SDSS) ###
+##################################################
+#
+#ulimit -n 20000
+#
+#for suffix in "" # "_SP"
+#do
+#    for filters in ugriz griz  #ugri #ugriz2 #ugri #uriz 
+#    do
+#	filters2=$filters
+#	if [ $filters = "ugriz2" ]
+#	then
+#	    filters2=ugriz
+#	fi
+#	for calib in "" # "_recalibSDSSplus" # "_recalibSDSS" # "" #"_recalib" "_recalibplus"
+#	do
+#	    for ending in "" # "_cleanZP" # "_cleanZPi" # ""
+#	    do
+#		for survey in specz #SDSS
+#		do
+#		    #pointings=${filters}_tiles$ending.txt
+#		    #while read field
+#		    #do
+#		    #	echo $bd/$field/${field}${suffix}_${filters2}_photoz${calib}_ext_${survey}.cat
+#		    #done<@RUNROOT@/$pointings>$md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
+#		    #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/paste_FITS_cats_list.py \
+#		    #					   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
+#		    #					   OBJECTS \
+#		    #					   $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_tiles.txt
+#		    if [ -f  $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat ]
+#		    then
+#			#@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot.py \
+#			#    				       $md/UNIONS_DR6_${filters}${calib}_${survey}${ending}.cat \
+#			#    				       z_spec_spec \
+#			#    				       Z_B \
+#			#    				       MAG_AUTO \
+#			#    				       2.0 \
+#			#    				       24.0 \
+#			#    				       $filters"-"$calib"-"$ending"-"$survey \
+#			#    				       $md/UNIONS_DR6_${filters}${calib}_${survey}${ending}_zz
+#			#@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot_weighted.py \
+#			#				       $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
+#			#				       z_spec_spec \
+#			#				       Z_B \
+#			#				       MAG_AUTO \
+#			#				       2.0 \
+#			#				       24.0 \
+#			#				       ${filters}${suffix} \
+#			#				       $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_zzw \
+#			#				       $md/UNIONS100_ugriz_photoz_ext_nc.txt
+#			@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_plot_weighted.py \
+#							       $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}.cat \
+#							       z_spec_spec \
+#							       Z_B \
+#							       MAG_GAAP_i \
+#							       2.0 \
+#							       24.5 \
+#							       ${filters}${suffix} \
+#							       $md/UNIONS_DR6${suffix}_${filters}${calib}_${survey}${ending}_zzwi \
+#							       $md/UNIONS100_ugriz_photoz_ext_nci.txt
+#		    fi
+#		done
+#	    done
+#	done
+#    done
+#done
 
 #############################
 #### Photo-z matrix plots ###
@@ -183,7 +193,8 @@ done
 #       25. \
 #       "ugri vs. ugriz photo-z" \
 #       $md/UNIONS_DR6_ugri_vs_ugriz_weighted \
-#       $md/UNIONS100_ugriz_photoz_ext_nc.txt
+#       $md/UNIONS100_ugriz_photoz_ext_nc.txt \
+#       r
 #
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot_weighted.py \
 #       $md/UNIONS_DR6_ugri_specz.cat \
@@ -195,7 +206,48 @@ done
 #       23. \
 #       "ugri vs. ugriz photo-z r<23" \
 #       $md/UNIONS_DR6_ugri_vs_ugriz_weighted_rlt23 \
-#       $md/UNIONS100_ugriz_photoz_ext_nc.txt
+#       $md/UNIONS100_ugriz_photoz_ext_nc.txt \
+#       r
+
+#@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot_weighted.py \
+#       ~/Euclid/euc_DR1_mainonly_specz_GAAPfake.cat \
+#       $md/UNIONS_DR6_ugriz_specz.cat \
+#       z_spec_spec \
+#       Z_B \
+#       MAG_GAAP_i \
+#       10. \
+#       25. \
+#       "EuDR1 grizYJH vs. UNIONS ugriz photo-z" \
+#       ~/Euclid/euc_DR1_vs_UNIONS_ugriz_weighted \
+#       $md/UNIONS100_ugriz_photoz_ext_nci.txt \
+#       i
+
+@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot_weighted.py \
+       ~/Euclid/euc_DR1_mainonly_specz_GAAPfake_North.cat \
+       $md/UNIONS_DR6_ugriz_specz.cat \
+       z_spec_spec \
+       Z_B \
+       MAG_GAAP_i \
+       10. \
+       25. \
+       "EuDR1-N grizYJH vs. UNIONS ugriz photo-z" \
+       ~/Euclid/euc_DR1N_vs_UNIONS_ugriz_weighted \
+       $md/UNIONS100_ugriz_photoz_ext_nci.txt \
+       i
+
+@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot_weighted.py \
+       ~/Euclid/euc_DR1_mainonly_specz_GAAPfake_North.cat \
+       $md/UNIONS_DR6_griz_specz.cat \
+       z_spec_spec \
+       Z_B \
+       MAG_GAAP_i \
+       10. \
+       25. \
+       "EuDR1-N grizYJH vs. UNIONS griz photo-z" \
+       ~/Euclid/euc_DR1N_vs_UNIONS_griz_weighted \
+       $md/UNIONS100_ugriz_photoz_ext_nci.txt \
+       i
+
 
 #@RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/QC/zz_matrix_plot.py \
 #       $md/UNIONS_DR6_ugri_specz_cleanZP.cat \

@@ -4,12 +4,17 @@
 # 2, 8, 21, 33, 34, 35, 36, 47, 60, 73, 85, 87, 99, 100
 # awk '{sum=$2+$8+$21+$33+$34+$35+$36+$47+$60+$73+$85+$87+$99+$100; if (sum<14) print $1}'
 
-md=$1
-tile=$2
+# Essential columns including SP:
+# 2, 3, 8, 21, 33, 34, 35, 36, 37, 47, 60, 73, 85, 86, 87, 88, 99, 100
+# awk '{sum=$2+$3+$8+$21+$33+$34+$35+$36+$37+$47+$60+$73+$85+$86+$87+$88+$99+$100; if (sum<18) print $1}'
 
-tileid=`echo $tile|cut -d "." -f 2-3`
+wd=$1
 
-wd=$md/$tile/
+tile=`basename $wd`
+xxx=`echo $tile|cut -d "." -f 2`
+yyy=`echo $tile|cut -d "." -f 3`
+
+tileid=$xxx.$yyy
 
 # 1; tile ID
 
