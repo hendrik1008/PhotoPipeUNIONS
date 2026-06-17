@@ -8,12 +8,12 @@ wd=/arc/projects/unions/catalogues/unions/GAaP_photometry/UNIONS_DR6_QC/phot_com
 
 test ! -d $wd && mkdir -p $wd
 
-for survey in PGM PS SDSS
+for survey in  SDSS #PGM #PS
 do
     echo $survey
-    for MERGE in MERGE preMERGE
+    for MERGE in MERGE #preMERGE
     do
-	for filter in u g r i z z2
+	for filter in u # g r i z z2 #u
 	do
 	    echo $filter
 	    rm $wd/${filter}_${survey}_offsets_tile_$MERGE.asc

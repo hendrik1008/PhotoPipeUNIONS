@@ -26,6 +26,9 @@ bands = ("u", "g", "r", "i", "z", "z2")
 if survey == "PGM":
     bands = ("g", "r", "i", "z", "z2")
 
+if survey == "SDSS":
+    bands = ("u",)
+
 for band in bands:
     cat = np.loadtxt(md+band+"_"+survey+star+"_offsets_"+unit+"_"+MERGE+".asc")
     medians = cat[:,3]
