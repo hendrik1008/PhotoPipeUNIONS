@@ -2,7 +2,7 @@
 
 #     CONVERT PREPARE GAUSSIANISE GAAP SDSSPREP ZPREP PSPREP PGMPREP COMPTILE \
 #     COMPTILEPS COMPTILEPGM MERGE COMPTILEPOSTMERGE COMPTILEPSPOSTMERGE COMPTILEPGMPOSTMERGE BPZ \
-#     COMPTILEZ MASK QC CLEAN COPY COPYBACK ERASE \
+#     COMPTILEZ MASK QC CLEAN COPY COPYBACK CHECKFAIL ERASE \
 
 nsession=$1
 ntile=$2
@@ -62,7 +62,7 @@ do
     echo Launching session with tiles ${tile_no_start} to ${tile_no_end}.
     canfar launch headless skaha/improc:24.04 --cpu 1 --memory 4 --  \
     	   bash @RUNROOT@/PhotoPipe_${tile_list_base}_${tile_no_start}t${tile_no_end}.sh
-    sleep 30 #$wait_sec
+    sleep 1 #$wait_sec
     echo
     i=$[$i+1]
 done
