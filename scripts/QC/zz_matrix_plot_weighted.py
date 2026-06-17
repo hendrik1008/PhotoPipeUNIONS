@@ -44,6 +44,7 @@ rmax = float(sys.argv[7])
 label = sys.argv[8]
 outbase = sys.argv[9]
 r_hist_file = sys.argv[10]
+filter_label = sys.argv[11]
 
 ### catalogue 1 ###
 
@@ -203,7 +204,7 @@ ax[3,0].set_xlabel(r"$z_\mathrm{spec}$")
 ax[3,0].set_xticks((0.,0.5,1.,1.5))
 ax[3,1].set_xlabel(r"$z_\mathrm{phot}$")
 ax[3,1].set_xticks((0.,0.5,1.,1.5))
-ax[3,2].set_xlabel(r"$r$")
+ax[3,2].set_xlabel(r"$"+filter_label+"$")
 ax[3,2].set_xticks((18.,20.,22.,24.))
 #ax[0,0].set_ylabel(r"$\langle\Delta z\rangle$")
 ax[0,0].set_ylabel(r"$\mathrm{med}(\Delta z/(1+z))$")
