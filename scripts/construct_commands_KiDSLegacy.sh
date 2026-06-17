@@ -142,7 +142,7 @@ do
 		 -a $phot_cat_local \
 		 -o $cat_LDAC \
 		 -c @RUNROOT@/@CONFIGPATH@/asctoldac_MP.conf \;
-	    echo -n rm -f $phot_cat_local \;
+	    #echo -n rm -f $phot_cat_local \;
 	fi
 	if [ ! -e $cat_LDAC2 ]
 	then
@@ -362,6 +362,10 @@ do
 		   @RUNROOT@/INSTALL/gapphot_TE/ \
 		   ${band} \
 		   ${field_name} \;
+	      echo -n bash @RUNROOT@/@SCRIPTPATH@/gaussianise_QC.sh \
+		   $wdband \
+		   $field_name \
+		   $band \;
 	  fi
       done
       echo sleep 1
@@ -722,11 +726,20 @@ do
 	      
 	      echo -n echo Adding tile names \;
 	      echo -n echo \;
-	      echo -n ldacaddkey -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-		   -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
-		   -t OBJECTS -k \
-		   MP_NAME \"${field_name}\" STRING \"Name of the pointing in MegaPipe convention\" \
-		   THELI_NAME \"$THELI_name\" STRING \"Name of the pointing in THELI convention\" \;
+	      #echo -n ldacaddkey -i ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+	      #	   -o ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
+	      #	   -t OBJECTS -k \
+	      #	   MP_NAME \"${field_name}\" STRING \"Name of the pointing in MegaPipe convention\" \
+	      #	   THELI_NAME \"$THELI_name\" STRING \"Name of the pointing in THELI convention\" \;
+	      
+	      #echo -n @RUNROOT@/INSTALL/anaconda2/bin/python \
+	      echo -n python3 \
+		   @RUNROOT@/@SCRIPTPATH@/ldacaddkey.py \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp \
+		   OBJECTS \
+		   MP_NAME \"${field_name}\" \"Name of the pointing in MegaPipe convention\" \
+		   THELI_NAME \"$THELI_name\" \"Name of the pointing in THELI convention\" \;
 	      
 	      echo -n rm -f ${mdfield}/${field_name}${suffix}_ugriz*_$$ \;
 	      
@@ -1159,8 +1172,15 @@ do
     if [ "${mode}" = "MASK" ]; then
 	if [ ! -s ${mdfield}/${field_name}_ugriz.mask.fits ]
 	then
+	    rm -f $mdfield/${field_name}_missing_bands.txt
+	    touch $mdfield/${field_name}_missing_bands.txt
 	    for filter in u g r i z z2
 	    do
+		filter2=$filter
+		if [ $filter = "z" ]
+		then
+		    filter2=z1
+		fi
 		if [ -s ${mdfield}/$filter/${field_name}_$filter.weight.fits ]
 		then
 		    if [ -s ${mdfield}/$filter/${field_name}_${filter}_smart_full.cat ]
@@ -1169,10 +1189,12 @@ do
 		    else
 			echo -n ic -p -32 -c 10000 10000 \'0\' \
 			     \>$md/$field_name/$filter/${field_name}_${filter}.weight2.fits \;
+			echo $filter2 >> $mdfield/${field_name}_missing_bands.txt
 		    fi
 		else
 		    echo -n ic -p -32 -c 10000 10000 \'0\' \
 			 \>$md/$field_name/$filter/${field_name}_${filter}.weight2.fits \;
+		    echo $filter2 >> $mdfield/${field_name}_missing_bands.txt
 		fi
 	    done
 	    echo -n @RUNROOT@/INSTALL/theli-@THELIPACKVERS@/bin/@MACHINE@/ic -p 16 \
