@@ -221,6 +221,4 @@ rm -f bgnoise.dat
 rm -f gpsfsig.dat
 rm -f inimage.fits
 
-bash @RUNROOT@/@SCRIPTPATH@/gaussianise_QC.sh $wd $tile $band
-
 cd $orig_dir

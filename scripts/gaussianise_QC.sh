@@ -31,11 +31,11 @@ wd=$1   # work directory
 tile=$2 # tile name
 band=$3 # band of the image, i.e. u, g, r, i, z
 
-python @RUNROOT@/@SCRIPTPATH@/chimney_plot.py \
-       $wd $tile $band
-
 album -b 10 1 1 $wd/${tile}_${band}.fits > $wd/${tile}_${band}.small.fits
 album -b 10 1 1 $wd/${tile}_${band}.weight.fits > $wd/${tile}_${band}.weight.small.fits
+
+python @RUNROOT@/@SCRIPTPATH@/chimney_plot.py \
+       $wd $tile $band
 
 ic '1 0 %1 0 > ? %2 *' \
    $wd/${tile}_${band}.weight.small.fits \
