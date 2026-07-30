@@ -706,7 +706,8 @@ do
 	      echo -n echo \;
 	      echo -n @RUNROOT@/INSTALL/anaconda2/bin/python @RUNROOT@/@SCRIPTPATH@/add_extinction_python2.py \
 		   ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp${i}_$$ \
-		   ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \;
+		   ${mdfield}/${field_name}${suffix}_ugriz.cat_tmp$[$i+1]_$$ \
+		   $RA \;
 	      
 	      i=$[$i+1]
 	      
@@ -864,6 +865,12 @@ do
 		       -t FIELDS \;
 		  echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat_tmp2_$$ \
 		       -o ${mdfield}/${field_name}${suffix}_${filters}_photoz_ext.cat \
+		       -t OBJECTS \
+		       -k  \
+		       MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z MAG_LIM_0p7_z2 \
+		       MAG_LIM_1p0_u MAG_LIM_1p0_g MAG_LIM_1p0_r MAG_LIM_1p0_i MAG_LIM_1p0_z MAG_LIM_1p0_z2 \;
+		  echo -n ldacdelkey -i ${mdfield}/${field_name}${suffix}_${filters}_maglim_photoz.cat \
+		       -o ${mdfield}/${field_name}${suffix}_${filters}_photoz.cat \
 		       -t OBJECTS \
 		       -k  \
 		       MAG_LIM_0p7_u MAG_LIM_0p7_g MAG_LIM_0p7_r MAG_LIM_0p7_i MAG_LIM_0p7_z MAG_LIM_0p7_z2 \
@@ -1216,12 +1223,12 @@ do
 	if [ ! -s ${mdfield}/r/${field_name}_r_maskstars.reg ]
 	then
 	    echo -n cd /arc/home/hendrik/src/automask/scripts/Linux_64 \;
-	    echo -n export INSTRUMENT\=MEGAPRIME \;
+	    echo -n export INSTRUMENT\=UNIONS \; #MEGAPRIME \;
 	    echo -n bash ./maskstars.sh \
 	         $mdfield/r/ \
 		 ${field_name}_r.fits \
 		 ${field_name}_r.weight.fits \
-		 MEGAPRIME_mask.ini \;
+		 UNIONS_mask.ini \;
 	fi
 	echo sleep 1
     fi

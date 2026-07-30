@@ -7,13 +7,18 @@ from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord
 from astropy import wcs
 
-inimage = fits.open('/arc/home/hendrik/src/PhotoPipeUNIONS/dustmaps/sfd/SFD_dust_4096_ngp.fits') # axis flipped!
-imagedata = inimage[0].data
-
-w = WCS('/arc/home/hendrik/src/PhotoPipeUNIONS/dustmaps/sfd/SFD_dust_4096_ngp.fits')
-
 incat = sys.argv[1]
 outcat = sys.argv[2]
+RA = sys.argv[3]
+
+hemisphere = 'n'
+if RA < 90 or RA > 300:
+    hemisphere = 's'
+
+inimage = fits.open('/arc/home/hendrik/src/PhotoPipeUNIONS/dustmaps/sfd/SFD_dust_4096_'+hemisphere+'gp.fits') # axis flipped!
+imagedata = inimage[0].data
+
+w = WCS('/arc/home/hendrik/src/PhotoPipeUNIONS/dustmaps/sfd/SFD_dust_4096_'+hemisphere+'gp.fits')
 
 hdu = fits.open(incat)
 
