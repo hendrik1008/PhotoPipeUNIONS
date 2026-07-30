@@ -362,7 +362,8 @@ do
 	${RUNROOT}/CANFAR_launch*.sh \
 	${RUNROOT}/distribute_CANFAR*.sh \
 	${RUNROOT}/${SCRIPTPATH}/*.* \
-	${RUNROOT}/${SCRIPTPATH}/QC/*.*
+	${RUNROOT}/${SCRIPTPATH}/QC/*.* \
+	${RUNROOT}/${SCRIPTPATH}/masking/*.*
 done 
 echo -e "\033[0;31m - Done! \033[0m" 
 #}}}

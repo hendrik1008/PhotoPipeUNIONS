@@ -1222,13 +1222,19 @@ do
 	fi
 	if [ ! -s ${mdfield}/r/${field_name}_r_maskstars.reg ]
 	then
-	    echo -n cd /arc/home/hendrik/src/automask/scripts/Linux_64 \;
-	    echo -n export INSTRUMENT\=UNIONS \; #MEGAPRIME \;
-	    echo -n bash ./maskstars.sh \
+	    #echo -n cd /arc/home/hendrik/src/automask/scripts/Linux_64 \;
+	    #echo -n export INSTRUMENT\=UNIONS \; #MEGAPRIME \;
+	    #echo -n bash ./maskstars.sh \
+	    #     $mdfield/r/ \
+	    #	 ${field_name}_r.fits \
+	    #	 ${field_name}_r.weight.fits \
+	    #	 UNIONS_mask.ini \;
+	    echo -n export INSTRUMENT\=UNIONS \;
+	    echo -n bash @RUNROOT@/@SCRIPTPATH@/masking/maskstars.sh \
 	         $mdfield/r/ \
 		 ${field_name}_r.fits \
 		 ${field_name}_r.weight.fits \
-		 UNIONS_mask.ini \;
+		 @RUNROOT@/@CONFIGPATH@/UNIONS_mask.ini \;
 	fi
 	echo sleep 1
     fi
